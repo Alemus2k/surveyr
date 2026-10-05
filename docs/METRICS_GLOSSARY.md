@@ -69,6 +69,7 @@ are applied.
 | **Fill needs (in the ground)** | Bank volume required to make that fill: fill ÷ (1 − shrinkage). |
 | **Swell** | Loose soil takes up more room than in the ground: loose = bank × (1 + swell). Governs truck space. |
 | **Shrinkage** | Compacted fill is denser than in-ground soil, so it needs more bank volume than the space it fills. |
+| **Where the dirt goes** | The dug-out soil fills the depressions first; *used to fill* = the smaller of cut and fill-needed. Anything remaining is **left over to remove**; if the cut runs out first, the remainder is **short — bring in**. |
 | **Export / import** | Cut minus fill-needed (bank). Positive is hauled away, negative brought in; within 0.5 % of the soil moved counts as *balanced*. Shown as loose volume and truckloads (rounded up). |
 | **Dig / fill map** | Plan view, north up: red where ground is above the pad (dig), blue below it (fill), grey within 1 cm of grade. |
 

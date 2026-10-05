@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { balancedBase, designGrid, haul, siteCells, volumes, type SiteCells } from "./earthworks";
+import { balancedBase, designGrid, dirtLedger, haul, siteCells, volumes, type SiteCells } from "./earthworks";
 
 // 2 × 2 grid of 1 m cells: elevations 0, 1, 2, 3 m (row-major, row 0 = south)
 const GRID = { x: [0.5, 1.5], y: [0.5, 1.5], z: [[0, 1], [2, 3]], mask: [[1, 1], [1, 1]] };
@@ -82,5 +82,27 @@ describe("haul", () => {
     const h = haul({ cut: 50, fill: 45 }, material, 10);
     expect(h.direction).toBe("balanced");
     expect(h.loads).toBe(0);
+  });
+});
+
+describe("dirtLedger", () => {
+  test("cut first fills the depressions; the rest is left over to remove", () => {
+    const l = dirtLedger(100, 37.5);
+    expect(l.usedForFill).toBe(37.5);
+    expect(l.leftOver).toBe(62.5);
+    expect(l.shortfall).toBe(0);
+    expect(l.usedPct).toBeCloseTo(37.5, 6);
+  });
+
+  test("when the cut runs out, the remainder is a shortfall to bring in", () => {
+    const l = dirtLedger(20, 50);
+    expect(l.usedForFill).toBe(20);
+    expect(l.leftOver).toBe(0);
+    expect(l.shortfall).toBe(30);
+    expect(l.usedPct).toBe(100);
+  });
+
+  test("no cut at all", () => {
+    expect(dirtLedger(0, 10)).toEqual({ usedForFill: 0, leftOver: 0, shortfall: 10, usedPct: 0 });
   });
 });

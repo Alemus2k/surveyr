@@ -39,6 +39,9 @@ export function jobsiteSummary(s: SummaryInput): string {
     `Scanned area: ${area(s.scannedArea)} (grid ${s.cellSize} m)`,
     `Cut: ${vol(v.cut)} in place over ${area(v.cutArea)}, deepest ${v.maxCut.toFixed(2)} m`,
     `Fill: ${vol(v.fill)} compacted over ${area(v.fillArea)}, highest ${v.maxFill.toFixed(2)} m — needs ${vol(h.fillBank)} in place`,
+    `Dirt balance: ${vol(v.cut)} dug − ${vol(Math.min(v.cut, h.fillBank))} used to fill depressions = ${
+      v.cut >= h.fillBank ? `${vol(v.cut - h.fillBank)} left over to remove` : `${vol(h.fillBank - v.cut)} short`
+    }`,
     `Material: ${s.material.label} (swell ${s.material.swellPct}%, shrinkage ${s.material.shrinkPct}%)`,
     `Result: ${outcome}`,
     "Volumes are estimates from a LiDAR scan (prismatic cells); verify on site before quoting.",

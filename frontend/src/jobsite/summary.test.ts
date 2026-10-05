@@ -37,5 +37,6 @@ describe("jobsiteSummary", () => {
     });
     expect(text).toContain("Pad at 12.35 m, falling 2% toward East");
     expect(text).toContain("Export 50.0 m³ loose (40.0 m³ in the ground) ≈ 5 loads of 10 m³");
+    expect(text).toContain("Dirt balance: 30.1 m³ dug − 10.0 m³ used to fill depressions = 20.1 m³ left over to remove");
   });
 });

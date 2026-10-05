@@ -116,3 +116,85 @@
 .legend-max {
   margin-left: 4px;
 }
+
+/* dirt ledger: dug soil → fills depressions → left over */
+.ledger-bar {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-input);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ledger-bar span {
+  height: 100%;
+  transition: width var(--duration-normal) var(--ease-out-expo);
+}
+.ledger-used {
+  background: var(--accent);
+}
+.ledger-left {
+  background: var(--text-faint);
+}
+.ledger-key {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.ledger-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ledger-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.ledger-rows {
+  margin: 10px 0 0;
+}
+.ledger-rows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: var(--text-sm);
+}
+.ledger-rows dt {
+  color: var(--text-muted);
+}
+.ledger-rows dd {
+  margin: 0;
+  text-align: right;
+}
+.ledger-rows .ledger-sub {
+  padding-top: 0;
+  font-size: var(--text-xs);
+}
+.ledger-rows .ledger-sub dt {
+  padding-left: 14px;
+  color: var(--text-faint);
+}
+.ledger-rows .ledger-sub dd {
+  color: var(--text-muted);
+}
+.ledger-rows .ledger-total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-strong);
+  font-size: var(--text-base);
+}
+.ledger-rows .ledger-total dt,
+.ledger-rows .ledger-total dd {
+  color: var(--text);
+  font-weight: var(--weight-heavy);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ledger-bar span {
+    transition: none;
+  }
+}

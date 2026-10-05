@@ -3,7 +3,8 @@ import { formatArea, formatLength, formatVolume, type Quantity } from "../lib/fo
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { CutFillMap } from "./CutFillMap";
-import { balancedBase, designGrid, haul, siteCells, volumes } from "./earthworks";
+import { DirtLedgerCard } from "./DirtLedgerCard";
+import { balancedBase, designGrid, dirtLedger, haul, siteCells, volumes } from "./earthworks";
 import { CUSTOM_MATERIAL, DIRECTIONS, MATERIALS, useJobsiteSettings } from "./settings";
 import { jobsiteSummary } from "./summary";
 
@@ -81,6 +82,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
   const target = useMemo(() => designGrid(site, { ...grade, base }), [site, base, s.slopePct, s.fallsTowardDeg]);
   const v = useMemo(() => volumes(site, target), [site, target]);
   const h = haul(v, s, s.truckM3);
+  const ledger = dirtLedger(v.cut, h.fillBank);
 
   if (site.z.length === 0) return <div className="empty-state">No scanned ground to calculate.</div>;
 
@@ -116,7 +118,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
       {/* ---------------- headline result */}
       <section className={`js-result ${h.direction}`} aria-live="polite">
         <span className="js-result-label">
-          {h.direction === "balanced" ? "Balanced on site" : h.direction === "export" ? "Haul away (export)" : "Bring in (import)"}
+          {h.direction === "balanced" ? "Balanced on site" : h.direction === "export" ? "Left over to remove" : "Short — bring in"}
         </span>
         {h.direction === "balanced" ? (
           <span className="js-result-sub">Cut covers the fill — no trucks needed.</span>
@@ -191,19 +193,15 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
       </PanelSection>
 
       {/* ---------------- volumes */}
-      <PanelSection label="Earthworks">
+      <PanelSection label="Where the dirt goes">
+        <DirtLedgerCard volumes={v} haul={h} ledger={ledger} truckM3={s.truckM3} shrinkPct={s.shrinkPct} />
+      </PanelSection>
+
+      <PanelSection label="Earthworks detail">
         <dl className="metric-list">
-          <div className="metric-row">
-            <dt>Cut (in the ground)</dt>
-            <dd className="mono">{q(formatVolume(v.cut))}</dd>
-          </div>
           <div className="metric-row">
             <dt>Fill (compacted)</dt>
             <dd className="mono">{q(formatVolume(v.fill))}</dd>
-          </div>
-          <div className="metric-row">
-            <dt>Fill needs (in the ground)</dt>
-            <dd className="mono">{q(formatVolume(h.fillBank))}</dd>
           </div>
           <div className="metric-row">
             <dt>Cut / fill area</dt>

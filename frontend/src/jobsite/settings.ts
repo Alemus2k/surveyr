@@ -79,6 +79,11 @@ export function useJobsiteSettings(projectId: string | null): [JobsiteSettings, 
     if (key && state.key === key) savePref(key, state.settings);
   }, [key, state]);
 
-  const update = (patch: Partial<JobsiteSettings>) => setState({ key, settings: parseJobsite({ ...settings, ...patch }) });
+  // build on the latest stored settings, so quick successive edits never undo each other
+  const update = (patch: Partial<JobsiteSettings>) =>
+    setState((st) => {
+      const current = st.key === key ? st.settings : key ? parseJobsite(loadPref(key, anyValue)) : DEFAULT_JOBSITE;
+      return { key, settings: parseJobsite({ ...current, ...patch }) };
+    });
   return [settings, update];
 }

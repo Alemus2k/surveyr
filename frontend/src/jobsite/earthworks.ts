@@ -166,3 +166,21 @@ export function haul(v: Pick<Volumes, "cut" | "fill">, m: Material, truckM3: num
     loads: truckM3 > 0 ? Math.ceil(loose / truckM3 - 1e-9) : 0,
   };
 }
+
+export interface DirtLedger {
+  usedForFill: number; // bank m³ of cut that goes into the depressions
+  leftOver: number; // bank m³ of cut remaining after every depression is filled
+  shortfall: number; // bank m³ still needed once all the cut is used
+  usedPct: number; // share of the cut used as fill (0–100)
+}
+
+/** Where the dug-out soil goes: into the depressions first, the remainder off site. */
+export function dirtLedger(cutBank: number, fillBank: number): DirtLedger {
+  const usedForFill = Math.min(cutBank, fillBank);
+  return {
+    usedForFill,
+    leftOver: Math.max(cutBank - fillBank, 0),
+    shortfall: Math.max(fillBank - cutBank, 0),
+    usedPct: cutBank > 0 ? (100 * usedForFill) / cutBank : 0,
+  };
+}
