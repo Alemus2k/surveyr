@@ -14,7 +14,7 @@ from typing import Dict, Optional
 import numpy as np
 
 # Canonical optional channel names this app understands. Keeping them as one
-# canonical list future-proofs the schema for real drone lidar (see PROFESSOR_QUESTIONS.md).
+# canonical list future-proofs the schema for real drone lidar.
 KNOWN_CHANNELS: tuple = (
     "intensity",            # reflectivity (real lidar; None from phone)
     "return_number",        # echo index within a pulse

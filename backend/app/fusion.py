@@ -17,7 +17,7 @@ Coverage = per-cell count of how many sub-maps covered each raster cell, so
 "revisited areas" = cells seen by >= 2 passes.
 
 This is intentionally dependency-light (numpy + scipy) and free. Registration
-without a pose prior is a known hard problem (see PROFESSOR_QUESTIONS.md); the
+without a pose prior is a known hard problem (see README "Known limitations"); the
 bounded ICP above is the pragmatic refinement typically paired with a coarse
 GPS/odometry prior supplied via ``FusedProject.add_scan(scan, prior=...)``.
 """

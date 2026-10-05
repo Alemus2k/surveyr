@@ -50,8 +50,8 @@ jobs:
           python -m pytest tests -q
 
       - name: Engine — bundle with PyInstaller
-        working-directory: backend
-        run: python -m PyInstaller surveyr-backend.spec --noconfirm --log-level WARN
+        working-directory: frontend
+        run: node scripts/build-engine.mjs # same script as `npm run build:engine`
 
       - name: Frontend — install and tests
         working-directory: frontend

@@ -17,10 +17,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "app",
-      "dmg"
-    ],
+    "targets": "all",
     "category": "Productivity",
     "shortDescription": "LiDAR terrain survey workstation",
     "icon": [

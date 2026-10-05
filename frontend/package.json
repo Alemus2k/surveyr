@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "tauri": "tauri",
-    "build:engine": "cd ../backend && ./.venv/bin/pyinstaller surveyr-backend.spec --noconfirm --log-level WARN",
+    "build:engine": "node scripts/build-engine.mjs",
     "app:dev": "tauri dev",
     "app:build": "npm run build:engine && tauri build"
   },

@@ -75,7 +75,7 @@ def cut_fill(z: np.ndarray, cell_size: float, target_elev: float) -> dict:
         net   - fill - cut; positive net means importing dirt.
 
     Volumes use simple prismatic cell-area; professional grading uses a TIN or
-    more rigorous method — flagged for the GIS professor (see PROFESSOR_QUESTIONS.md).
+    a more rigorous method (see "Known limitations" in the README).
     """
     area = cell_size * cell_size
     above = z - target_elev
