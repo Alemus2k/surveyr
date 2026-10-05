@@ -1,0 +1,88 @@
+/* Surveyr design tokens — point-cloud workstation: charcoal chrome, amber accent.
+   Theme is set via data-theme on <html> ("dark" default, "light"). The 3D
+   viewport stays dark in both themes, like a scanner/CAD viewport. */
+
+:root,
+html[data-theme="dark"] {
+  --bg-app: #121316;
+  --bg-chrome: #18191d;
+  --bg-panel: #1d1f24;
+  --bg-raised: #25272d;
+  --bg-input: #15161a;
+  --bg-hover: #2b2e35;
+  --line: #2a2d34;
+  --line-strong: #3a3e47;
+  --text: #e8e9eb;
+  --text-muted: #a0a5ad;
+  --text-faint: #6c727c;
+  --accent: #f5b400;
+  --accent-hover: #ffc626;
+  --accent-ink: #1b1400;
+  --accent-soft: rgba(245, 180, 0, 0.14);
+  --accent-line: rgba(245, 180, 0, 0.55);
+  --good: #3ecf7a;
+  --bad: #ff6b6b;
+  --shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --bg-app: #d9dbdf;
+  --bg-chrome: #e6e7ea;
+  --bg-panel: #f2f3f5;
+  --bg-raised: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: #e4e6ea;
+  --line: #d3d6dc;
+  --line-strong: #b9bec7;
+  --text: #17191d;
+  --text-muted: #555b65;
+  --text-faint: #8a909a;
+  --accent: #c98a00;
+  --accent-hover: #b37a00;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(201, 138, 0, 0.13);
+  --accent-line: rgba(201, 138, 0, 0.6);
+  --good: #18a058;
+  --bad: #d64545;
+  --shadow-pop: 0 10px 28px rgba(20, 24, 32, 0.16), 0 0 0 1px rgba(20, 24, 32, 0.06);
+  color-scheme: light;
+}
+
+:root {
+  --viewport-bg: #04060a;
+  /* Rajdhani: squared HUD letterforms; small x-height, so sizes run ~1px larger
+     and body text uses the 500 weight (400 is too thin on dark screens). */
+  --font-ui: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --weight-body: 500;
+  --weight-strong: 600;
+  --weight-heavy: 700;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14.5px;
+  --text-lg: 17px;
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+
+  --topbar-h: 38px;
+  --rail-w: 48px;
+  --panel-w: 296px;
+  --dock-h: 210px;
+
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Highlight variants for the always-dark 3D viewport. These are defaults only:
+   useAppearance() overwrites every --accent* token from the user's chosen colour. */
+:root {
+  --accent-viewport: #f5b400;
+  --accent-viewport-soft: rgba(245, 180, 0, 0.14);
+  --accent-viewport-line: rgba(245, 180, 0, 0.5);
+  --accent-viewport-ink: #000000;
+}

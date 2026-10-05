@@ -1,0 +1,279 @@
+/* Workstation shell: title bar / icon rail / side panel / viewport + bottom dock. */
+
+.shell {
+  display: grid;
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
+  grid-template-columns: var(--rail-w) auto minmax(0, 1fr);
+  grid-template-areas:
+    "top top top"
+    "rail panel work";
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ------------------------------------------------------------ top bar */
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  background: var(--bg-chrome);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: calc(var(--rail-w) + var(--panel-w));
+  flex-shrink: 0;
+  padding: 0 12px;
+  border-right: 1px solid var(--line);
+}
+.brand-mark {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px; /* matches macOS icon corner proportion at this size */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.brand-name {
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-base);
+  letter-spacing: 0.01em;
+}
+.project-tabs {
+  display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.project-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 230px;
+  border-right: 1px solid var(--line);
+  color: var(--text-muted);
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+.project-tab:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.project-tab[data-active="true"] {
+  color: var(--accent);
+  background: var(--bg-panel);
+}
+.project-tab[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--accent);
+}
+.tab-label {
+  height: 100%;
+  min-width: 0;
+  padding: 0 4px 0 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.tab-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0; /* revealed on hover, focus, or for the active tab */
+  transition: opacity var(--duration-fast), background var(--duration-fast);
+}
+.project-tab:hover .tab-close,
+.project-tab:focus-within .tab-close,
+.project-tab[data-active="true"] .tab-close {
+  opacity: 0.75;
+}
+.tab-close:hover {
+  opacity: 1;
+  background: var(--bg-raised);
+}
+@media (hover: none) {
+  .tab-close {
+    opacity: 0.75;
+  }
+}
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding: 0 10px 0 16px;
+  flex-shrink: 0;
+}
+.topbar-readout {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+/* ------------------------------------------------------------ icon rail */
+.icon-rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+  background: var(--bg-chrome);
+  border-right: 1px solid var(--line);
+}
+.rail-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.rail-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.rail-btn[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------ side panel */
+.side-panel {
+  grid-area: panel;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: var(--panel-w);
+  min-height: 0;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--line);
+  animation: panel-in var(--duration-normal) var(--ease-out-expo);
+}
+.shell[data-panel="closed"] .topbar-brand {
+  width: auto;
+}
+
+/* drag handle on the panel's right edge */
+.panel-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 4;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.panel-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background var(--duration-fast);
+}
+.panel-resizer:hover::after,
+.panel-resizer:focus-visible::after,
+.is-resizing .panel-resizer::after {
+  background: var(--accent);
+}
+.panel-resizer:focus-visible {
+  outline: none;
+}
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+body.is-resizing .viewport {
+  pointer-events: none; /* keep the 3D canvas from stealing the drag */
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+/* ------------------------------------------------------------ workspace */
+.workspace {
+  grid-area: work;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  background: var(--viewport-bg);
+}
+
+/* ------------------------------------------------------------ narrow screens */
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    grid-template-areas:
+      "top top"
+      "rail work";
+  }
+  .topbar-brand {
+    width: auto;
+  }
+  .brand-name,
+  .topbar-readout {
+    display: none;
+  }
+  .side-panel {
+    grid-area: work;
+    z-index: 5;
+    width: min(var(--panel-w), calc(100vw - var(--rail-w)));
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel {
+    animation: none;
+  }
+}
+
+.project-tab-add {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.project-tab-add:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.project-tab-add:disabled {
+  cursor: progress;
+  opacity: 0.5;
+}

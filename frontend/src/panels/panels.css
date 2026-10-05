@@ -1,0 +1,422 @@
+/* Side panel content: headers, sections, presets, metrics, colour, maps, charts. */
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 10px 0 16px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.panel-head h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.panel-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.panel-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.section-label {
+  margin: 0 0 10px;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.panel-note {
+  margin: 10px 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.field-label {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------- slope preset ladder */
+.preset-ladder {
+  position: relative;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.preset-ladder::before {
+  /* the vertical rail joining each preset's node */
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 22px;
+  bottom: 22px;
+  width: 1px;
+  background: var(--line-strong);
+}
+.preset-ladder li + li {
+  margin-top: 8px;
+}
+.preset {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 0 0 26px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.preset::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  background: var(--bg-panel);
+  transform: translateY(-50%);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.preset[aria-pressed="true"]::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.preset-text,
+.preset-curve {
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+}
+.preset-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  height: 48px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  border-right: 0;
+}
+.preset-curve {
+  width: 92px;
+  height: 48px;
+  margin-left: -10px;
+  padding: 8px 6px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: 0;
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.preset-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-strong);
+}
+.preset-deg {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+.preset:hover .preset-text,
+.preset:hover .preset-curve {
+  background: var(--bg-hover);
+}
+.preset[aria-pressed="true"] .preset-text,
+.preset[aria-pressed="true"] .preset-curve {
+  border-color: var(--accent-line);
+}
+.preset[aria-pressed="true"] .preset-curve {
+  stroke: var(--accent);
+}
+
+/* ---------------------------------------------------- metric list */
+.metric-list {
+  margin: 0;
+}
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.metric-row:first-child dd {
+  color: var(--accent);
+  font-size: var(--text-lg);
+}
+.metric-row dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.metric-row dd {
+  margin: 0;
+  font-size: var(--text-base);
+}
+.unit {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------- cloud colour */
+.color-modes {
+  display: flex;
+  flex-direction: column;
+}
+.color-card {
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+}
+.color-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: var(--weight-strong);
+}
+.color-card-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: var(--text-xs);
+}
+.range-inputs {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.range-inputs input {
+  width: 78px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.range-inputs input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.histogram {
+  position: relative;
+  height: 64px;
+}
+.histogram svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.histogram .bar {
+  fill: var(--text-faint);
+  opacity: 0.35;
+}
+.histogram .bar.in {
+  fill: var(--accent);
+  opacity: 0.9;
+}
+.range-handle {
+  /* two overlaid sliders; only their thumbs take pointer input */
+  position: absolute;
+  inset: auto 0 -8px;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.range-handle::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid var(--accent-ink);
+  background: var(--accent);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+.range-handle::-moz-range-thumb {
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid var(--accent-ink);
+  background: var(--accent);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+.ramp-strip {
+  height: 6px;
+  margin-top: 14px;
+  border-radius: 2px;
+}
+.range-extent {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+.mode-list {
+  margin: 0;
+  padding: 0 0 12px;
+  list-style: none;
+}
+.mode-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 16px;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+.mode-na {
+  font-size: var(--text-xs);
+  opacity: 0.7;
+}
+
+/* ---------------------------------------------------- projects */
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.project-list .project-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.project-name {
+  font-weight: var(--weight-strong);
+}
+.project-id {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------- maps + charts */
+.map-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.map-tile {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
+.map-tile canvas {
+  image-rendering: pixelated;
+  transform: scaleY(-1); /* grid row 0 is the southern edge; flip so north is up */
+}
+.map-title {
+  padding: 7px 10px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  border-bottom: 1px solid var(--line);
+}
+
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------- project rows */
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.project-row:hover {
+  background: var(--bg-hover);
+}
+.project-row[data-active="true"] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.project-list .project-open {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+.project-list .project-open:hover {
+  background: transparent;
+}
+.project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-open-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-raised);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+}
+.project-delete {
+  margin-right: 4px;
+  opacity: 0; /* revealed on hover/focus so the list stays calm */
+}
+.project-row:hover .project-delete,
+.project-row:focus-within .project-delete {
+  opacity: 1;
+}
+.project-delete:hover {
+  color: var(--bad);
+}
+@media (hover: none) {
+  .project-delete {
+    opacity: 1;
+  }
+}

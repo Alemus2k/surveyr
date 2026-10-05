@@ -1,0 +1,125 @@
+/* Charts panel. All text/lines use theme tokens so both themes stay legible. */
+
+:root {
+  --series-cut: var(--bad);
+  --series-fill: #4d9dff;
+}
+html[data-theme="light"] {
+  --series-fill: #2563eb;
+}
+
+.chart-box {
+  width: 100%;
+  margin-top: 4px;
+}
+.chart-box svg {
+  display: block;
+  overflow: visible;
+}
+.chart-centre svg {
+  margin: 0 auto;
+}
+.chart-label {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.chart-axis {
+  stroke: var(--line-strong);
+}
+.chart-ring {
+  fill: none;
+  stroke: var(--line);
+}
+.chart-marker {
+  stroke: var(--text);
+  opacity: 0.6;
+}
+.chart-marker-dot {
+  fill: var(--accent);
+  stroke: var(--bg-panel);
+  stroke-width: 2;
+}
+.series-cut {
+  stroke: var(--series-cut);
+}
+.series-fill {
+  stroke: var(--series-fill);
+}
+.chart-title {
+  margin: 14px 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+}
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.swatch-line {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid;
+}
+.swatch-line.series-cut {
+  border-color: var(--series-cut);
+}
+.swatch-line.series-fill {
+  border-color: var(--series-fill);
+}
+.chart-readout {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+.chart-readout strong {
+  color: var(--text);
+  font-weight: var(--weight-heavy);
+}
+
+/* slope classes */
+.stack-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-input);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.stack-bar span {
+  height: 100%;
+}
+.class-list {
+  margin: 8px 0 0;
+}
+.class-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: var(--text-sm);
+}
+.class-row dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.class-row dt i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.class-row dd {
+  margin: 0;
+  color: var(--text);
+}

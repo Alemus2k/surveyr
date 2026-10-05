@@ -1,0 +1,263 @@
+/* Comparisons: layers panel, viewport legend, new-comparison dialog. */
+
+/* ---------------------------------------------------- layers panel */
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.layer-card {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  transition: border-color var(--duration-fast), opacity var(--duration-fast);
+}
+.layer-card[data-selected="true"] {
+  border-color: var(--accent-line);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.layer-card[data-hidden="true"] .layer-name,
+.layer-card[data-hidden="true"] .layer-color {
+  opacity: 0.45;
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.layer-color {
+  position: relative;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+}
+.layer-color input {
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.layer-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-weight: var(--weight-strong);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.layer-name:hover {
+  background: var(--bg-hover);
+}
+.layer-sub {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-body);
+}
+.layer-opacity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 2px 0;
+}
+.layer-opacity input {
+  flex: 1;
+  min-width: 0; /* range inputs default to ~130px and would overflow narrow panels */
+}
+.layer-opacity output {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: right;
+  font-size: var(--text-sm);
+}
+.layer-toggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+.layer-transform {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.xf-grid {
+  display: grid;
+  /* two per row in a wide panel, one per row when it's narrow */
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 6px 10px;
+}
+.xf-field {
+  display: grid;
+  grid-template-columns: 38px minmax(56px, 1fr) 12px;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.xf-field input {
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  font-size: var(--text-sm);
+}
+.xf-field input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.xf-field input:disabled {
+  opacity: 0.5;
+}
+.layer-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.text-btn.danger {
+  color: var(--bad);
+}
+.text-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  text-decoration: none;
+}
+.add-layer {
+  display: flex;
+  gap: 8px;
+}
+.add-layer select {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+}
+.error-text {
+  color: var(--bad);
+}
+
+/* ---------------------------------------------------- viewport legend */
+.layer-legend {
+  position: absolute;
+  right: 16px;
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 220px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(4, 6, 10, 0.78);
+  color: #e6eef7;
+  font-size: var(--text-sm);
+  list-style: none;
+  pointer-events: none;
+}
+.layer-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.layer-legend li[data-hidden="true"] {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.layer-legend li[data-selected="true"] {
+  color: var(--accent-viewport);
+}
+.legend-swatch {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legend-swatch[data-elevation="true"] {
+  background: linear-gradient(135deg, #1428ff, #00dcff, #28ff3c, #fff000, #ff1e0a);
+}
+.legend-loading {
+  color: rgba(230, 238, 247, 0.5);
+  font-size: var(--text-xs);
+}
+
+/* ---------------------------------------------------- dialog bits */
+.secondary-btn.full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.primary-btn.compact {
+  width: auto;
+  height: 32px;
+  margin: 0;
+  padding: 0 14px;
+}
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+}
+.dialog-field input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+}
+.dialog-field input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.dialog-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  overflow-y: auto;
+}
+.dialog-checks legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+.dialog-checks label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+.dialog-checks input {
+  accent-color: var(--accent);
+}

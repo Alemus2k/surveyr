@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Surveyr's main window. The UI talks only to the local engine over HTTP, so it needs no Tauri plugin permissions.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

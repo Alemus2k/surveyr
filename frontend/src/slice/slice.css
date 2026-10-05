@@ -1,0 +1,78 @@
+/* Bottom cross-section dock. */
+
+.slice-dock {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: var(--dock-h);
+  border-top: 1px solid var(--line);
+  background: var(--bg-panel);
+  animation: dock-in var(--duration-normal) var(--ease-out-expo);
+}
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.slice-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-height: 42px;
+  padding: 6px 8px 6px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.slice-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.slice-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.slice-field input[type="range"] {
+  width: 140px;
+}
+.slice-field output {
+  min-width: 64px;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.slice-count {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+.slice-close {
+  margin-left: auto;
+}
+.slice-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--viewport-bg);
+}
+
+@media (max-width: 640px) {
+  .slice-dock {
+    height: 240px;
+  }
+  .slice-field input[type="range"] {
+    width: 90px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slice-dock {
+    animation: none;
+  }
+}

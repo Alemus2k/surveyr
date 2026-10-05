@@ -1,0 +1,26 @@
+# Phase 0 (core terrain analytics) dependencies.
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.7
+pytest>=7.4
+
+# Phase 1 (API).
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+# Phase 2 (point-cloud IO + fusion).
+laspy>=2.5
+
+# Tests (FastAPI TestClient).
+httpx>=0.27
+
+# Desktop app: scan uploads + packaging.
+python-multipart>=0.0.9
+pyinstaller>=6.10
+
+# Real LiDAR: LAZ decompression + coordinate systems (units, georeferencing).
+lazrs>=0.6
+pyproj>=3.6
+
+# Windows/Linux: deleted projects go to the Recycle Bin / desktop trash.
+send2trash>=1.8
