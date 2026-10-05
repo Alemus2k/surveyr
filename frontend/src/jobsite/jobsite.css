@@ -1,0 +1,118 @@
+/* Job site calculations panel. */
+
+.js-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 12px 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+}
+.js-result.export {
+  border-left-color: var(--accent);
+}
+.js-result.import {
+  border-left-color: var(--series-fill, #4d9dff);
+}
+.js-result.balanced {
+  border-left-color: var(--good);
+}
+.js-result-label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.js-result-value {
+  color: var(--text);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+.js-result-value .unit {
+  font-size: var(--text-sm);
+}
+.js-result-sub {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.js-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin-top: 10px;
+}
+.js-field select {
+  height: 30px;
+}
+.js-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.js-input input {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  font-size: var(--text-sm);
+}
+.js-input input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.js-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0 10px;
+}
+.js-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 6px;
+}
+
+.cutfill-map {
+  margin: 12px 0 0;
+}
+.cutfill-map canvas {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  image-rendering: pixelated;
+}
+.cutfill-map figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.legend-ramp {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #ef4b4b, rgba(128, 134, 145, 0.6), #4d9dff);
+}
+.legend-chip.cut {
+  color: #ef4b4b;
+}
+.legend-chip.fill {
+  color: #4d9dff;
+}
+.legend-max {
+  margin-left: 4px;
+}

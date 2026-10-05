@@ -1,6 +1,6 @@
 import { Icon, type IconName } from "./icons";
 
-export type PanelId = "projects" | "terrain" | "color" | "maps" | "charts" | "adjust" | "layers";
+export type PanelId = "projects" | "terrain" | "color" | "maps" | "charts" | "jobsite" | "adjust" | "layers";
 
 const ITEMS: ReadonlyArray<{ id: PanelId; icon: IconName; label: string }> = [
   { id: "projects", icon: "folder", label: "Projects" },
@@ -8,6 +8,7 @@ const ITEMS: ReadonlyArray<{ id: PanelId; icon: IconName; label: string }> = [
   { id: "color", icon: "cloudColor", label: "Cloud colour" },
   { id: "maps", icon: "maps", label: "2D maps" },
   { id: "charts", icon: "chart", label: "Charts" },
+  { id: "jobsite", icon: "excavator", label: "Job site calculations" },
   { id: "adjust", icon: "sliders", label: "Manual adjustments" },
   { id: "layers", icon: "layers", label: "Layers" },
 ];

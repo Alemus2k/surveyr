@@ -18,6 +18,7 @@ import { Icon } from "./layout/icons";
 import { TopBar } from "./layout/TopBar";
 import { ColorPanel } from "./panels/ColorPanel";
 import { ChartsPanel } from "./charts/ChartsPanel";
+import { JobsitePanel } from "./jobsite/JobsitePanel";
 import { MapsPanel } from "./panels/DataPanels";
 import { ProjectsPanel } from "./panels/ProjectsPanel";
 import { SidePanel } from "./panels/SidePanel";
@@ -31,11 +32,12 @@ const PANEL_TITLES: Record<PanelId, string> = {
   color: "Cloud colour",
   maps: "2D maps",
   charts: "Charts",
+  jobsite: "Job site calculations",
   adjust: "Manual adjustments",
   layers: "Layers",
 };
 // A comparison has no single terrain, so the analysis panels don't apply to it.
-const SCAN_PANELS: readonly PanelId[] = ["projects", "terrain", "color", "maps", "charts", "adjust"];
+const SCAN_PANELS: readonly PanelId[] = ["projects", "terrain", "color", "maps", "charts", "jobsite", "adjust"];
 const COMPARE_PANELS: readonly PanelId[] = ["projects", "layers"];
 const DEFAULT_THRESHOLD_DEG = 3;
 
@@ -123,6 +125,8 @@ export default function App() {
     if (!analysis || !cloud || !range) return <div className="empty-state">Loading…</div>;
     if (id === "terrain") return <TerrainPanel analysis={analysis} threshold={threshold} onThreshold={setThreshold} />;
     if (id === "color") return <ColorPanel cloud={cloud} range={range} onRange={(r) => setRangeState({ cloud, range: r })} />;
+    if (id === "jobsite" && tabs.active)
+      return <JobsitePanel projectId={tabs.active} projectName={byId.get(tabs.active)?.name ?? tabs.active} analysis={analysis} />;
     if (id === "maps") return <MapsPanel analysis={analysis} threshold={threshold} accent={appearance.uiAccent} />;
     return <ChartsPanel analysis={analysis} accent={appearance.uiAccent} threshold={threshold} />;
   };

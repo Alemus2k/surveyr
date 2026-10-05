@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export type IconName =
   | "folder" | "terrain" | "cloudColor" | "maps" | "chart"
   | "cube" | "top" | "front" | "reset" | "grid" | "points" | "slice" | "close" | "chevronUp" | "plus" | "collapse" | "trash" | "palette"
-  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders";
+  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders" | "excavator";
 
 const PATHS: Record<IconName, ReactNode> = {
   folder: <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />,
@@ -120,6 +120,17 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M19.5 12A7.5 7.5 0 1 1 12 4.5h3" />
       <path d="m13 2 2.5 2.5L13 7" />
+    </>
+  ),
+  excavator: (
+    <>
+      <path d="M2.5 19.5h11" />
+      <rect x="3" y="13" width="9" height="4" rx="1" />
+      <path d="M5 13v-3h4l1.5 3" />
+      <path d="M10.5 11 15 5.5l4 3.5" />
+      <path d="M19 9v4.5l-2.5 2.5h-2.5l1.5-3" />
+      <circle cx="5" cy="19.5" r="0.8" />
+      <circle cx="10.5" cy="19.5" r="0.8" />
     </>
   ),
   sliders: (

@@ -65,6 +65,12 @@ right-click → **Open** → **Open**.
   colour (elevation range), 2D maps, Charts (earthworks balance, slope classes,
   aspect rose, distributions) and **Manual adjustments**. Drag the panel's
   right edge to resize it (double-click resets); « hides it.
+- **Job site calculations** (excavator icon): earthworks to level the site.
+  Choose a *balanced* pad (cut exactly makes the fill, allowing for
+  compaction) or a *custom* pad height, with an optional drainage fall; pick
+  the soil type (swell / shrinkage) and truck size. Shows cut, fill, the
+  import or export volume as loose truck volume and **truckloads**, a dig/fill
+  map, and **Copy summary** for quotes and emails.
 - **Manual adjustments** — saved per scan as `<scan>.settings.json`; the scan
   file itself is never modified:
   - *Units*: m / cm / mm / ft / US survey ft / in, converted to metres on load.
@@ -244,6 +250,7 @@ frontend/
     viewer/            3D stage, points/surface rendering, toolbar, compass
     compare/           comparison workspace (layers, placement, scene)
     charts/            Charts panel and terrain statistics
+    jobsite/           Job site calculations (earthworks, haul, cut/fill map)
     adjust/            Manual adjustments panel
     slice/             cross-section dock and profile drawing
     panels/ layout/    side panels, top bar, icon rail, dialogs

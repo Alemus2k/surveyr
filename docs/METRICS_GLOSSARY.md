@@ -58,6 +58,24 @@ are applied.
 - **Elevation / slope distributions** — histograms (or area / cumulative %)
   of the scanned cells.
 
+## Job site calculations
+
+| Term | Meaning |
+|---|---|
+| **Pad** | The finished ground you're grading to: flat, or falling at the *drainage fall* (%) toward a compass direction. Its elevation is quoted at the centre of the scan. |
+| **Balanced pad** | The pad height where the cut, once compacted into the fill, exactly makes it: cut = fill ÷ (1 − shrinkage). Found numerically; with 0 % shrinkage on a flat pad it is the mean elevation. |
+| **Cut (in the ground)** | Bank volume above the pad — soil as it sits before digging. |
+| **Fill (compacted)** | Space below the pad to be filled, as finished compacted volume. |
+| **Fill needs (in the ground)** | Bank volume required to make that fill: fill ÷ (1 − shrinkage). |
+| **Swell** | Loose soil takes up more room than in the ground: loose = bank × (1 + swell). Governs truck space. |
+| **Shrinkage** | Compacted fill is denser than in-ground soil, so it needs more bank volume than the space it fills. |
+| **Export / import** | Cut minus fill-needed (bank). Positive is hauled away, negative brought in; within 0.5 % of the soil moved counts as *balanced*. Shown as loose volume and truckloads (rounded up). |
+| **Dig / fill map** | Plan view, north up: red where ground is above the pad (dig), blue below it (fill), grey within 1 cm of grade. |
+
+Swell and shrinkage presets are typical textbook figures (e.g. common earth
+25 % / 10 %); real values depend on the soil, moisture and compaction
+specification — use a geotechnical report's numbers where available.
+
 ## Comparisons
 
 - **Cross-section slice** — every visible layer's points inside a thin band,

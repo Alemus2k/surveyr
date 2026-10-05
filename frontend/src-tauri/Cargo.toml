@@ -1,6 +1,6 @@
 [package]
 name = "surveyr"
-version = "0.3.0"
+version = "0.4.0"
 description = "Surveyr — LiDAR terrain survey workstation"
 edition = "2021"
 publish = false
