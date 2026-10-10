@@ -38,11 +38,15 @@ accounts, cloud services or internet connection needed.
 
 ### macOS (Apple silicon)
 
-There is no published Mac download yet — build it with
-`npm run app:build` (see [Building installers](#building-installers)) and drag
-`Surveyr.app` into Applications. It's ad-hoc signed, not notarised (that needs
-a paid Apple developer account), so on another Mac the first launch is
-right-click → **Open** → **Open**.
+1. Sign in to GitHub, open **Releases** and download
+   `Surveyr_<version>_aarch64.dmg` from the latest release.
+2. Open it and drag **Surveyr** into Applications.
+3. It's ad-hoc signed, not notarised (that needs a paid Apple developer
+   account), so the first launch is right-click → **Open** → **Open**. If macOS
+   says the app is damaged, run `xattr -cr /Applications/Surveyr.app` once.
+
+To build it yourself instead, run `npm run app:build` (see
+[Building installers](#building-installers)).
 
 - Projects are stored in `~/Library/Application Support/SurveyR/Projects`;
   deleted projects go to the Trash.
@@ -195,19 +199,25 @@ This bundles the engine with PyInstaller (`npm run build:engine`, using
 
 ### Cloud builds (GitHub Actions)
 
-`.github/workflows/windows-build.yml` builds the Windows installer on a
-GitHub-hosted Windows machine after running the full backend and frontend test
-suites there. Private repositories get free monthly Actions minutes.
+`.github/workflows/release.yml` builds the Windows installer and the macOS
+(Apple silicon) disk image on GitHub-hosted machines, after running the full
+backend and frontend test suites on each. It doesn't matter which computer the
+tag is pushed from — both installers are always built from the same commit.
+Private repositories get free monthly Actions minutes (Windows minutes count
+2× and macOS 10× against that allowance).
 
-- **Publish a release:** bump `version` in `frontend/src-tauri/tauri.conf.json`
-  and `frontend/src-tauri/Cargo.toml`, commit, then push a tag:
+- **Publish a release:** bump `version` in `frontend/src-tauri/tauri.conf.json`,
+  `frontend/src-tauri/Cargo.toml` (and its entry in `Cargo.lock`),
+  `frontend/package.json` and `frontend/package-lock.json`, commit, push, then
+  push a tag:
   ```bash
-  git tag v0.3.1
-  git push origin v0.3.1
+  git tag v0.4.3
+  git push origin v0.4.3
   ```
-  The installer is attached to that tag's page under **Releases**.
-- **One-off build:** *Actions → Windows build → Run workflow*; download the
-  installer from the run's **Artifacts**.
+  Both installers are attached to that tag's page under **Releases** — only
+  once both builds pass, so Windows and macOS never drift apart.
+- **One-off build:** *Actions → Release build → Run workflow*; download the
+  installers from the run's **Artifacts**.
 
 ---
 
@@ -259,7 +269,7 @@ frontend/
   src-tauri/           desktop shell (Rust): starts/stops the engine; icons
   scripts/             build-engine.mjs (cross-platform PyInstaller build)
 docs/                  METRICS_GLOSSARY.md
-.github/workflows/     Windows installer build
+.github/workflows/     Windows + macOS installer builds (release.yml)
 ```
 
 ---
