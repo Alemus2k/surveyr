@@ -4,9 +4,17 @@ import type { ReactNode } from "react";
 export type IconName =
   | "folder" | "terrain" | "cloudColor" | "maps" | "chart"
   | "cube" | "top" | "front" | "reset" | "grid" | "points" | "slice" | "close" | "chevronUp" | "plus" | "collapse" | "trash" | "palette"
-  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders" | "excavator" | "flag";
+  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders" | "excavator" | "flag" | "hardhat";
 
 const PATHS: Record<IconName, ReactNode> = {
+  hardhat: (
+    <>
+      <path d="M3 17.5h18" />
+      <path d="M4.5 17.5a7.5 7.5 0 0 1 15 0" />
+      <path d="M10 10.5V6.5h4v4" />
+      <path d="M8 11.5v6M16 11.5v6" />
+    </>
+  ),
   flag: (
     <>
       <path d="M5.5 21V3.5" />

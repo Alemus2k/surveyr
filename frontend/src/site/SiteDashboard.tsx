@@ -1,20 +1,34 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ProjectRef } from "../api";
+import type { ColorRange, PreparedCloud } from "../viewer/prepare";
 import { Icon } from "../layout/icons";
 import { formatVolume } from "../lib/format";
 import { formatDate, todayIso } from "./dates";
 import { PayAppCard } from "./PayAppCard";
 import { overallPct } from "./progress";
 import { ProgressChart } from "./ProgressChart";
+import { Site3D } from "./Site3D";
 import { SiteMap, type MapMode } from "./SiteMap";
 import { siteSummary } from "./summary";
 import { ZONE_PALETTE } from "./types";
 import type { SiteState } from "./useSite";
 import { ZoneTable } from "./ZoneTable";
 
+/** The selected scan's points for the 3D view (loaded by the app, which also feeds the scan panels). */
+export interface ScanCloud {
+  projectId: string;
+  cloud: PreparedCloud;
+  colors: Float32Array; // elevation colours from the Cloud colour panel
+  range: ColorRange;
+}
+
 interface SiteDashboardProps {
   state: SiteState;
   projects: ProjectRef[];
+  scanId: string | null; // the scan shown; null = latest
+  onScan: (projectId: string | null) => void;
+  scanCloud: ScanCloud | null;
+  accent: string; // 3D viewport highlight
   selectedZone: string | null;
   onSelectZone: (id: string | null) => void;
   onZoneCreated: (id: string) => void;
@@ -27,15 +41,14 @@ const MODES: ReadonlyArray<[MapMode, string]> = [
 ];
 
 /** Construction progress for a job site: timeline, plan map, zones, schedule and pay apps. */
-export function SiteDashboard({ state, projects, selectedZone, onSelectZone, onZoneCreated }: SiteDashboardProps) {
+export function SiteDashboard(props: SiteDashboardProps) {
+  const { state, projects, scanId, onScan, scanCloud, accent, selectedZone, onSelectZone, onZoneCreated } = props;
   const { site, surfaces, progress, checks, update } = state;
-  const [scanChoice, setScan] = useState<number | null>(null); // null = latest
   const [modeChoice, setMode] = useState<MapMode>("design");
+  const [view, setView] = useState<"plan" | "3d">("plan");
   const [drawing, setDrawing] = useState(false);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const today = todayIso();
-
-  useEffect(() => setScan(null), [surfaces?.dates.length]);
 
   if (!site) return <div className="empty-state">Loading site…</div>;
   if (site.scans.length === 0)
@@ -49,7 +62,8 @@ export function SiteDashboard({ state, projects, selectedZone, onSelectZone, onZ
     );
 
   const last = surfaces.scans.length - 1;
-  const scan = Math.min(scanChoice ?? last, last);
+  const chosen = scanId ? site.scans.findIndex((s) => s.project_id === scanId) : -1;
+  const scan = chosen >= 0 && chosen <= last ? chosen : last;
   const mode: MapMode = modeChoice === "design" && !surfaces.design ? "change" : modeChoice === "change" && scan === 0 ? (surfaces.design ? "design" : "elevation") : modeChoice;
   const name = (id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? id : null);
   const grading = progress.filter((p) => p.zone.kind === "grading");
@@ -131,7 +145,7 @@ export function SiteDashboard({ state, projects, selectedZone, onSelectZone, onZ
 
       <nav className="site-timeline" aria-label="Scans">
         {surfaces.dates.map((d, k) => (
-          <button key={d + k} aria-pressed={k === scan} onClick={() => setScan(k === last ? null : k)}>
+          <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
             <span className="mono">{formatDate(d, true)}</span>
             <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
           </button>
@@ -153,23 +167,63 @@ export function SiteDashboard({ state, projects, selectedZone, onSelectZone, onZ
                 </button>
               ))}
             </div>
-            <button className={drawing ? "primary-btn compact" : "secondary-btn"} onClick={() => setDrawing((d) => !d)}>
-              <Icon name="plus" size={14} /> {drawing ? "Drawing…" : "Draw zone"}
-            </button>
+            <div className="site-card-tools">
+              <div className="segmented" role="group" aria-label="View">
+                <button aria-pressed={view === "plan"} onClick={() => setView("plan")}>
+                  Plan
+                </button>
+                <button
+                  aria-pressed={view === "3d"}
+                  onClick={() => {
+                    setView("3d");
+                    setDrawing(false);
+                  }}
+                >
+                  3D
+                </button>
+              </div>
+              {view === "plan" && (
+                <button className={drawing ? "primary-btn compact" : "secondary-btn"} onClick={() => setDrawing((d) => !d)}>
+                  <Icon name="plus" size={14} /> {drawing ? "Drawing…" : "Draw zone"}
+                </button>
+              )}
+            </div>
           </div>
-          <SiteMap
-            surfaces={surfaces}
-            scan={scan}
-            mode={mode}
-            tolerance={site.tolerance_m}
-            changeThreshold={site.change_threshold_m}
-            zones={site.zones}
-            selectedZone={selectedZone}
-            onSelectZone={onSelectZone}
-            drawing={drawing}
-            onDrawn={zoneDrawn}
-            onDrawCancel={() => setDrawing(false)}
-          />
+          {view === "3d" ? (
+            scanCloud && scanCloud.projectId === site.scans[scan]?.project_id ? (
+              <Site3D
+                cloud={scanCloud.cloud}
+                elevationColors={scanCloud.colors}
+                range={scanCloud.range}
+                surfaces={surfaces}
+                scan={scan}
+                mode={mode}
+                tolerance={site.tolerance_m}
+                changeThreshold={site.change_threshold_m}
+                zones={site.zones}
+                selectedZone={selectedZone}
+                accent={accent}
+              />
+            ) : (
+              <div className="site-3d site-3d-loading">
+                <span className="spinner" aria-hidden="true" /> Loading the scan's points…
+              </div>
+            )
+          ) : (
+            <SiteMap
+              surfaces={surfaces}
+              scan={scan}
+              mode={mode}
+              tolerance={site.tolerance_m}
+              changeThreshold={site.change_threshold_m}
+              zones={site.zones}
+              selectedZone={selectedZone}
+              onSelectZone={onSelectZone}
+              drawing={drawing}
+              onDrawn={zoneDrawn}
+              onDrawCancel={() => setDrawing(false)}
+            />
+          )}
           <MapLegend mode={mode} tolerance={site.tolerance_m} threshold={site.change_threshold_m} />
         </section>
 

@@ -25,6 +25,7 @@ import { SidePanel } from "./panels/SidePanel";
 import { NewSiteDialog } from "./site/NewSiteDialog";
 import { SiteDashboard } from "./site/SiteDashboard";
 import { SitePanel } from "./site/SitePanel";
+import { formatDate } from "./site/dates";
 import { useSite } from "./site/useSite";
 import { TerrainPanel } from "./panels/TerrainPanel";
 import { colorize, type ColorRange, type PreparedCloud } from "./viewer/prepare";
@@ -39,12 +40,15 @@ const PANEL_TITLES: Record<PanelId, string> = {
   jobsite: "Job site calculations",
   adjust: "Manual adjustments",
   layers: "Layers",
-  site: "Site progress",
+  sites: "Job sites",
+  site: "Site setup",
 };
-// A comparison has no single terrain, so the analysis panels don't apply to it.
-const SCAN_PANELS: readonly PanelId[] = ["projects", "terrain", "color", "maps", "charts", "jobsite", "adjust"];
-const COMPARE_PANELS: readonly PanelId[] = ["projects", "layers"];
-const SITE_PANELS: readonly PanelId[] = ["projects", "site"];
+// Panels about one scan. A site shows them for the scan picked in its timeline;
+// a comparison has no single terrain, so they don't apply to it.
+const SINGLE_SCAN: readonly PanelId[] = ["terrain", "color", "maps", "charts", "jobsite", "adjust"];
+const SCAN_PANELS: readonly PanelId[] = ["projects", "sites", ...SINGLE_SCAN];
+const COMPARE_PANELS: readonly PanelId[] = ["projects", "sites", "layers"];
+const SITE_PANELS: readonly PanelId[] = ["projects", "sites", "site", ...SINGLE_SCAN];
 const DEFAULT_THRESHOLD_DEG = 3;
 
 export default function App() {
@@ -62,10 +66,18 @@ export default function App() {
   // bumped whenever a scan's manual adjustments change, so everything reloads converted
   const [settingsVersion, setSettingsVersion] = useState(0);
   const bumpSettings = useCallback(() => setSettingsVersion((v) => v + 1), []);
-  const { analysis, cloud, error } = useProjectAnalysis(ready, isGroup ? null : tabs.active, settingsVersion);
   const composition = useComposition(isCompare ? tabs.active : null, settingsVersion);
   const site = useSite(isSite ? tabs.active : null, settingsVersion);
-  const scanSettings = useScanSettings(ready && !isGroup ? tabs.active : null, bumpSettings);
+
+  // on a site, the scan panels and the 3D view follow the scan picked in its timeline (default: latest)
+  const [siteScanSel, setSiteScanSel] = useState<{ site: string; scan: string } | null>(null);
+  const siteScans = isSite ? site.site?.scans ?? [] : [];
+  const pickedScan =
+    siteScanSel && siteScanSel.site === tabs.active && siteScans.some((s) => s.project_id === siteScanSel.scan) ? siteScanSel.scan : null;
+  const siteScanId = pickedScan ?? siteScans[siteScans.length - 1]?.project_id ?? null;
+  const scanId = isSite ? siteScanId : isCompare ? null : tabs.active; // the single scan the panels describe
+  const { analysis, cloud, error } = useProjectAnalysis(ready, scanId, settingsVersion);
+  const scanSettings = useScanSettings(ready ? scanId : null, bumpSettings);
   const [panelWidth, setPanelWidth, resetPanelWidth] = usePanelWidth();
   const appearance = useAppearance();
 
@@ -139,6 +151,21 @@ export default function App() {
           busy={projects.busy}
         />
       );
+    if (id === "sites")
+      return (
+        <ProjectsPanel
+          variant="sites"
+          projects={projects.projects}
+          openIds={tabs.open}
+          activeId={tabs.active}
+          onOpen={tabs.select}
+          onImport={importScan}
+          onDelete={deleteProject}
+          onNewComparison={() => setNewCompareOpen(true)}
+          onNewSite={() => setNewSiteOpen(true)}
+          busy={projects.busy}
+        />
+      );
     if (!tabs.active) return <div className="empty-state">Open a project to see its {PANEL_TITLES[id].toLowerCase()}.</div>;
     if (id === "layers")
       return (
@@ -152,14 +179,23 @@ export default function App() {
     if (id === "site")
       return <SitePanel state={site} projects={projects.projects} selectedZone={selectedZone} onSelectZone={selectZone} />;
     if (id === "adjust") return <AdjustPanel state={scanSettings} analysis={analysis} />;
-    if (!analysis || !cloud || !range) return <div className="empty-state">Loading…</div>;
+    if (!analysis || !cloud || !range || !scanId) return <div className="empty-state">Loading…</div>;
     if (id === "terrain") return <TerrainPanel analysis={analysis} threshold={threshold} onThreshold={setThreshold} />;
     if (id === "color") return <ColorPanel cloud={cloud} range={range} onRange={(r) => setRangeState({ cloud, range: r })} />;
-    if (id === "jobsite" && tabs.active)
-      return <JobsitePanel projectId={tabs.active} projectName={byId.get(tabs.active)?.name ?? tabs.active} analysis={analysis} />;
+    if (id === "jobsite") return <JobsitePanel projectId={scanId} projectName={byId.get(scanId)?.name ?? scanId} analysis={analysis} />;
     if (id === "maps") return <MapsPanel analysis={analysis} threshold={threshold} accent={appearance.uiAccent} />;
     return <ChartsPanel analysis={analysis} accent={appearance.uiAccent} threshold={threshold} />;
   };
+
+  // on a site, say which scan the scan panels are describing
+  const siteScanDate = siteScans.find((s) => s.project_id === siteScanId)?.date;
+  const panelContext = (id: PanelId) =>
+    isSite && siteScanDate && SINGLE_SCAN.includes(id) ? (
+      <p className="panel-context">
+        Scan of <strong>{formatDate(siteScanDate)}</strong>
+        {siteScanId !== siteScans[siteScans.length - 1]?.project_id ? "" : " (latest)"} — pick another in the site's timeline.
+      </p>
+    ) : null;
 
   const loadError = isSite ? site.error : isCompare ? composition.error : error;
   const workspace = () => {
@@ -192,6 +228,10 @@ export default function App() {
         <SiteDashboard
           state={site}
           projects={projects.projects}
+          scanId={pickedScan}
+          onScan={(scan) => setSiteScanSel(scan && tabs.active ? { site: tabs.active, scan } : null)}
+          scanCloud={cloud && colors && range && siteScanId ? { projectId: siteScanId, cloud, colors, range } : null}
+          accent={appearance.viewportAccent}
           selectedZone={selectedZone}
           onSelectZone={selectZone}
           onZoneCreated={() => setPanel("site")}
@@ -246,6 +286,7 @@ export default function App() {
             ) : null
           }
         >
+          {panelContext(panel)}
           {panelBody(panel)}
         </SidePanel>
       )}

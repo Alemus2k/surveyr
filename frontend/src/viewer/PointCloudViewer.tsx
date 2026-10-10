@@ -3,7 +3,7 @@ import { jetCssGradient } from "../color";
 import type { SliceSpec } from "../slice/slice";
 import { Compass, useCompass } from "./Compass";
 import type { ColorRange, PreparedCloud } from "./prepare";
-import { createViewerScene, surfaceGridStep, type RenderMode, type ViewerScene, type ViewPreset } from "./scene";
+import { createViewerScene, surfaceGridStep, type Outline, type RenderMode, type ViewerScene, type ViewPreset } from "./scene";
 import type { SurfaceGrid } from "./surface";
 
 /** A view change request; bump ``n`` to repeat the same preset. */
@@ -26,12 +26,14 @@ interface PointCloudViewerProps {
   surfaceOpacity: number;
   onTopView: () => void;
   toolbar: ReactNode;
+  outlines?: Outline[]; // closed outlines drawn over the points (job-site zones)
+  legend?: ReactNode; // replaces the elevation colour scale
 }
 
 /** Full-bleed 3D viewport (particles or gridded surface) with legend, compass and a toolbar slot. */
 export function PointCloudViewer(props: PointCloudViewerProps) {
   const { cloud, colors, range, pointScale, showGrid, slice, view, accent, onTopView, toolbar } = props;
-  const { renderMode, surfaceGrid, surfaceOpacity } = props;
+  const { renderMode, surfaceGrid, surfaceOpacity, outlines, legend } = props;
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ViewerScene | null>(null);
   const colorsRef = useRef(colors);
@@ -63,6 +65,7 @@ export function PointCloudViewer(props: PointCloudViewerProps) {
   useEffect(() => sceneRef.current?.setSurface(surfaceGrid, range), [surfaceGrid, range.min, range.max, cloud]);
   useEffect(() => sceneRef.current?.setRenderMode(renderMode), [renderMode, cloud]);
   useEffect(() => sceneRef.current?.setSurfaceOpacity(surfaceOpacity), [surfaceOpacity, cloud]);
+  useEffect(() => sceneRef.current?.setOutlines(outlines ?? []), [outlines, cloud]);
   useEffect(() => {
     if (view) sceneRef.current?.goTo(view.preset);
   }, [view]);
@@ -71,11 +74,13 @@ export function PointCloudViewer(props: PointCloudViewerProps) {
     <div ref={host} className="viewport">
       <div className="viewport-toolbar">{toolbar}</div>
 
-      <div className="pc-legend" aria-label="Elevation colour scale">
-        <span className="pc-chip mono">{range.max.toFixed(2)} m</span>
-        <div className="pc-legend-bar" style={{ background: jetCssGradient() }} />
-        <span className="pc-chip mono">{range.min.toFixed(2)} m</span>
-      </div>
+      {legend ?? (
+        <div className="pc-legend" aria-label="Elevation colour scale">
+          <span className="pc-chip mono">{range.max.toFixed(2)} m</span>
+          <div className="pc-legend-bar" style={{ background: jetCssGradient() }} />
+          <span className="pc-chip mono">{range.min.toFixed(2)} m</span>
+        </div>
+      )}
 
       <div className="pc-badges">
         {cloud.exaggeration > 1.05 && <span className="pc-chip mono">Vertical ×{cloud.exaggeration.toFixed(1)}</span>}

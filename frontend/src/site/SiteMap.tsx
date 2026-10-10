@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { niceStep } from "../viewer/backdrop";
 import { pointInPolygon, type Surfaces } from "./progress";
+import { mix, siteTint, tintScale, workMask, type RGB, type SiteColorMode } from "./siteColors";
 import type { Zone } from "./types";
 
-export type MapMode = "design" | "change" | "elevation";
+export type MapMode = SiteColorMode;
 
 interface SiteMapProps {
   surfaces: Surfaces;
@@ -19,14 +20,8 @@ interface SiteMapProps {
   onDrawCancel: () => void;
 }
 
-type RGB = [number, number, number];
-const CUT: RGB = [239, 75, 75]; // ground above design / dug since last scan
-const FILL: RGB = [77, 157, 255]; // ground below design / placed since last scan
-const ON_GRADE: RGB = [62, 207, 122];
 const RAMP: RGB[] = [[38, 70, 160], [40, 160, 190], [120, 200, 110], [235, 210, 90], [215, 110, 60]];
 const CLOSE_PX = 12; // clicking this near the first vertex closes the polygon
-
-const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 function ramp(t: number): RGB {
   const x = Math.min(1, Math.max(0, t)) * (RAMP.length - 1);
@@ -56,12 +51,6 @@ function hillshade(z: Float64Array, nx: number, ny: number, cell: number): Float
   return out;
 }
 
-function percentileAbs(values: number[], q: number): number {
-  if (!values.length) return 0;
-  values.sort((a, b) => a - b);
-  return values[Math.min(values.length - 1, Math.floor(q * values.length))];
-}
-
 /** Plan view of the site (north up) at one scan, coloured by the chosen comparison. */
 export function SiteMap(props: SiteMapProps) {
   const { surfaces: s, scan, mode, tolerance, changeThreshold, zones, selectedZone, onSelectZone, drawing, onDrawn, onDrawCancel } = props;
@@ -85,15 +74,11 @@ export function SiteMap(props: SiteMapProps) {
       const d = z[i] - ref[i];
       if (Number.isFinite(d)) diffs.push(Math.abs(d));
     }
-    return { lo, hi, maxAbs: Math.max(0.25, percentileAbs(diffs, 0.98)) };
+    return { lo, hi, maxAbs: tintScale(diffs) };
   }, [z, prev, s.design, mode]);
 
   // ground that needed work at the first scan: only there does "on grade" mean "finished"
-  const needsWork = useMemo(() => {
-    const first = s.scans[0];
-    if (!s.design) return null;
-    return Uint8Array.from(first, (v, i) => (Math.abs(v - s.design![i]) > tolerance ? 1 : 0));
-  }, [s, tolerance]);
+  const needsWork = useMemo(() => workMask(s.scans[0], s.design, tolerance), [s, tolerance]);
 
   useEffect(() => {
     const cv = canvas.current;
@@ -115,15 +100,8 @@ export function SiteMap(props: SiteMapProps) {
         if (mode === "elevation") {
           rgb = mix(ramp((z[i] - range.lo) / (range.hi - range.lo || 1)), [0, 0, 0], 0.55 * (1 - h));
         } else if (ref) {
-          const d = z[i] - ref[i];
-          if (Number.isFinite(d)) {
-            if (Math.abs(d) <= deadband) {
-              if (mode === "design" && needsWork?.[i]) rgb = mix(rgb, ON_GRADE, 0.5);
-            } else {
-              const t = 0.35 + 0.6 * Math.min(1, Math.abs(d) / range.maxAbs);
-              rgb = mix(rgb, d > 0 === (mode === "design") ? CUT : FILL, t);
-            }
-          }
+          const tint = siteTint(mode, z[i] - ref[i], deadband, range.maxAbs, !!needsWork?.[i]);
+          if (tint) rgb = mix(rgb, tint.rgb, tint.t);
         }
         const o = ((s.ny - 1 - r) * s.nx + c) * 4; // grid row 0 is south; canvas row 0 is the top
         img.data[o] = rgb[0];

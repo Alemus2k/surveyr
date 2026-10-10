@@ -648,3 +648,47 @@ html[data-theme="light"] .site-dialog input[type="date"] {
   gap: 10px;
   min-height: 32px;
 }
+
+/* ------------------------------------------------------------ 3D view + view switch */
+.site-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.site-card-tools .segmented button {
+  padding: 0 12px;
+}
+.site-3d {
+  position: relative;
+  height: min(62vh, 620px);
+  min-height: 320px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--viewport-bg);
+}
+.site-3d > .viewport {
+  position: absolute;
+  inset: 0;
+}
+.site-3d-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* which scan the scan panels describe, when a job site is open */
+.panel-context {
+  margin: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+.panel-context strong {
+  color: var(--text);
+}

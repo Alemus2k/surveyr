@@ -10,6 +10,13 @@ import { buildSurfaceGeometry, setSurfaceColors, type SurfaceGrid } from "./surf
 export type { ViewPreset } from "./stage";
 export type RenderMode = "points" | "surface";
 
+/** A closed outline in survey coordinates (easting, northing, elevation), e.g. a work zone. */
+export interface Outline {
+  points: [number, number, number][];
+  color: string;
+  emphasis: boolean;
+}
+
 const POINT_SIZE_FACTOR = 1.6; // dot diameter relative to mean point spacing
 const SURFACE_GRID_DIVISIONS = 20; // surface grid lines across the long side
 
@@ -24,6 +31,8 @@ export interface ViewerScene {
   /** Provide the elevation grid; the surface is built once and recoloured on demand. */
   setSurface: (grid: SurfaceGrid | null, range: ColorRange) => void;
   setSurfaceOpacity: (opacity: number) => void;
+  /** Replace the drawn outlines (e.g. job-site zones). */
+  setOutlines: (outlines: Outline[]) => void;
   goTo: (preset: ViewPreset) => void;
   resize: (w: number, h: number) => void;
   dispose: () => void;
@@ -57,6 +66,9 @@ export function createViewerScene(
 
   const outline = createSliceOutline();
   stage.scene.add(points, outline.group);
+  const outlines = new THREE.Group();
+  stage.scene.add(outlines);
+  const toScene = cloudToScene(cloud);
 
   const surfaceMats = createSurfaceMaterials({ opacity: 0.85, gridStep: surfaceGridStep(cloud) });
   let surface: { group: THREE.Group; geo: THREE.BufferGeometry; grid: SurfaceGrid } | null = null;
@@ -100,8 +112,26 @@ export function createViewerScene(
     setSurfaceOpacity(opacity) {
       surfaceMats.shade.uniforms.uOpacity.value = opacity;
     },
+    setOutlines(list) {
+      for (const child of [...outlines.children]) {
+        const line = child as THREE.LineLoop;
+        line.geometry.dispose();
+        (line.material as THREE.Material).dispose();
+        outlines.remove(line);
+      }
+      for (const o of list) {
+        const pts = o.points.map(([x, y, z]) => new THREE.Vector3(...toScene(x, y, z)));
+        const mat = new THREE.LineBasicMaterial({ color: o.color, transparent: true, opacity: o.emphasis ? 1 : 0.75, depthTest: false });
+        const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), mat);
+        line.renderOrder = 2; // drawn over the points so outlines never hide behind them
+        outlines.add(line);
+      }
+    },
     goTo: stage.goTo,
     resize: stage.resize,
-    dispose: stage.dispose,
+    dispose: () => {
+      outlines.children.forEach((c) => (c as THREE.LineLoop).geometry.dispose());
+      stage.dispose();
+    },
   };
 }
