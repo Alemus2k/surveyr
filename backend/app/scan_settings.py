@@ -1,4 +1,5 @@
-"""Per-scan manual adjustments: source units, which axis is up, ground-only.
+"""Per-scan manual adjustments: source units, which axis is up, ground-only,
+and an elevation correction (e.g. from checking the scan against control).
 
 Stored as ``<project>.settings.json`` beside the scan (the scan file itself is
 never modified) and applied every time the scan is loaded, so all analytics,
@@ -14,7 +15,7 @@ import os
 from typing import Literal, Optional
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import service
 
@@ -49,6 +50,7 @@ class ScanSettings(BaseModel):
     unit: Unit = "m"
     up_axis: Literal["z", "y"] = "z"
     ground_only: bool = True
+    z_offset_m: float = Field(0.0, ge=-100, le=100)  # added to every elevation, after unit conversion
 
 
 def _path(project_id: str) -> str:
@@ -85,11 +87,15 @@ def save(project_id: str, settings: ScanSettings) -> ScanSettings:
 
 
 def apply(points: np.ndarray, settings: ScanSettings) -> np.ndarray:
-    """Return a converted copy: Y-up → Z-up (right-handed), then scaled to metres."""
+    """Return a converted copy: Y-up → Z-up (right-handed), scaled to metres, then
+    shifted vertically by the elevation correction."""
     pts = np.asarray(points, dtype=float)
     if settings.up_axis == "y":
         pts = np.column_stack([pts[:, 0], -pts[:, 2], pts[:, 1]])
-    return pts * UNIT_TO_M[settings.unit]
+    pts = pts * UNIT_TO_M[settings.unit]
+    if settings.z_offset_m:
+        pts[:, 2] += settings.z_offset_m
+    return pts
 
 
 def ground_mask(classification: Optional[np.ndarray]) -> Optional[np.ndarray]:

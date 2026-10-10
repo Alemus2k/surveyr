@@ -1,0 +1,94 @@
+/* Control & accuracy panel. */
+
+.control-pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+.control-import {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.control-import input[type="file"] {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.control-import .js-field > input {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.control-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.accuracy-card {
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line-strong);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--bg-raised);
+  margin-bottom: 12px;
+}
+.accuracy-card.good {
+  border-left-color: var(--good);
+}
+.accuracy-card.fair {
+  border-left-color: var(--accent);
+}
+.accuracy-card.poor {
+  border-left-color: var(--bad);
+}
+.accuracy-grade {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.04em;
+}
+.accuracy-card.good .accuracy-grade {
+  color: var(--good);
+}
+.accuracy-card.fair .accuracy-grade {
+  color: var(--accent);
+}
+.accuracy-card.poor .accuracy-grade {
+  color: var(--bad);
+}
+.control-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.control-table th {
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-strong);
+  text-align: left;
+}
+.control-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.control-table .num {
+  text-align: right;
+}
+.control-table .warn {
+  color: var(--accent);
+}
+.control-table .bad {
+  color: var(--bad);
+}
+.control-table .faint,
+.control-desc {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}

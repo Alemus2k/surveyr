@@ -39,6 +39,7 @@ export interface Site {
   tolerance_m: number;
   change_threshold_m: number;
   overbill_pct: number;
+  control_id: string | null; // check points every flight is graded against
   zones: Zone[];
   pay_apps: PayApp[];
 }

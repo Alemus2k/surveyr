@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ScanSettings } from "../api";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
@@ -17,6 +18,7 @@ const size = (a: Analysis | null) => {
 /** Manual adjustments for one scan: source units, up axis, ground-only. */
 export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
   const { current, saving, error, save } = state;
+  const [offsetDraft, setOffsetDraft] = useState<string | null>(null); // typed but not yet applied
   if (!current) return <div className="empty-state">{error ?? "Loading…"}</div>;
   const { settings, detected } = current;
   const set = (patch: Partial<ScanSettings>) => save({ ...settings, ...patch });
@@ -94,6 +96,37 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
             : settings.ground_only
               ? "This scan isn't ground-classified (phone scans never are), so every point is used."
               : "Every point is used, including vegetation and structures if the scan has them."}
+        </p>
+      </PanelSection>
+
+      <PanelSection label="Elevation correction">
+        <label className="js-field">
+          <span className="field-label">Add to every elevation</span>
+          <span className="js-input">
+            <input
+              type="number"
+              className="mono"
+              step={0.1}
+              min={-1000}
+              max={1000}
+              value={offsetDraft ?? String(Math.round(settings.z_offset_m * 1000) / 10)}
+              disabled={saving}
+              onChange={(e) => setOffsetDraft(e.target.value)}
+              // apply on Enter / leaving the field: every change reloads the scan and anything built on it
+              onBlur={() => {
+                const cm = Number(offsetDraft);
+                if (offsetDraft !== null && offsetDraft.trim() !== "" && Number.isFinite(cm) && cm / 100 !== settings.z_offset_m)
+                  set({ z_offset_m: cm / 100 });
+                setOffsetDraft(null);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            />
+            <span className="unit">cm</span>
+          </span>
+        </label>
+        <p className="panel-note">
+          Shifts the whole scan up (+) or down (−), e.g. to fix a base-station height error. Control &amp; accuracy can
+          work this out from surveyed check points.
         </p>
       </PanelSection>
 

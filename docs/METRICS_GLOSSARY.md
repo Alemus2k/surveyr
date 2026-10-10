@@ -106,6 +106,25 @@ interpolated outside a scan's outline.
 | **Pay-app check** | A claim covers the period ending at its scan date. *Measured* is the volume dug (for a cut claim) or placed (for a fill claim) in its zone between that scan and the one before. Claims more than the set % (default 10 %) above measured are flagged. Cut is bank volume; fill is compacted. |
 | **Earthworks complete (overall)** | Grading zones' % complete, weighted by how much earthworks each zone started with. |
 
+## Control & accuracy
+
+Check points are surveyed spot elevations (GNSS rover / total station) on
+open, hard ground. Only vertical accuracy is checked — horizontal checks need
+targets visible in the point cloud.
+
+| Term | Meaning |
+|---|---|
+| **Scan height at a point** | A least-squares plane through the scan points within 0.5 m of the check point (widening to 1 m, then 2 m, until at least 6 points are found), evaluated at the point. Points with no scan nearby are *not on scan*. |
+| **Scan − survey (dz)** | Scan height minus surveyed elevation. Positive: the scan is high. |
+| **Mean offset (bias)** | Average dz — a consistent shift such as a wrong base-station height. Offered as a correction when it's at least 1 cm and more than two standard errors (so it isn't just scatter). |
+| **RMSE** | Root-mean-square of dz: the overall vertical error, bias included. |
+| **95 % of ground within** | 1.96 × RMSE (NSSDA), assuming roughly normal, unbiased errors. |
+| **Grade** | *Good*: RMSE within half the job tolerance (site on-grade tolerance, default 5 cm). *Check*: within the tolerance. *Poor*: worse. |
+| **Elevation correction** | Added to every elevation of the scan after unit conversion; set by hand in Manual adjustments or from the bias. |
+
+A formal accuracy statement (e.g. ASPRS) needs 20 or more well-distributed
+check points on flat, open ground; fewer still catch blunders and offsets.
+
 ## Caveats
 
 - Results depend on cell size: finer cells resolve small features but are

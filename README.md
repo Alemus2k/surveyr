@@ -84,6 +84,16 @@ To build it yourself instead, run `npm run app:build` (see
   - *Up axis*: Z-up (survey LiDAR, most apps) or Y-up exports.
   - *Ground points only*: for ground-classified LiDAR (ASPRS class 2) — trees
     and buildings are left out of the terrain. No effect on phone scans.
+  - *Elevation correction*: shift the whole scan up or down (e.g. a wrong
+    base-station height). Control & accuracy can work it out for you.
+- **Control & accuracy** (crosshair icon): import a surveyor's check points
+  (CSV / text, PNEZD or with a header row; US survey feet, feet or metres) and
+  see how far the scan's ground is from each one: RMSE, mean offset (bias),
+  95 % figure and worst point, graded against the job tolerance. A consistent
+  offset gets a one-click fix (an elevation correction; the file is never
+  changed). On a job site, pick the check points in **Site setup** and every
+  flight in the timeline gets an accuracy badge; a flight that's off is
+  flagged above the timeline with a **Review flight** shortcut.
 - **Comparisons** (Projects → **New comparison…**): overlay scans as layers,
   each with its own colour or height colours, opacity, show/hide, lock and
   points/surface mode. Select a layer to move or rotate it with the 3D handles
@@ -110,7 +120,9 @@ To build it yourself instead, run `npm run app:build` (see
   Edit zones, scan dates, the design and tolerances in the **Site progress**
   panel (flag icon). Saved as `<name>.site.json`; scans are never modified.
   All scans of a site must share a coordinate system — they're compared cell
-  by cell with no re-alignment. A demo site, *Riverside Commons*, is included.
+  by cell with no re-alignment. A demo site, *Riverside Commons*, is included
+  — with 12 check points, and one flight (21 Sep) that came back 3.5 cm high
+  for the accuracy check to catch.
 - **Appearance** (palette icon, top right): System / Light / Dark theme and a
   highlight colour (colour wheel, presets or hex), auto-adjusted for contrast.
 

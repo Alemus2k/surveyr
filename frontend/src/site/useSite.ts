@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchSite, fetchSiteGrids, saveSite } from "../api";
+import { fetchSite, fetchSiteGrids, fetchSiteQA, saveSite, type FlightQA } from "../api";
 import { checkPayApp, toSurfaces, zoneCells, zoneProgress, type PayAppCheck, type Surfaces, type ZoneProgress } from "./progress";
 import type { Site, SiteGrids, Zone } from "./types";
 
@@ -10,6 +10,7 @@ export interface SiteState {
   surfaces: Surfaces | null; // scans in date order, matching site.scans
   progress: ZoneProgress[]; // one per zone, in zone order
   checks: PayAppCheck[]; // one per pay app, in pay-app order
+  qa: FlightQA[]; // each flight graded against the site's check points (empty without them)
   loading: boolean; // surfaces being (re)built by the engine
   error: string | null;
   saveError: string | null;
@@ -33,6 +34,7 @@ export function useSite(siteId: string | null, reloadKey = 0): SiteState {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [qa, setQa] = useState<FlightQA[]>([]);
   const pending = useRef<{ id: string; site: Site } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -81,6 +83,21 @@ export function useSite(siteId: string | null, reloadKey = 0): SiteState {
     };
   }, [siteId, members, reloadKey, flush]);
 
+  // flight accuracy: re-checked when scans, the control set or any scan's settings change
+  const controlId = site?.control_id ?? null;
+  useEffect(() => {
+    setQa([]);
+    if (!siteId || members === null || !controlId) return;
+    let live = true;
+    flush()
+      .then(() => fetchSiteQA(siteId))
+      .then((q) => live && setQa(q))
+      .catch(() => live && setQa([])); // QA is advisory: the dashboard works without it
+    return () => {
+      live = false;
+    };
+  }, [siteId, members, controlId, reloadKey, flush]);
+
   const update = useCallback(
     (change: (s: Site) => Site) => {
       setSite((s) => {
@@ -127,5 +144,5 @@ export function useSite(siteId: string | null, reloadKey = 0): SiteState {
     [site?.pay_apps, site?.zones, site?.change_threshold_m, site?.overbill_pct, surfaces]
   );
 
-  return { site, surfaces, progress, checks, loading, error, saveError, update, updateZone };
+  return { site, surfaces, progress, checks, qa, loading, error, saveError, update, updateZone };
 }

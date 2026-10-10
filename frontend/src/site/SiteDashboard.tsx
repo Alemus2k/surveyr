@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ProjectRef } from "../api";
 import type { ColorRange, PreparedCloud } from "../viewer/prepare";
+import { cm, GRADE_LABEL, gradeAccuracy, type Verdict } from "../control/qa";
 import { ConfirmDialog } from "../layout/ConfirmDialog";
 import { Icon } from "../layout/icons";
 import { formatVolume } from "../lib/format";
@@ -33,6 +34,7 @@ interface SiteDashboardProps {
   selectedZone: string | null;
   onSelectZone: (id: string | null) => void;
   onZoneCreated: (id: string) => void;
+  onReviewFlight: (projectId: string) => void; // show a flight in Control & accuracy
 }
 
 const MODES: ReadonlyArray<[MapMode, string]> = [
@@ -43,7 +45,7 @@ const MODES: ReadonlyArray<[MapMode, string]> = [
 
 /** Construction progress for a job site: timeline, plan map, zones, schedule and pay apps. */
 export function SiteDashboard(props: SiteDashboardProps) {
-  const { state, projects, scanId, onScan, scanCloud, accent, selectedZone, onSelectZone, onZoneCreated } = props;
+  const { state, projects, scanId, onScan, scanCloud, accent, selectedZone, onSelectZone, onZoneCreated, onReviewFlight } = props;
   const { site, surfaces, progress, checks, update } = state;
   const [modeChoice, setMode] = useState<MapMode>("design");
   const [view, setView] = useState<"plan" | "3d">("plan");
@@ -73,6 +75,14 @@ export function SiteDashboard(props: SiteDashboardProps) {
   const movedLatest = progress.reduce((sum, p) => sum + (p.snapshots[last]?.cut ?? 0) + (p.snapshots[last]?.fill ?? 0), 0);
   const behind = grading.filter((p) => p.status === "behind" || p.status === "stalled");
   const flagged = checks.filter((c) => c.flagged);
+  // each flight graded against the site's check points; flag offsets and poor fits
+  const verdicts = new Map<string, Verdict & { rmse: number | null }>(
+    state.qa.map((q) => [q.project_id, { ...gradeAccuracy(q.stats, site.tolerance_m), rmse: q.stats.rmse }])
+  );
+  const suspect = site.scans.filter((s) => {
+    const v = verdicts.get(s.project_id);
+    return v && (v.bias !== null || v.grade === "poor");
+  });
 
   const zoneDrawn = (polygon: [number, number][]) => {
     setDrawing(false);
@@ -159,13 +169,42 @@ export function SiteDashboard(props: SiteDashboardProps) {
         </div>
       </div>
 
+      {suspect.map((s) => {
+        const v = verdicts.get(s.project_id)!;
+        return (
+          <div key={s.project_id} className="qa-banner" role="status">
+            <span>
+              <strong>{formatDate(s.date)} flight</strong>{" "}
+              {v.bias !== null
+                ? `sits ${cm(Math.abs(v.bias), false)} ${v.bias > 0 ? "high" : "low"} against the check points`
+                : `fits the check points poorly (RMSE ${cm(v.rmse ?? 0, false)})`}
+              {" "}— volumes involving it will be off until it's corrected.
+            </span>
+            <button className="secondary-btn" onClick={() => onReviewFlight(s.project_id)}>
+              Review flight
+            </button>
+          </div>
+        );
+      })}
+
       <nav className="site-timeline" aria-label="Scans">
-        {surfaces.dates.map((d, k) => (
-          <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
-            <span className="mono">{formatDate(d, true)}</span>
-            <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
-          </button>
-        ))}
+        {surfaces.dates.map((d, k) => {
+          const v = verdicts.get(site.scans[k]?.project_id ?? "");
+          return (
+            <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
+              <span className="mono">{formatDate(d, true)}</span>
+              <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
+              {v && v.grade !== "none" && (
+                <span
+                  className={`qa-badge ${v.bias !== null ? "fair" : v.grade}`}
+                  title={`Check points: ${GRADE_LABEL[v.grade]}, RMSE ${cm(v.rmse ?? 0, false)}${v.bias !== null ? `, offset ${cm(v.bias)}` : ""}`}
+                >
+                  {v.bias !== null ? cm(v.bias) : `±${cm(v.rmse ?? 0, false)}`}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       <div className="site-grid">

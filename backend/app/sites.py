@@ -72,6 +72,7 @@ class Site(BaseModel):
     tolerance_m: float = Field(0.05, gt=0, le=2)  # on grade when within this of design
     change_threshold_m: float = Field(0.05, ge=0, le=2)  # smaller scan-to-scan changes are noise
     overbill_pct: float = Field(10.0, ge=0, le=100)  # flag claims this far above measured
+    control_id: Optional[str] = None  # check points every flight is graded against
     zones: List[Zone] = Field(default_factory=list, max_length=MAX_ZONES)
     pay_apps: List[PayApp] = Field(default_factory=list, max_length=500)
 
@@ -140,6 +141,8 @@ def load(site_id: str) -> Site:
     site.scans = [s for s in site.scans if s.project_id in registry]
     if site.design_id not in registry:
         site.design_id = None
+    if site.control_id and not os.path.exists(os.path.join(service.DATA_DIR, site.control_id + ".control.json")):
+        site.control_id = None
     return _sorted(site)
 
 
@@ -227,3 +230,17 @@ def grids(site_id: str) -> dict:
             del _grid_cache[k]
         _grid_cache[key] = result
     return result
+
+
+def qa(site_id: str) -> List[dict]:
+    """Every flight's vertical accuracy against the site's control set (empty without one)."""
+    from . import control
+
+    site = load(site_id)
+    if not site.control_id:
+        return []
+    out = []
+    for s in site.scans:
+        res = control.check(s.project_id, site.control_id)
+        out.append({"project_id": s.project_id, "date": s.date, "stats": res["stats"], "points": len(res["points"])})
+    return out

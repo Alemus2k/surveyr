@@ -9,6 +9,7 @@ import type { GizmoMode } from "./compare/compareScene";
 import { LayersPanel } from "./compare/LayersPanel";
 import { NewComparisonDialog } from "./compare/NewComparisonDialog";
 import { useComposition } from "./compare/useComposition";
+import { ControlPanel } from "./control/ControlPanel";
 import { useOpenTabs } from "./hooks/useOpenTabs";
 import { usePanelWidth } from "./hooks/usePanelWidth";
 import { useProjectAnalysis } from "./hooks/useProjectAnalysis";
@@ -38,6 +39,7 @@ const PANEL_TITLES: Record<PanelId, string> = {
   maps: "2D maps",
   charts: "Charts",
   jobsite: "Job site calculations",
+  control: "Control & accuracy",
   adjust: "Manual adjustments",
   layers: "Layers",
   sites: "Job sites",
@@ -45,11 +47,12 @@ const PANEL_TITLES: Record<PanelId, string> = {
 };
 // Panels about one scan. A site shows them for the scan picked in its timeline;
 // a comparison has no single terrain, so they don't apply to it.
-const SINGLE_SCAN: readonly PanelId[] = ["terrain", "color", "maps", "charts", "jobsite", "adjust"];
+const SINGLE_SCAN: readonly PanelId[] = ["terrain", "color", "maps", "charts", "jobsite", "control", "adjust"];
 const SCAN_PANELS: readonly PanelId[] = ["projects", "sites", ...SINGLE_SCAN];
 const COMPARE_PANELS: readonly PanelId[] = ["projects", "sites", "layers"];
 const SITE_PANELS: readonly PanelId[] = ["projects", "sites", "site", ...SINGLE_SCAN];
 const DEFAULT_THRESHOLD_DEG = 3;
+const DEFAULT_TOLERANCE_M = 0.05; // accuracy grading for scans outside a job site
 
 export default function App() {
   const projects = useProjects();
@@ -179,6 +182,19 @@ export default function App() {
     if (id === "site")
       return <SitePanel state={site} projects={projects.projects} selectedZone={selectedZone} onSelectZone={selectZone} />;
     if (id === "adjust") return <AdjustPanel state={scanSettings} analysis={analysis} />;
+    if (id === "control")
+      return scanId ? (
+        <ControlPanel
+          key={scanId}
+          projectId={scanId}
+          settings={scanSettings}
+          siteControlId={isSite ? site.site?.control_id ?? null : null}
+          tolerance={isSite ? site.site?.tolerance_m ?? DEFAULT_TOLERANCE_M : DEFAULT_TOLERANCE_M}
+          reloadKey={settingsVersion}
+        />
+      ) : (
+        <div className="empty-state">Loading…</div>
+      );
     if (!analysis || !cloud || !range || !scanId) return <div className="empty-state">Loading…</div>;
     if (id === "terrain") return <TerrainPanel analysis={analysis} threshold={threshold} onThreshold={setThreshold} />;
     if (id === "color") return <ColorPanel cloud={cloud} range={range} onRange={(r) => setRangeState({ cloud, range: r })} />;
@@ -235,6 +251,10 @@ export default function App() {
           selectedZone={selectedZone}
           onSelectZone={selectZone}
           onZoneCreated={() => setPanel("site")}
+          onReviewFlight={(scan) => {
+            if (tabs.active) setSiteScanSel({ site: tabs.active, scan });
+            setPanel("control");
+          }}
         />
       );
     if (isCompare) {

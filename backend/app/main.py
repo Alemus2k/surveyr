@@ -11,10 +11,10 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import compare, scan_settings, service, sites, storage
+from . import compare, control, scan_settings, service, sites, storage
 
 app = FastAPI(title="Surveyr API", version="0.2.0", description="Land surveying terrain analytics")
 
@@ -200,3 +200,70 @@ def site_grids(site_id: str) -> dict:
         return sites.grids(site_id)
     except service.ProjectNotFound:
         raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+
+
+@app.get("/api/sites/{site_id}/qa")
+def site_qa(site_id: str) -> list:
+    """Each flight's vertical accuracy against the site's control points."""
+    try:
+        return sites.qa(site_id)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+
+
+# ------------------------------------------------------------------ control points
+
+
+@app.get("/api/control")
+def list_control() -> list:
+    return control.list_sets()
+
+
+@app.post("/api/control", status_code=201)
+def import_control(
+    file: UploadFile = File(...),
+    name: str = Form(""),
+    unit: str = Form("m"),
+    order: control.Order = Form("PNEZD"),
+) -> dict:
+    """Import check points from a CSV / text file (PNEZD by default, or a header row)."""
+    raw = file.file.read(5 * 1024 * 1024 + 1)
+    if len(raw) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="control point files are limited to 5 MB")
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("latin-1")
+    default_name = os.path.splitext(file.filename or "control")[0]
+    try:
+        return control.create(name or default_name, text, unit, order)
+    except control.ControlInvalid as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/control/{control_id}")
+def get_control(control_id: str) -> control.ControlSet:
+    try:
+        return control.load(control_id)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown control set '{control_id}'")
+
+
+@app.delete("/api/control/{control_id}")
+def delete_control(control_id: str) -> dict:
+    try:
+        control.delete(control_id)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown control set '{control_id}'")
+    return {"id": control_id}
+
+
+@app.get("/api/projects/{project_id}/control-check")
+def control_check(project_id: str, control_id: str = Query(..., alias="control")) -> dict:
+    """A scan's ground compared with each control point, plus accuracy statistics."""
+    try:
+        return control.check(project_id, control_id)
+    except service.NotAnalyzable:
+        raise HTTPException(status_code=400, detail="check a scan, not a comparison or site")
+    except service.ProjectNotFound as exc:
+        raise HTTPException(status_code=404, detail=f"unknown project or control set '{exc.args[0]}'")

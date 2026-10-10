@@ -25,7 +25,7 @@ SITE_DEMO_FILES = (
 )
 # Demo sets by seed version. A folder records the last version it received, so
 # each set arrives once — including on installs seeded before the set existed.
-DEMO_SETS = ((1, DEMO_FILES), (2, SITE_DEMO_FILES))
+DEMO_SETS = ((1, DEMO_FILES), (2, SITE_DEMO_FILES), (3, ("riverside_control.control.json",)))
 SEED_MARKER = ".surveyr-seeded"
 _CHUNK = 1024 * 1024
 _STEM_MAX = 60

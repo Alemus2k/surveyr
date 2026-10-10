@@ -1,4 +1,5 @@
 import type { Composition } from "./compare/types";
+import type { AccuracyStats } from "./control/qa";
 import type { Site, SiteGrids, SiteScan } from "./site/types";
 import type { Analysis } from "./types";
 import type { Origin } from "./viewer/prepare";
@@ -94,6 +95,7 @@ export interface ScanSettings {
   unit: Unit;
   up_axis: "z" | "y";
   ground_only: boolean;
+  z_offset_m: number; // elevation correction added after unit conversion
 }
 
 /** What a scan's units appear to be: "crs" = stated by the file, "size" = a guess. */
@@ -213,4 +215,79 @@ export async function fetchSiteGrids(id: string): Promise<SiteGrids> {
   const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(id)}/grids`);
   if (!res.ok) throw new Error(`Couldn't load site surfaces: ${await errorDetail(res)}`);
   return res.json() as Promise<SiteGrids>;
+}
+
+// ------------------------------------------------------------------ control points
+
+export interface ControlSetRef {
+  id: string;
+  name: string;
+  count: number;
+  source_unit: Unit;
+}
+
+export type ColumnOrder = "PNEZD" | "PENZD" | "NEZ" | "ENZ";
+
+export interface ControlCheckPoint {
+  id: string;
+  e: number;
+  n: number;
+  z: number;
+  desc: string;
+  scan_z: number | null;
+  dz: number | null; // scan minus control (m); null where the scan doesn't reach
+  radius_m: number | null;
+  neighbours: number;
+  spread_m: number | null;
+}
+
+export interface ControlCheck {
+  project_id: string;
+  control_id: string;
+  control_name: string;
+  points: ControlCheckPoint[];
+  stats: AccuracyStats;
+}
+
+export interface FlightQA {
+  project_id: string;
+  date: string;
+  stats: AccuracyStats;
+  points: number;
+}
+
+export async function fetchControlSets(): Promise<ControlSetRef[]> {
+  const res = await fetch(`${apiBase()}/control`);
+  if (!res.ok) throw new Error(`Couldn't list control points: ${await errorDetail(res)}`);
+  return res.json() as Promise<ControlSetRef[]>;
+}
+
+/** Import check points from a CSV / text export. */
+export async function importControl(file: File, name: string, unit: Unit, order: ColumnOrder): Promise<ControlSetRef> {
+  const body = new FormData();
+  body.append("file", file, file.name);
+  body.append("name", name);
+  body.append("unit", unit);
+  body.append("order", order);
+  const res = await fetch(`${apiBase()}/control`, { method: "POST", body });
+  if (!res.ok) throw new Error(`Couldn't import ${file.name}: ${await errorDetail(res)}`);
+  return res.json() as Promise<ControlSetRef>;
+}
+
+export async function deleteControl(id: string): Promise<void> {
+  const res = await fetch(`${apiBase()}/control/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Couldn't delete control points: ${await errorDetail(res)}`);
+}
+
+export async function fetchControlCheck(projectId: string, controlId: string): Promise<ControlCheck> {
+  const res = await fetch(`${apiBase()}/projects/${encodeURIComponent(projectId)}/control-check?control=${encodeURIComponent(controlId)}`);
+  if (!res.ok) throw new Error(`Couldn't check against control: ${await errorDetail(res)}`);
+  return res.json() as Promise<ControlCheck>;
+}
+
+/** Every flight of a site graded against the site's control points. */
+export async function fetchSiteQA(siteId: string): Promise<FlightQA[]> {
+  const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(siteId)}/qa`);
+  if (!res.ok) throw new Error(`Couldn't check flights against control: ${await errorDetail(res)}`);
+  return res.json() as Promise<FlightQA[]>;
 }

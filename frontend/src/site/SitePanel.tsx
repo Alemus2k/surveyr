@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { ProjectRef } from "../api";
+import { useEffect, useState } from "react";
+import { fetchControlSets, type ControlSetRef, type ProjectRef } from "../api";
 import { Icon } from "../layout/icons";
 import { PanelSection } from "../panels/SidePanel";
 import { dateInName, formatDate, todayIso } from "./dates";
@@ -20,6 +20,10 @@ const isScan = (p: ProjectRef) => p.type === "single" || p.type === "fused" || p
 export function SitePanel({ state, projects, selectedZone, onSelectZone }: SitePanelProps) {
   const { site, progress, update, updateZone } = state;
   const [adding, setAdding] = useState<{ id: string; date: string } | null>(null);
+  const [controlSets, setControlSets] = useState<ControlSetRef[]>([]);
+  useEffect(() => {
+    fetchControlSets().then(setControlSets, () => setControlSets([]));
+  }, []);
   if (!site) return <div className="empty-state">Loading…</div>;
 
   const zone = site.zones.find((z) => z.id === selectedZone) ?? null;
@@ -192,6 +196,21 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
         <p className="panel-note">
           Scans must share a coordinate system (e.g. RTK drone flights on the same site control). Import new flights
           from Projects first. Dates set the timeline: latest is {formatDate(site.scans[site.scans.length - 1]?.date ?? todayIso())}.
+        </p>
+      </PanelSection>
+
+      <PanelSection label="Check points">
+        <select value={site.control_id ?? ""} onChange={(e) => set({ control_id: e.target.value || null })} aria-label="Check points">
+          <option value="">None</option>
+          {controlSets.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.count} pts)
+            </option>
+          ))}
+        </select>
+        <p className="panel-note">
+          Every flight is graded against these surveyed points (badges on the timeline). Import them in Control &amp;
+          accuracy.
         </p>
       </PanelSection>
 

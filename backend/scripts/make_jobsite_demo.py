@@ -15,6 +15,9 @@ Writes into data/:
   riverside_design.laz            finished-grade design surface
   riverside_<date>.laz (x6)       the scans, in UTM zone 17N metres
   riverside_commons.site.json     zones, planned dates and pay-app claims
+  riverside_control.control.json  12 surveyed check points on undisturbed ground
+  riverside_checkpoints.csv       the same points as a surveyor's PNEZD export in
+                                  US survey feet (for trying the import; not bundled)
   riverside_truth.json            exact volumes from the analytic surfaces
                                   (test oracle, not bundled with the app)
 
@@ -33,6 +36,14 @@ DATA = os.path.join(BASE, "data")
 PREFIX = "riverside"
 SITE_FILE = "riverside_commons.site.json"
 TRUTH_FILE = "riverside_truth.json"
+CONTROL_ID = "riverside_control"
+CONTROL_CSV = "riverside_checkpoints.csv"
+N_CONTROL = 12
+CONTROL_NOISE = 0.004  # m, surveyed with RTK GNSS / total station
+# One flight comes back high — a bad base-station height, say — so the
+# accuracy check has something to catch. Correcting it in the app restores it.
+SCAN_BIAS_M = {"2026-09-21": 0.035}
+US_FT = 1200 / 3937
 
 # Survey-grid placement: UTM zone 17N, so coordinates look like real LiDAR.
 E0, N0 = 612_400.0, 4_270_150.0
@@ -246,6 +257,25 @@ def truth() -> Dict:
     return out
 
 
+def control_points(rng: np.random.Generator) -> List[Dict]:
+    """Check points spread over ground no work zone touches (it never changes)."""
+    gx, gy = np.meshgrid(np.arange(6.0, W - 6, 4.0), np.arange(6.0, H - 6, 4.0))
+    x, y = gx.ravel(), gy.ravel()
+    clear = np.ones(len(x), dtype=bool)
+    for zone in ZONES:  # stay well outside every zone, batters included
+        poly = np.array(zone["polygon"])
+        lo, hi = poly.min(axis=0) - 6, poly.max(axis=0) + 6
+        clear &= ~((x > lo[0]) & (x < hi[0]) & (y > lo[1]) & (y < hi[1]))
+    x, y = x[clear], y[clear]
+    picked = [int(np.argmin(x + y))]  # farthest-point sampling: an even spread
+    for _ in range(N_CONTROL - 1):
+        d = np.min([np.hypot(x - x[i], y - y[i]) for i in picked], axis=0)
+        picked.append(int(np.argmax(d)))
+    z = existing(x[picked], y[picked]) + rng.normal(0, CONTROL_NOISE, N_CONTROL)
+    return [{"id": f"CP{k + 1}", "e": round(float(x[i] + E0), 3), "n": round(float(y[i] + N0), 3),
+             "z": round(float(zk), 3), "desc": "CHK"} for k, (i, zk) in enumerate(zip(picked, z))]
+
+
 def main() -> None:
     os.makedirs(DATA, exist_ok=True)
     rng = np.random.default_rng(7)
@@ -256,7 +286,7 @@ def main() -> None:
     scans = []
     for k, date in enumerate(DATES):
         x, y = sample_points(rng, n)
-        z = ground(x, y, k) + rng.normal(0, NOISE, n)
+        z = ground(x, y, k) + rng.normal(0, NOISE, n) + SCAN_BIAS_M.get(date, 0.0)
         pid = f"{PREFIX}_{date}"
         write_laz(os.path.join(DATA, f"{pid}.laz"), x, y, z, date)
         scans.append({"project_id": pid, "date": date})
@@ -277,6 +307,7 @@ def main() -> None:
         "tolerance_m": 0.05,
         "change_threshold_m": 0.05,
         "overbill_pct": 10.0,
+        "control_id": CONTROL_ID,
         "zones": zones,
         "pay_apps": pay_apps,
     }
@@ -284,6 +315,14 @@ def main() -> None:
         json.dump(site, f, indent=2)
     with open(os.path.join(DATA, TRUTH_FILE), "w") as f:
         json.dump(exact, f, indent=2)
+
+    points = control_points(np.random.default_rng(11))
+    with open(os.path.join(DATA, f"{CONTROL_ID}.control.json"), "w") as f:
+        json.dump({"version": 1, "name": "Riverside check points", "source_unit": "m", "points": points}, f, indent=2)
+    with open(os.path.join(DATA, CONTROL_CSV), "w") as f:
+        f.write("Point,Northing,Easting,Elevation,Description\n")
+        for p in points:
+            f.write(f"{p['id']},{p['n'] / US_FT:.3f},{p['e'] / US_FT:.3f},{p['z'] / US_FT:.3f},{p['desc']}\n")
 
     print(f"wrote design + {len(DATES)} scans ({n:,} points each), {SITE_FILE}")
     for zone_id, rows in exact["zones"].items():
