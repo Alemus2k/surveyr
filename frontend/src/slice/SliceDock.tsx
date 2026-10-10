@@ -1,9 +1,16 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Icon } from "../layout/icons";
 import type { SceneBox } from "../viewer/backdrop";
 import { niceStep } from "../viewer/backdrop";
-import { drawProfile, type ProfileSeries } from "./drawProfile";
-import { selectSliceFrom, sliceHalfRange, type SliceAxis, type SliceSource, type SliceSpec } from "./slice";
+import { drawProfile, profileLayout, type ProfileSeries } from "./drawProfile";
+import {
+  elevationAt,
+  selectSliceFrom,
+  sliceHalfRange,
+  type SliceAxis,
+  type SliceSource,
+  type SliceSpec,
+} from "./slice";
 
 /** One thing to cut through: a single scan, or one layer of a comparison. */
 export interface SliceLayer {
@@ -21,6 +28,17 @@ export interface SliceExtent {
   zMin: number;
   zMax: number;
 }
+
+/** Pointer readout over the profile: cursor x and, per layer, the elevation under it. */
+interface Hover {
+  x: number;
+  u: number;
+  readings: { label: string; colour: string; z: number | null; y: number | null }[];
+  flip: boolean; // readout sits left of the line near the right edge
+}
+
+const HOVER_PX = 4; // points within this many pixels either side count towards the reading
+const READOUT_W = 170;
 
 interface SliceDockProps {
   layers: SliceLayer[];
@@ -51,6 +69,24 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
     ro.observe(cv);
     return () => ro.disconnect();
   }, [series, extent]);
+
+  const [hover, setHover] = useState<Hover | null>(null);
+  useEffect(() => setHover(null), [series, extent]);
+
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const cv = canvas.current;
+    if (!cv) return;
+    const rect = cv.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const layout = profileLayout(cv.clientWidth, cv.clientHeight, extent);
+    if (x < layout.plotLeft || x > layout.plotRight) return setHover(null);
+    const u = layout.fromX(x);
+    const readings = series.map((s) => {
+      const z = elevationAt(s.sample, u, HOVER_PX / layout.sx);
+      return { label: s.label, colour: s.solid ?? "var(--accent)", z, y: z === null ? null : layout.toY(z) };
+    });
+    setHover({ x, u, readings, flip: x + READOUT_W + 16 > cv.clientWidth });
+  };
 
   const setAxis = (axis: SliceAxis) => onSpec({ ...spec, axis, offset: 0 });
   const setThickness = (t: number) =>
@@ -91,7 +127,53 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
           <Icon name="close" size={16} />
         </button>
       </div>
-      <canvas ref={canvas} className="slice-canvas" aria-label="Cross-section profile" />
+      <div className="slice-plot" onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)}>
+        <canvas ref={canvas} className="slice-canvas" aria-label="Cross-section profile" />
+        {hover && <HoverReadout hover={hover} along={spec.axis === "ew" ? "E" : "N"} />}
+      </div>
     </section>
+  );
+}
+
+function HoverReadout({ hover, along }: { hover: Hover; along: string }) {
+  const { x, u, readings, flip } = hover;
+  const multi = readings.length > 1;
+  const [a, b] = readings;
+  const gap = multi && readings.length === 2 && a.z !== null && b.z !== null ? b.z - a.z : null;
+  const signed = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)} m`;
+  return (
+    <div className="slice-hover" aria-hidden="true">
+      <div className="slice-hover-line" style={{ left: x }} />
+      {readings.map(
+        (r, i) =>
+          r.y !== null && (
+            <div key={i} className="slice-hover-dot" style={{ left: x, top: r.y, background: r.colour }} />
+          )
+      )}
+      <div
+        className={`slice-hover-readout mono${flip ? " flip" : ""}`}
+        style={{ left: flip ? x - 10 : x + 10, width: READOUT_W }}
+      >
+        <div className="slice-hover-row muted">
+          <span>{along}</span>
+          <span>{signed(u)}</span>
+        </div>
+        {readings.map((r, i) => (
+          <div key={i} className="slice-hover-row">
+            <span className="slice-hover-label">
+              {multi && <i style={{ background: r.colour }} />}
+              {multi ? r.label : "Elevation"}
+            </span>
+            <span>{r.z === null ? "—" : `${r.z.toFixed(2)} m`}</span>
+          </div>
+        ))}
+        {gap !== null && (
+          <div className="slice-hover-row gap">
+            <span>Δ</span>
+            <span>{signed(gap)}</span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

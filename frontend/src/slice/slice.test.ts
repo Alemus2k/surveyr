@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { prepareCloud } from "../viewer/prepare";
-import { selectSlice, selectSliceFrom, sliceHalfRange } from "./slice";
+import { profileLayout } from "./drawProfile";
+import { elevationAt, selectSlice, selectSliceFrom, sliceHalfRange } from "./slice";
 
 // 4 points on a 2 x 2 m patch; centre is (1, 1).
 const cloud = prepareCloud(
@@ -48,5 +49,31 @@ describe("selectSliceFrom", () => {
     expect(Array.from(s.u)).toEqual([-1, 1]);
     expect(Array.from(s.z)).toEqual([10, 11]);
     expect(Array.from(s.index)).toEqual([0, 1]);
+  });
+});
+
+describe("elevationAt", () => {
+  const sample = {
+    u: new Float32Array([-1, 0, 0.05, 0.1, 3]),
+    z: new Float32Array([5, 10, 12, 11, 20]),
+    index: new Uint32Array([0, 1, 2, 3, 4]),
+  };
+
+  test("is the median elevation of points near the cursor", () => {
+    expect(elevationAt(sample, 0.05, 0.1)).toBeCloseTo(11); // 10, 12, 11
+    expect(elevationAt(sample, 0.025, 0.04)).toBeCloseTo(11); // 10, 12 -> mean of the middle pair
+  });
+
+  test("is null where the band has no points", () => {
+    expect(elevationAt(sample, 1.5, 0.2)).toBeNull();
+  });
+});
+
+describe("profileLayout", () => {
+  test("fromX inverts toX across the plot", () => {
+    const l = profileLayout(600, 200, { span: 40, zMin: 100, zMax: 110 });
+    expect(l.toX(-20)).toBeCloseTo(l.plotLeft);
+    expect(l.toX(20)).toBeCloseTo(l.plotRight);
+    for (const u of [-20, -3.7, 0, 12.5]) expect(l.fromX(l.toX(u))).toBeCloseTo(u);
   });
 });

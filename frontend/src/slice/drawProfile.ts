@@ -25,6 +25,45 @@ const FONT = "11px 'Share Tech Mono', ui-monospace, monospace";
 const DOT = 1.2;
 const JET_SWATCH = ["#1428ff", "#00dcff", "#28ff3c", "#fff000", "#ff1e0a"];
 
+/** Where the plot sits on a ``w`` x ``h`` canvas and how profile coordinates map to pixels. */
+export interface ProfileLayout {
+  plotLeft: number;
+  plotRight: number;
+  plotTop: number;
+  plotBottom: number;
+  zLo: number;
+  zHi: number;
+  sx: number; // px per metre along the section
+  sz: number; // px per metre of elevation
+  toX: (u: number) => number;
+  toY: (z: number) => number;
+  fromX: (x: number) => number;
+}
+
+export function profileLayout(w: number, h: number, extent: ProfileExtent): ProfileLayout {
+  const plotW = w - PAD.left - PAD.right;
+  const plotH = h - PAD.top - PAD.bottom;
+  const uHalf = extent.span / 2;
+  const zLo = extent.zMin;
+  const zHi = Math.max(extent.zMax, zLo + 1e-6);
+  const sx = plotW / (2 * uHalf);
+  const sz = Math.min(plotH / (zHi - zLo), sx * MAX_PROFILE_EXAGGERATION);
+  const zBase = PAD.top + plotH - (plotH - (zHi - zLo) * sz) / 2; // centre short profiles vertically
+  return {
+    plotLeft: PAD.left,
+    plotRight: w - PAD.right,
+    plotTop: PAD.top,
+    plotBottom: PAD.top + plotH,
+    zLo,
+    zHi,
+    sx,
+    sz,
+    toX: (u) => PAD.left + (u + uHalf) * sx,
+    toY: (z) => zBase - (z - zLo) * sz,
+    fromX: (x) => (x - PAD.left) / sx - uHalf,
+  };
+}
+
 /**
  * Paint a cross-section onto ``canvas``: horizontal = distance along the
  * section, vertical = true elevation (stretched at most 5x when very flat).
@@ -43,16 +82,8 @@ export function drawProfile(canvas: HTMLCanvasElement, series: ProfileSeries[], 
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, w, h);
 
-  const plotW = w - PAD.left - PAD.right;
+  const { zLo, zHi, sx, sz, toX, toY } = profileLayout(w, h, extent);
   const plotH = h - PAD.top - PAD.bottom;
-  const uHalf = extent.span / 2;
-  const zLo = extent.zMin;
-  const zHi = Math.max(extent.zMax, zLo + 1e-6);
-  const sx = plotW / (2 * uHalf);
-  const sz = Math.min(plotH / (zHi - zLo), sx * MAX_PROFILE_EXAGGERATION);
-  const zBase = PAD.top + plotH - (plotH - (zHi - zLo) * sz) / 2; // centre short profiles vertically
-  const toX = (u: number) => PAD.left + (u + uHalf) * sx;
-  const toY = (z: number) => zBase - (z - zLo) * sz;
 
   // elevation grid lines + labels
   ctx.font = FONT;

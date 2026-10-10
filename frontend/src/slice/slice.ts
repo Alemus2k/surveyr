@@ -48,6 +48,21 @@ export function selectSliceFrom(src: SliceSource, spec: SliceSpec): SliceSample 
   return { u, z, index: Uint32Array.from(picked) };
 }
 
+/**
+ * Ground elevation at ``u`` along the section: the median elevation of the
+ * band's points within ``halfWidth`` metres either side, or null if none.
+ */
+export function elevationAt(sample: SliceSample, u: number, halfWidth: number): number | null {
+  const near: number[] = [];
+  for (let k = 0; k < sample.u.length; k++) {
+    if (Math.abs(sample.u[k] - u) <= halfWidth) near.push(sample.z[k]);
+  }
+  if (near.length === 0) return null;
+  near.sort((a, b) => a - b);
+  const mid = near.length >> 1;
+  return near.length % 2 ? near[mid] : (near[mid - 1] + near[mid]) / 2;
+}
+
 export function selectSlice(cloud: PreparedCloud, spec: SliceSpec): SliceSample {
   return selectSliceFrom({ positions: cloud.positions, elevation: cloud.z }, spec);
 }
