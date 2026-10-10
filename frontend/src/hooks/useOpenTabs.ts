@@ -18,15 +18,16 @@ export interface OpenTabs extends TabsState {
 
 /**
  * Which projects have tabs, and which is active. Restored from the last session
- * once the project list arrives; projects that no longer exist drop out.
+ * once the project list arrives; projects that no longer exist drop out. With
+ * nothing saved, ``firstRun`` (default: every project) is opened.
  */
-export function useOpenTabs(projectIds: string[] | null): OpenTabs {
+export function useOpenTabs(projectIds: string[] | null, firstRun?: string[]): OpenTabs {
   const [state, setState] = useState<TabsState | null>(null);
   const idsKey = projectIds?.join("\n") ?? null;
 
   useEffect(() => {
     if (projectIds === null) return;
-    setState((prev) => reconcileTabs(prev ?? loadPref(STORAGE_KEY, isTabsState), projectIds));
+    setState((prev) => reconcileTabs(prev ?? loadPref(STORAGE_KEY, isTabsState), projectIds, firstRun));
   }, [idsKey]); // keyed on the list's contents; the array identity changes every fetch
 
   useEffect(() => {

@@ -22,9 +22,15 @@ export function closeTab(state: TabsState, id: string): TabsState {
   return { open, active: open[idx] ?? open[idx - 1] ?? null };
 }
 
-/** Restore saved tabs against the projects that exist now (first run: open all). */
-export function reconcileTabs(saved: TabsState | null, available: string[]): TabsState {
-  if (!saved) return { open: [...available], active: available[0] ?? null };
+/**
+ * Restore saved tabs against the projects that exist now. First run opens
+ * ``firstRun`` (default: everything), activating its first entry.
+ */
+export function reconcileTabs(saved: TabsState | null, available: string[], firstRun: string[] = available): TabsState {
+  if (!saved) {
+    const open = firstRun.filter((id) => available.includes(id));
+    return { open, active: open[0] ?? null };
+  }
   const gone = saved.open.filter((id) => !available.includes(id));
   const next = gone.reduce((state, id) => closeTab(state, id), saved);
   // a corrupt save could name an active tab that isn't open

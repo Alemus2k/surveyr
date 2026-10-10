@@ -58,6 +58,7 @@ jobs:
           python -m pip install -r requirements.txt
           python scripts/make_synthetic_terrain.py
           python scripts/make_multi_scan.py
+          python scripts/make_jobsite_demo.py
           python -m pytest tests -q
 
       - name: Engine — bundle with PyInstaller

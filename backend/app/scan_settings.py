@@ -57,7 +57,7 @@ def _path(project_id: str) -> str:
 
 def _scan_info(project_id: str) -> dict:
     info = service._resolve(project_id)
-    if info["type"] == "compare":
+    if info["type"] in service.GROUP_TYPES:
         raise service.NotAnalyzable(project_id)
     return info
 

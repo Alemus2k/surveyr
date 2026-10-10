@@ -22,6 +22,10 @@ import { JobsitePanel } from "./jobsite/JobsitePanel";
 import { MapsPanel } from "./panels/DataPanels";
 import { ProjectsPanel } from "./panels/ProjectsPanel";
 import { SidePanel } from "./panels/SidePanel";
+import { NewSiteDialog } from "./site/NewSiteDialog";
+import { SiteDashboard } from "./site/SiteDashboard";
+import { SitePanel } from "./site/SitePanel";
+import { useSite } from "./site/useSite";
 import { TerrainPanel } from "./panels/TerrainPanel";
 import { colorize, type ColorRange, type PreparedCloud } from "./viewer/prepare";
 import { Workspace } from "./viewer/Workspace";
@@ -35,25 +39,33 @@ const PANEL_TITLES: Record<PanelId, string> = {
   jobsite: "Job site calculations",
   adjust: "Manual adjustments",
   layers: "Layers",
+  site: "Site progress",
 };
 // A comparison has no single terrain, so the analysis panels don't apply to it.
 const SCAN_PANELS: readonly PanelId[] = ["projects", "terrain", "color", "maps", "charts", "jobsite", "adjust"];
 const COMPARE_PANELS: readonly PanelId[] = ["projects", "layers"];
+const SITE_PANELS: readonly PanelId[] = ["projects", "site"];
 const DEFAULT_THRESHOLD_DEG = 3;
 
 export default function App() {
   const projects = useProjects();
   const ready = projects.engine === "ready";
-  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null);
+  // first run: open job sites first, and not the individual scans inside them
+  const firstRun = [...projects.projects].sort((a, b) => Number(b.type === "site") - Number(a.type === "site")).filter((p) => !p.site);
+  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null, firstRun.map((p) => p.id));
   const byId = new Map(projects.projects.map((p) => [p.id, p]));
-  const isCompare = byId.get(tabs.active ?? "")?.type === "compare";
+  const activeType = byId.get(tabs.active ?? "")?.type;
+  const isCompare = activeType === "compare";
+  const isSite = activeType === "site";
+  const isGroup = isCompare || isSite; // made of other scans: no single terrain to analyse
 
   // bumped whenever a scan's manual adjustments change, so everything reloads converted
   const [settingsVersion, setSettingsVersion] = useState(0);
   const bumpSettings = useCallback(() => setSettingsVersion((v) => v + 1), []);
-  const { analysis, cloud, error } = useProjectAnalysis(ready, isCompare ? null : tabs.active, settingsVersion);
+  const { analysis, cloud, error } = useProjectAnalysis(ready, isGroup ? null : tabs.active, settingsVersion);
   const composition = useComposition(isCompare ? tabs.active : null, settingsVersion);
-  const scanSettings = useScanSettings(ready && !isCompare ? tabs.active : null, bumpSettings);
+  const site = useSite(isSite ? tabs.active : null, settingsVersion);
+  const scanSettings = useScanSettings(ready && !isGroup ? tabs.active : null, bumpSettings);
   const [panelWidth, setPanelWidth, resetPanelWidth] = usePanelWidth();
   const appearance = useAppearance();
 
@@ -63,19 +75,25 @@ export default function App() {
   const [selection, setSelection] = useState<{ comp: string; layer: string } | null>(null);
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
   const [newCompareOpen, setNewCompareOpen] = useState(false);
+  const [newSiteOpen, setNewSiteOpen] = useState(false);
+  const [zoneSel, setZoneSel] = useState<{ site: string; zone: string } | null>(null);
 
   // the rail shows only panels that fit the open tab; map a remembered choice across
-  const railItems = isCompare ? COMPARE_PANELS : SCAN_PANELS;
+  const railItems = isSite ? SITE_PANELS : isCompare ? COMPARE_PANELS : SCAN_PANELS;
   const panel =
-    panelChoice === null ? null : railItems.includes(panelChoice) ? panelChoice : isCompare ? "layers" : "terrain";
+    panelChoice === null ? null : railItems.includes(panelChoice) ? panelChoice : isSite ? "site" : isCompare ? "layers" : "terrain";
   const selectedLayer = selection && selection.comp === tabs.active ? selection.layer : null;
+  const selectedZone = zoneSel && zoneSel.site === tabs.active ? zoneSel.zone : null;
+  const selectZone = (zone: string | null) => setZoneSel(zone && tabs.active ? { site: tabs.active, zone } : null);
 
   // colour range resets when a different cloud is shown
   const range = cloud && (rangeState?.cloud === cloud ? rangeState.range : cloud.defaultRange);
   const colors = useMemo(() => (cloud && range ? colorize(cloud.z, range) : null), [cloud, range?.min, range?.max]);
 
   const openTabs = tabs.open.flatMap((id) => byId.get(id) ?? []);
-  const readout = isCompare
+  const readout = isSite
+    ? site.site && `${site.site.scans.length} scans · ${site.site.zones.length} zones`
+    : isCompare
     ? composition.comp && `${composition.comp.layers.length} layers`
     : analysis && `${(analysis.points.kept / 1000).toFixed(0)}k pts · ${analysis.grid.cell_size} m cell`;
 
@@ -97,6 +115,15 @@ export default function App() {
     }
   };
 
+  const createSite = async (name: string, scans: { project_id: string; date: string }[], designId: string | null) => {
+    const id = await projects.createSite(name, scans, designId);
+    setNewSiteOpen(false);
+    if (id) {
+      tabs.select(id);
+      setPanel("site");
+    }
+  };
+
   const panelBody = (id: PanelId) => {
     if (id === "projects")
       return (
@@ -108,6 +135,7 @@ export default function App() {
           onImport={importScan}
           onDelete={deleteProject}
           onNewComparison={() => setNewCompareOpen(true)}
+          onNewSite={() => setNewSiteOpen(true)}
           busy={projects.busy}
         />
       );
@@ -121,6 +149,8 @@ export default function App() {
           onSelect={(layer) => setSelection(layer && tabs.active ? { comp: tabs.active, layer } : null)}
         />
       );
+    if (id === "site")
+      return <SitePanel state={site} projects={projects.projects} selectedZone={selectedZone} onSelectZone={selectZone} />;
     if (id === "adjust") return <AdjustPanel state={scanSettings} analysis={analysis} />;
     if (!analysis || !cloud || !range) return <div className="empty-state">Loading…</div>;
     if (id === "terrain") return <TerrainPanel analysis={analysis} threshold={threshold} onThreshold={setThreshold} />;
@@ -131,7 +161,7 @@ export default function App() {
     return <ChartsPanel analysis={analysis} accent={appearance.uiAccent} threshold={threshold} />;
   };
 
-  const loadError = isCompare ? composition.error : error;
+  const loadError = isSite ? site.error : isCompare ? composition.error : error;
   const workspace = () => {
     if (projects.engine === "starting")
       return (
@@ -156,6 +186,16 @@ export default function App() {
           <p>Couldn't load this project.</p>
           <p className="mono">{loadError}</p>
         </div>
+      );
+    if (isSite)
+      return (
+        <SiteDashboard
+          state={site}
+          projects={projects.projects}
+          selectedZone={selectedZone}
+          onSelectZone={selectZone}
+          onZoneCreated={() => setPanel("site")}
+        />
       );
     if (isCompare) {
       if (composition.comp && composition.comp.layers.length === 0)
@@ -214,11 +254,19 @@ export default function App() {
 
       <NewComparisonDialog
         open={newCompareOpen}
-        projects={projects.projects.filter((p) => p.type !== "compare")}
-        initial={isCompare ? null : tabs.active}
+        projects={projects.projects.filter((p) => p.type !== "compare" && p.type !== "site")}
+        initial={isGroup ? null : tabs.active}
         busy={projects.busy}
         onCreate={createComparison}
         onCancel={() => setNewCompareOpen(false)}
+      />
+
+      <NewSiteDialog
+        open={newSiteOpen}
+        projects={projects.projects.filter((p) => p.type !== "compare" && p.type !== "site")}
+        busy={projects.busy}
+        onCreate={createSite}
+        onCancel={() => setNewSiteOpen(false)}
       />
 
       {projects.notice && (

@@ -85,6 +85,27 @@ specification — use a geotechnical report's numbers where available.
 - **Vertical ×N** — display-only exaggeration for very flat sites (up to 3× in
   3D, 5× in the slice profile). Numbers are never exaggerated.
 
+## Job sites (progress tracking)
+
+Every scan of a site and its design surface are gridded onto **one shared
+grid** (about 200 cells across the site; cell = mean elevation of the points in
+it). Only cells measured in every surface involved are counted — nothing is
+interpolated outside a scan's outline.
+
+| Term | Meaning |
+|---|---|
+| **Design surface** | The finished grade the site is being built to. |
+| **Still to dig / still to fill** | Volume of ground above / below design inside a zone at a scan. Cells within the **on-grade tolerance** (default ±5 cm) count as finished. |
+| **% complete** | 100 × (1 − earthworks still to do ÷ earthworks to do at the first scan), by volume. A zone counts as **complete** at ≥ 98 % — real scans leave about 1 % of residual noise on side slopes even on finished ground. |
+| **Dug / placed since last scan** | Ground lowered / raised between consecutive scans. Changes smaller than the **change threshold** (default 5 cm) are treated as scan noise and ignored. |
+| **Moved this period** | Dug + placed in the zone between the previous scan and this one. |
+| **Forecast finish** | Least-squares trend of % complete over the last three scans, projected to 100 %. No forecast if there's no progress or it would take more than two years. |
+| **Status** | *Complete*; *On track* (forecast on or before the planned finish); *Behind* (forecast after it); *Stalled* (no usable trend); *Not started*; *No plan* (no planned finish set). |
+| **Planned %** | A straight line from 0 % at the planned start to 100 % at the planned finish. |
+| **Stockpile volume** | Volume above the ground in the first scan, inside a stockpile zone. |
+| **Pay-app check** | A claim covers the period ending at its scan date. *Measured* is the volume dug (for a cut claim) or placed (for a fill claim) in its zone between that scan and the one before. Claims more than the set % (default 10 %) above measured are flagged. Cut is bank volume; fill is compacted. |
+| **Earthworks complete (overall)** | Grading zones' % complete, weighted by how much earthworks each zone started with. |
+
 ## Caveats
 
 - Results depend on cell size: finer cells resolve small features but are

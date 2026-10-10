@@ -17,6 +17,15 @@ from . import io
 SUPPORTED_EXTENSIONS = (".ply", ".las", ".laz", ".xyz")
 MAX_IMPORT_BYTES = 1024 * 1024 * 1024  # 1 GiB; phone scans are typically 5–100 MB
 DEMO_FILES = ("synthetic_topo.xyz", "scan_a.las", "scan_b.las")
+SITE_DEMO_DATES = ("2026-07-27", "2026-08-10", "2026-08-24", "2026-09-07", "2026-09-21", "2026-10-05")
+SITE_DEMO_FILES = (
+    "riverside_design.laz",
+    *(f"riverside_{d}.laz" for d in SITE_DEMO_DATES),
+    "riverside_commons.site.json",
+)
+# Demo sets by seed version. A folder records the last version it received, so
+# each set arrives once — including on installs seeded before the set existed.
+DEMO_SETS = ((1, DEMO_FILES), (2, SITE_DEMO_FILES))
 SEED_MARKER = ".surveyr-seeded"
 _CHUNK = 1024 * 1024
 _STEM_MAX = 60
@@ -116,21 +125,37 @@ def move_to_trash(path: PathLike, trash_dir: Optional[PathLike]) -> None:
     shutil.move(str(src), dest)
 
 
-def seed_demo_data(target: PathLike, demo_dir: PathLike) -> None:
-    """Copy the bundled demo projects into a new projects folder — once, ever.
+def _seeded_version(marker: Path) -> int:
+    if not marker.exists():
+        return 0
+    try:
+        return int(marker.read_text().strip() or 1)  # an empty marker predates versioning
+    except (OSError, ValueError):
+        return 1
 
-    A marker file records that seeding happened, so deleting every project
-    (demos included) doesn't bring the demos back on the next launch.
+
+def seed_demo_data(target: PathLike, demo_dir: PathLike) -> None:
+    """Copy bundled demo projects into the projects folder — each set once, ever.
+
+    A marker file records the last demo set delivered, so deleting the demos
+    doesn't bring them back on the next launch, while a newer app version can
+    still add its new demo once. The first set goes only into an empty folder;
+    later sets add their files beside existing projects, never overwriting.
     """
     target_dir = Path(target)
     target_dir.mkdir(parents=True, exist_ok=True)
     marker = target_dir / SEED_MARKER
-    if marker.exists():
+    done = _seeded_version(marker)
+    latest = DEMO_SETS[-1][0]
+    if done >= latest:
         return
-    has_projects = any(p.suffix.lower() in SUPPORTED_EXTENSIONS for p in target_dir.iterdir())
-    if not has_projects:
-        for name in DEMO_FILES:
-            src = Path(demo_dir) / name
-            if src.exists():
-                shutil.copy2(src, target_dir / name)
-    marker.touch()
+    for version, files in DEMO_SETS:
+        if version <= done:
+            continue
+        if version == 1 and any(p.suffix.lower() in SUPPORTED_EXTENSIONS for p in target_dir.iterdir()):
+            continue
+        for name in files:
+            src, dest = Path(demo_dir) / name, target_dir / name
+            if src.exists() and not dest.exists():
+                shutil.copy2(src, dest)
+    marker.write_text(str(latest))

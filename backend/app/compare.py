@@ -64,8 +64,8 @@ def _check_members(project_ids: List[str]) -> None:
         info = registry.get(pid)
         if info is None:
             raise CompositionInvalid(f"unknown project '{pid}'")
-        if info["type"] == "compare":
-            raise CompositionInvalid("a comparison can't contain another comparison")
+        if info["type"] in service.GROUP_TYPES:
+            raise CompositionInvalid("a comparison can only contain scans")
 
 
 def _write(comp_id: str, comp: Composition) -> None:

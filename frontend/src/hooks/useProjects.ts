@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { createComposition, deleteProject, fetchProjects, uploadScan, waitForBackend, type ProjectRef, type UnitDetection } from "../api";
+import { createComposition, createSite, deleteProject, fetchProjects, uploadScan, waitForBackend, type ProjectRef, type UnitDetection } from "../api";
 import { unitLabel } from "../adjust/units";
+import type { SiteScan } from "../site/types";
 
 export type EngineStatus = "starting" | "ready" | "failed";
 
@@ -20,6 +21,7 @@ export interface Projects {
   importScan: (file: File) => Promise<string | null>; // new project id, or null on failure
   removeProject: (project: ProjectRef) => Promise<boolean>;
   createComparison: (name: string, projectIds: string[]) => Promise<string | null>; // new id
+  createSite: (name: string, scans: SiteScan[], designId: string | null) => Promise<string | null>; // new id
 }
 
 const INFO_NOTICE_MS = 4000; // warnings and errors stay until dismissed
@@ -110,6 +112,20 @@ export function useProjects(): Projects {
     }
   }, []);
 
+  const createSiteProject = useCallback(async (name: string, scans: SiteScan[], designId: string | null) => {
+    setBusy(true);
+    try {
+      const created = await createSite(name, scans, designId);
+      setProjects(await fetchProjects());
+      return created.id;
+    } catch (e) {
+      setNotice({ text: message(e), tone: "error" });
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const dismissNotice = useCallback(() => setNotice(null), []);
 
   useEffect(() => {
@@ -118,5 +134,16 @@ export function useProjects(): Projects {
     return () => clearTimeout(t);
   }, [notice, busy]);
 
-  return { engine, engineError, projects, busy, notice, dismissNotice, importScan, removeProject, createComparison };
+  return {
+    engine,
+    engineError,
+    projects,
+    busy,
+    notice,
+    dismissNotice,
+    importScan,
+    removeProject,
+    createComparison,
+    createSite: createSiteProject,
+  };
 }

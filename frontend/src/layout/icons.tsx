@@ -4,9 +4,15 @@ import type { ReactNode } from "react";
 export type IconName =
   | "folder" | "terrain" | "cloudColor" | "maps" | "chart"
   | "cube" | "top" | "front" | "reset" | "grid" | "points" | "slice" | "close" | "chevronUp" | "plus" | "collapse" | "trash" | "palette"
-  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders" | "excavator";
+  | "surface" | "opacity" | "layers" | "eye" | "eyeOff" | "lock" | "unlock" | "move" | "rotate" | "sliders" | "excavator" | "flag";
 
 const PATHS: Record<IconName, ReactNode> = {
+  flag: (
+    <>
+      <path d="M5.5 21V3.5" />
+      <path d="M5.5 4h12l-2.5 4.25L17.5 12.5h-12" />
+    </>
+  ),
   folder: <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" />,
   terrain: (
     <>

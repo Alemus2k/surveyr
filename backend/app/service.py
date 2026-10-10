@@ -29,6 +29,7 @@ _NICE_CELLS = (0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0
 FUSED_PROJECT_ID = "multiscan"
 FUSED_SOURCES = ("scan_a.las", "scan_b.las")
 COMPARE_SUFFIX = ".compare.json"
+SITE_SUFFIX = ".site.json"
 _MAC_TRASH = os.path.expanduser("~/.Trash")
 # macOS: deleted projects are moved into the Trash folder so a mistake can be
 # undone. None (Windows/Linux) = the system recycle bin via send2trash.
@@ -58,6 +59,13 @@ def discover_projects() -> Dict[str, dict]:
         if fname.endswith(COMPARE_SUFFIX):
             pid = fname[: -len(COMPARE_SUFFIX)]
             found[pid] = {"id": pid, "name": _compare_name(fname, pid), "source": fname, "type": "compare"}
+        elif fname.endswith(SITE_SUFFIX):
+            pid = fname[: -len(SITE_SUFFIX)]
+            found[pid] = {"id": pid, "name": _compare_name(fname, pid), "source": fname, "type": "site"}
+    for site_id, info in [(k, v) for k, v in found.items() if v["type"] == "site"]:
+        for member in _site_members(info["source"]):
+            if member in found and "site" not in found[member]:
+                found[member]["site"] = site_id  # lets the app group a site's scans
     if all(os.path.exists(os.path.join(DATA_DIR, f)) for f in FUSED_SOURCES):
         found[FUSED_PROJECT_ID] = {
             "id": FUSED_PROJECT_ID, "name": "Two-Pass Revisit", "type": "fused",
@@ -67,7 +75,7 @@ def discover_projects() -> Dict[str, dict]:
 
 
 def _compare_name(fname: str, fallback: str) -> str:
-    """Display name stored inside a comparison file (tolerates a damaged file)."""
+    """Display name stored inside a comparison or site file (tolerates a damaged file)."""
     try:
         with open(os.path.join(DATA_DIR, fname)) as f:
             name = json.load(f).get("name")
@@ -76,8 +84,22 @@ def _compare_name(fname: str, fallback: str) -> str:
         return fallback
 
 
+def _site_members(fname: str) -> List[str]:
+    """Scan ids (and design) a site file refers to; empty for a damaged file."""
+    try:
+        with open(os.path.join(DATA_DIR, fname)) as f:
+            raw = json.load(f)
+        ids = [s.get("project_id") for s in raw.get("scans", []) if isinstance(s, dict)]
+        return [i for i in ids + [raw.get("design_id")] if isinstance(i, str)]
+    except (OSError, ValueError, AttributeError):
+        return []
+
+
 class NotAnalyzable(ValueError):
-    """The project is a comparison, which has no single terrain to analyse."""
+    """The project is a comparison or site, which has no single terrain to analyse."""
+
+
+GROUP_TYPES = ("compare", "site")  # projects made of other scans, with no points of their own
 
 
 SETTINGS_SUFFIX = ".settings.json"
@@ -85,7 +107,7 @@ SETTINGS_SUFFIX = ".settings.json"
 
 def _project_files(info: dict) -> List[str]:
     """Every file belonging to a project (scan(s) plus its settings, if saved)."""
-    if info["type"] == "compare":
+    if info["type"] in GROUP_TYPES:
         return [info["source"]]
     scans = list(FUSED_SOURCES) if info["type"] == "fused" else [info["source"]]
     return scans + [info["id"] + SETTINGS_SUFFIX]
@@ -159,7 +181,7 @@ def analyze(project_id: str, cell_size: Optional[float] = None) -> dict:
 
     ``cell_size=None`` picks a size from the scan footprint (see auto_cell_size).
     """
-    if _resolve(project_id)["type"] == "compare":
+    if _resolve(project_id)["type"] in GROUP_TYPES:
         raise NotAnalyzable(project_id)
     key = f"{project_id}@{cell_size or 'auto'}"
     with _lock:
@@ -204,7 +226,7 @@ def _load_cloud(project_id: str):
     if project_id == FUSED_PROJECT_ID:
         return PointCloud(_fuse_demo_passes()[0].fused_points()), False
     info = _resolve(project_id)
-    if info["type"] == "compare":
+    if info["type"] in GROUP_TYPES:
         raise NotAnalyzable(project_id)
     settings = scan_settings.load(project_id)
     raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]))

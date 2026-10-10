@@ -1,4 +1,5 @@
 import type { Composition } from "./compare/types";
+import type { Site, SiteGrids, SiteScan } from "./site/types";
 import type { Analysis } from "./types";
 import type { Origin } from "./viewer/prepare";
 
@@ -9,12 +10,13 @@ declare global {
   }
 }
 
-export type ProjectType = "single" | "fused" | "compare";
+export type ProjectType = "single" | "fused" | "compare" | "site";
 
 export interface ProjectRef {
   id: string;
   name: string;
   type?: ProjectType;
+  site?: string; // the job site this scan belongs to, if any
 }
 
 /** API root: injected by the desktop app, else the Vite dev-server proxy. */
@@ -177,4 +179,38 @@ export async function saveComposition(id: string, comp: Composition): Promise<vo
     body: JSON.stringify(comp),
   });
   if (!res.ok) throw new Error(`Couldn't save comparison: ${await errorDetail(res)}`);
+}
+
+// ------------------------------------------------------------------ job sites
+
+export async function createSite(name: string, scans: SiteScan[], designId: string | null): Promise<ProjectRef> {
+  const res = await fetch(`${apiBase()}/sites`, {
+    method: "POST",
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ name, scans, design_id: designId }),
+  });
+  if (!res.ok) throw new Error(`Couldn't create site: ${await errorDetail(res)}`);
+  return res.json() as Promise<ProjectRef>;
+}
+
+export async function fetchSite(id: string): Promise<Site> {
+  const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`Couldn't load site: ${await errorDetail(res)}`);
+  return res.json() as Promise<Site>;
+}
+
+export async function saveSite(id: string, site: Site): Promise<void> {
+  const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: JSON_HEADERS,
+    body: JSON.stringify(site),
+  });
+  if (!res.ok) throw new Error(`Couldn't save site: ${await errorDetail(res)}`);
+}
+
+/** Every scan of a site and its design on one shared elevation grid. */
+export async function fetchSiteGrids(id: string): Promise<SiteGrids> {
+  const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(id)}/grids`);
+  if (!res.ok) throw new Error(`Couldn't load site surfaces: ${await errorDetail(res)}`);
+  return res.json() as Promise<SiteGrids>;
 }

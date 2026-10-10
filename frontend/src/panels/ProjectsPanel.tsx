@@ -13,12 +13,15 @@ interface ProjectsPanelProps {
   onImport: (file: File) => void;
   onDelete: (project: ProjectRef) => Promise<boolean>;
   onNewComparison: () => void;
+  onNewSite: () => void;
   busy: boolean;
 }
 
+const isScan = (p: ProjectRef) => p.type !== "compare" && p.type !== "site";
+
 /** Every project on disk: open it in a tab, import new scans, or delete. */
 export function ProjectsPanel(props: ProjectsPanelProps) {
-  const { projects, openIds, activeId, onOpen, onImport, onDelete, onNewComparison, busy } = props;
+  const { projects, openIds, activeId, onOpen, onImport, onDelete, onNewComparison, onNewSite, busy } = props;
   const [pending, setPending] = useState<ProjectRef | null>(null);
 
   const confirmDelete = async () => {
@@ -35,9 +38,12 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       <button
         className="secondary-btn full"
         onClick={onNewComparison}
-        disabled={busy || !projects.some((p) => p.type !== "compare")}
+        disabled={busy || !projects.some(isScan)}
       >
         <Icon name="layers" size={16} /> New comparison…
+      </button>
+      <button className="secondary-btn full" onClick={onNewSite} disabled={busy || !projects.some(isScan)}>
+        <Icon name="flag" size={16} /> New job site…
       </button>
 
       {projects.length === 0 ? (
@@ -51,7 +57,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                 <button className="project-open" onClick={() => onOpen(p.id)} title={isOpen ? "Show tab" : "Open in a tab"}>
                   <span className="project-name">{p.name}</span>
                   <span className="project-id mono">
-                    {p.type === "compare" ? "comparison" : p.id}
+                    {p.type === "compare" ? "comparison" : p.type === "site" ? "job site" : p.id}
                     {isOpen && <span className="project-open-tag">open</span>}
                   </span>
                 </button>
@@ -85,7 +91,9 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
         onCancel={() => setPending(null)}
       >
         <p>
-          {pending?.id === "multiscan"
+          {pending?.type === "site" || pending?.type === "compare"
+            ? `Its ${pending.type === "site" ? "site" : "comparison"} file will be moved to the Trash. The scans in it are kept.`
+            : pending?.id === "multiscan"
             ? "Both of its scan files will be moved to the macOS Trash and the project removed from Surveyr. You can restore them from the Trash."
             : "Its scan file will be moved to the macOS Trash and the project removed from Surveyr. You can restore it from the Trash and import it again."}
         </p>

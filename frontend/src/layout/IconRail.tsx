@@ -1,6 +1,6 @@
 import { Icon, type IconName } from "./icons";
 
-export type PanelId = "projects" | "terrain" | "color" | "maps" | "charts" | "jobsite" | "adjust" | "layers";
+export type PanelId = "projects" | "terrain" | "color" | "maps" | "charts" | "jobsite" | "adjust" | "layers" | "site";
 
 const ITEMS: ReadonlyArray<{ id: PanelId; icon: IconName; label: string }> = [
   { id: "projects", icon: "folder", label: "Projects" },
@@ -11,6 +11,7 @@ const ITEMS: ReadonlyArray<{ id: PanelId; icon: IconName; label: string }> = [
   { id: "jobsite", icon: "excavator", label: "Job site calculations" },
   { id: "adjust", icon: "sliders", label: "Manual adjustments" },
   { id: "layers", icon: "layers", label: "Layers" },
+  { id: "site", icon: "flag", label: "Site progress" },
 ];
 
 interface IconRailProps {

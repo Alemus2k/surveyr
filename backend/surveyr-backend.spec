@@ -7,7 +7,12 @@
 # ships that folder as a resource and launches dist/surveyr-backend/surveyr-backend.
 # -*- mode: python ; coding: utf-8 -*-
 
-DEMO = ["data/synthetic_topo.xyz", "data/scan_a.las", "data/scan_b.las"]
+import sys
+
+sys.path.insert(0, ".")
+from app.storage import DEMO_SETS  # noqa: E402  single source of truth for bundled demos
+
+DEMO = [f"data/{name}" for _, files in DEMO_SETS for name in files]
 
 a = Analysis(
     ["surveyr_server.py"],

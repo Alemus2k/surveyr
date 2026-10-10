@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import compare, scan_settings, service, storage
+from . import compare, scan_settings, service, sites, storage
 
 app = FastAPI(title="Surveyr API", version="0.2.0", description="Land surveying terrain analytics")
 
@@ -154,3 +154,49 @@ def put_scan_settings(project_id: str, body: scan_settings.ScanSettings) -> dict
         raise HTTPException(status_code=400, detail="comparisons have no scan settings")
     except service.ProjectNotFound:
         raise HTTPException(status_code=404, detail=f"unknown project '{project_id}'")
+
+
+# ------------------------------------------------------------------ job sites
+
+
+class NewSite(sites.BaseModel):
+    name: str
+    scans: list[sites.SiteScan]
+    design_id: Optional[str] = None
+
+
+@app.post("/api/sites", status_code=201)
+def create_site(body: NewSite) -> dict:
+    """Create a progress-tracking site from dated scans; returns its project entry."""
+    try:
+        return sites.create(body.name, [s.model_dump() for s in body.scans], body.design_id)
+    except sites.SiteInvalid as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/sites/{site_id}")
+def get_site(site_id: str) -> sites.Site:
+    try:
+        return sites.load(site_id)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+
+
+@app.put("/api/sites/{site_id}")
+def put_site(site_id: str, body: sites.Site) -> sites.Site:
+    """Save zones, pay apps, scan dates and tolerances."""
+    try:
+        return sites.save(site_id, body)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+    except sites.SiteInvalid as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/sites/{site_id}/grids")
+def site_grids(site_id: str) -> dict:
+    """Every scan of the site and its design on one shared elevation grid."""
+    try:
+        return sites.grids(site_id)
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")

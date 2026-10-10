@@ -34,6 +34,10 @@ describe("reconcileTabs", () => {
     expect(reconcileTabs(null, ["a", "b"])).toEqual({ open: ["a", "b"], active: "a" });
   });
 
+  test("first run can open just a chosen subset, in its order", () => {
+    expect(reconcileTabs(null, ["a", "b", "site"], ["site", "a", "missing"])).toEqual({ open: ["site", "a"], active: "site" });
+  });
+
   test("restores saved tabs in order, dropping projects that no longer exist", () => {
     const saved = { open: ["c", "gone", "a"], active: "c" };
     expect(reconcileTabs(saved, ["a", "b", "c"])).toEqual({ open: ["c", "a"], active: "c" });
