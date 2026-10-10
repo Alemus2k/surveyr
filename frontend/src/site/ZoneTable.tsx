@@ -1,3 +1,4 @@
+import { Icon } from "../layout/icons";
 import { formatVolume } from "../lib/format";
 import { formatDate } from "./dates";
 import type { Status, ZoneProgress } from "./progress";
@@ -7,6 +8,7 @@ interface ZoneTableProps {
   scan: number; // which scan the quantities are shown at
   selected: string | null;
   onSelect: (id: string | null) => void;
+  onDelete: (id: string) => void;
 }
 
 export const STATUS: Record<Status, { label: string; tone: "good" | "bad" | "muted" }> = {
@@ -28,7 +30,7 @@ const vol = (m3: number) => {
 };
 
 /** One row per zone: status, % complete, what's left, what moved, and the forecast finish. */
-export function ZoneTable({ progress, scan, selected, onSelect }: ZoneTableProps) {
+export function ZoneTable({ progress, scan, selected, onSelect, onDelete }: ZoneTableProps) {
   if (progress.length === 0) return <p className="panel-note">No zones yet — use “Draw zone” on the map to outline a work area.</p>;
   return (
     <div className="zone-table-wrap">
@@ -41,6 +43,7 @@ export function ZoneTable({ progress, scan, selected, onSelect }: ZoneTableProps
             <th className="num">Left to dig / fill</th>
             <th className="num">Moved this period</th>
             <th>Finish: forecast / plan</th>
+            <th aria-label="Delete" />
           </tr>
         </thead>
         <tbody>
@@ -92,6 +95,19 @@ export function ZoneTable({ progress, scan, selected, onSelect }: ZoneTableProps
                       <span className="plan"> / {p.zone.finish ? formatDate(p.zone.finish) : "no date"}</span>
                     </span>
                   )}
+                </td>
+                <td>
+                  <button
+                    className="tool-btn zone-delete"
+                    aria-label={`Delete ${p.zone.name}`}
+                    title="Delete zone"
+                    onClick={(e) => {
+                      e.stopPropagation(); // don't also select the row
+                      onDelete(p.zone.id);
+                    }}
+                  >
+                    <Icon name="trash" size={14} />
+                  </button>
                 </td>
               </tr>
             );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ProjectRef } from "../api";
 import type { ColorRange, PreparedCloud } from "../viewer/prepare";
+import { ConfirmDialog } from "../layout/ConfirmDialog";
 import { Icon } from "../layout/icons";
 import { formatVolume } from "../lib/format";
 import { formatDate, todayIso } from "./dates";
@@ -48,6 +49,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
   const [view, setView] = useState<"plan" | "3d">("plan");
   const [drawing, setDrawing] = useState(false);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
+  const [deleting, setDeleting] = useState<string | null>(null); // zone awaiting confirmation
   const today = todayIso();
 
   if (!site) return <div className="empty-state">Loading site…</div>;
@@ -93,6 +95,20 @@ export function SiteDashboard(props: SiteDashboardProps) {
     onSelectZone(id);
     onZoneCreated(id);
   };
+
+  const deletingZone = site.zones.find((z) => z.id === deleting) ?? null;
+  const confirmDelete = () => {
+    if (!deletingZone) return;
+    update((s) => ({
+      ...s,
+      zones: s.zones.filter((z) => z.id !== deletingZone.id),
+      // claims against the zone stay, measured against the whole site
+      pay_apps: s.pay_apps.map((p) => (p.zone_id === deletingZone.id ? { ...p, zone_id: null } : p)),
+    }));
+    if (selectedZone === deletingZone.id) onSelectZone(null);
+    setDeleting(null);
+  };
+  const claimsOnDeleting = deletingZone ? site.pay_apps.filter((p) => p.zone_id === deletingZone.id).length : 0;
 
   const copySummary = async () => {
     try {
@@ -222,6 +238,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
               drawing={drawing}
               onDrawn={zoneDrawn}
               onDrawCancel={() => setDrawing(false)}
+              onDeleteZone={setDeleting}
             />
           )}
           <MapLegend mode={mode} tolerance={site.tolerance_m} threshold={site.change_threshold_m} />
@@ -231,7 +248,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
           <h3>
             Zones <span className="site-card-note">at {formatDate(surfaces.dates[scan])}</span>
           </h3>
-          <ZoneTable progress={progress} scan={scan} selected={selectedZone} onSelect={onSelectZone} />
+          <ZoneTable progress={progress} scan={scan} selected={selectedZone} onSelect={onSelectZone} onDelete={setDeleting} />
         </section>
 
         <section className="site-card wide">
@@ -252,6 +269,19 @@ export function SiteDashboard(props: SiteDashboardProps) {
         </section>
       </div>
       {state.saveError && <p className="error-state">{state.saveError}</p>}
+      <ConfirmDialog
+        open={deletingZone !== null}
+        title={`Delete “${deletingZone?.name ?? ""}”?`}
+        confirmLabel="Delete zone"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleting(null)}
+      >
+        <p>
+          The zone's outline and planned dates are removed. The scans aren't affected.
+          {claimsOnDeleting > 0 &&
+            ` Its ${claimsOnDeleting} pay-app claim${claimsOnDeleting === 1 ? "" : "s"} will be measured against the whole site instead.`}
+        </p>
+      </ConfirmDialog>
     </div>
   );
 }

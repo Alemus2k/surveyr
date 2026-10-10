@@ -86,7 +86,11 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
           <button
             className="danger-btn"
             onClick={() => {
-              update((s) => ({ ...s, zones: s.zones.filter((z) => z.id !== zone.id) }));
+              update((s) => ({
+                ...s,
+                zones: s.zones.filter((z) => z.id !== zone.id),
+                pay_apps: s.pay_apps.map((p) => (p.zone_id === zone.id ? { ...p, zone_id: null } : p)),
+              }));
               onSelectZone(null);
             }}
           >

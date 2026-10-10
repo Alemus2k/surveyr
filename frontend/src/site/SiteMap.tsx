@@ -18,6 +18,7 @@ interface SiteMapProps {
   drawing: boolean;
   onDrawn: (polygon: [number, number][]) => void;
   onDrawCancel: () => void;
+  onDeleteZone: (id: string) => void; // Delete key on the selected zone
 }
 
 const RAMP: RGB[] = [[38, 70, 160], [40, 160, 190], [120, 200, 110], [235, 210, 90], [215, 110, 60]];
@@ -53,7 +54,7 @@ function hillshade(z: Float64Array, nx: number, ny: number, cell: number): Float
 
 /** Plan view of the site (north up) at one scan, coloured by the chosen comparison. */
 export function SiteMap(props: SiteMapProps) {
-  const { surfaces: s, scan, mode, tolerance, changeThreshold, zones, selectedZone, onSelectZone, drawing, onDrawn, onDrawCancel } = props;
+  const { surfaces: s, scan, mode, tolerance, changeThreshold, zones, selectedZone, onSelectZone, drawing, onDrawn, onDrawCancel, onDeleteZone } = props;
   const canvas = useRef<HTMLCanvasElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<{ c: number; r: number; gx: number; gy: number; px: number; py: number; left: boolean; up: boolean } | null>(null);
@@ -161,7 +162,13 @@ export function SiteMap(props: SiteMapProps) {
   };
 
   const onKey = (e: KeyboardEvent) => {
-    if (!drawing) return;
+    if (!drawing) {
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedZone) {
+        e.preventDefault();
+        onDeleteZone(selectedZone);
+      } else if (e.key === "Escape") onSelectZone(null);
+      return;
+    }
     if (e.key === "Escape") {
       setDraft([]);
       onDrawCancel();

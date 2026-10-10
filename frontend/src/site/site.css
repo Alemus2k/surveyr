@@ -655,6 +655,11 @@ html[data-theme="light"] .site-dialog input[type="date"] {
   align-items: center;
   gap: 8px;
 }
+.site-card-tools > *,
+.site-card-tools button {
+  flex: none; /* never squeeze labels like "Draw zone" onto two lines */
+  white-space: nowrap;
+}
 .site-card-tools .segmented button {
   padding: 0 12px;
 }
@@ -691,4 +696,17 @@ html[data-theme="light"] .site-dialog input[type="date"] {
 }
 .panel-context strong {
   color: var(--text);
+}
+
+.zone-table .zone-delete {
+  width: 26px;
+  height: 26px;
+  opacity: 0.45;
+}
+.zone-table tr:hover .zone-delete,
+.zone-table .zone-delete:focus-visible {
+  opacity: 1;
+}
+.zone-table .zone-delete:hover {
+  color: var(--bad);
 }
