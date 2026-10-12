@@ -3,6 +3,7 @@ import { fetchControlSets, type ControlSetRef, type ProjectRef } from "../api";
 import { Icon } from "../layout/icons";
 import { PanelSection } from "../panels/SidePanel";
 import { dateInName, formatDate, todayIso } from "./dates";
+import { describeGrade } from "./specs";
 import { ZONE_PALETTE, type Site, type ZoneKind } from "./types";
 import type { SiteState } from "./useSite";
 import { STATUS } from "./ZoneTable";
@@ -15,6 +16,7 @@ interface SitePanelProps {
 }
 
 const isScan = (p: ProjectRef) => p.type === "single" || p.type === "fused" || p.type === undefined;
+const SPECS_NOTE = "Specs change through “Job specs change order” on the dashboard, so every revision is logged.";
 
 /** Edit a site: its zones and schedule, which scans belong to it, the design and tolerances. */
 export function SitePanel({ state, projects, selectedZone, onSelectZone }: SitePanelProps) {
@@ -65,16 +67,14 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
             ))}
           </div>
           {zone.kind === "grading" && (
-            <div className="js-row">
-              <label className="js-field">
-                <span className="field-label">Planned start</span>
-                <input type="date" value={zone.start ?? ""} onChange={(e) => updateZone(zone.id, { start: e.target.value || null })} />
-              </label>
-              <label className="js-field">
-                <span className="field-label">Planned finish</span>
-                <input type="date" value={zone.finish ?? ""} onChange={(e) => updateZone(zone.id, { finish: e.target.value || null })} />
-              </label>
-            </div>
+            <dl className="spec-list">
+              <dt>Finished grade</dt>
+              <dd>{describeGrade({ target_elevation_m: zone.target_elevation_m ?? null, design_offset_m: zone.design_offset_m ?? 0 })}</dd>
+              <dt>Planned</dt>
+              <dd className="mono">
+                {zone.start ? formatDate(zone.start) : "no start"} → {zone.finish ? formatDate(zone.finish) : "no finish"}
+              </dd>
+            </dl>
           )}
           <div className="zone-swatches" role="group" aria-label="Zone colour">
             {ZONE_PALETTE.map((c) => (
@@ -102,7 +102,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
           </button>
           <p className="panel-note">
             {zone.kind === "grading"
-              ? "Progress is measured toward the design surface inside this outline; the plan line runs straight from start to finish."
+              ? `Progress is measured toward the finished grade inside this outline; the plan line runs straight from start to finish. ${SPECS_NOTE}`
               : "A stockpile reports the volume piled on top of the ground in the first scan."}
           </p>
         </PanelSection>
@@ -214,22 +214,22 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
         </p>
       </PanelSection>
 
-      <PanelSection label="Design surface">
-        <select value={site.design_id ?? ""} onChange={(e) => set({ design_id: e.target.value || null })} aria-label="Design surface">
-          <option value="">None</option>
-          {projects
-            .filter((p) => isScan(p) && !site.scans.some((s) => s.project_id === p.id))
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-        </select>
-        <p className="panel-note">The finished grade to measure progress against, as a point cloud or surface file.</p>
+      <PanelSection label="Job specs">
+        <dl className="spec-list">
+          <dt>Design surface</dt>
+          <dd>{site.design_id ? scanName(site.design_id) : "None"}</dd>
+          <dt>On grade within</dt>
+          <dd className="mono">±{+(site.tolerance_m * 100).toFixed(1)} cm</dd>
+          <dt>Change orders</dt>
+          <dd className="mono">{site.change_orders?.length ?? 0}</dd>
+        </dl>
+        <p className="panel-note">
+          The design surface is the finished grade, as a point cloud or surface file; closer than the tolerance counts as
+          done. {SPECS_NOTE}
+        </p>
       </PanelSection>
 
       <PanelSection label="Tolerances">
-        {cmField("On grade within", site.tolerance_m, (m) => set({ tolerance_m: m }), "Closer than this to design counts as done.")}
         {cmField("Ignore changes under", site.change_threshold_m, (m) => set({ change_threshold_m: m }), "Scan-to-scan differences smaller than this are treated as noise.")}
         <label className="js-field">
           <span className="field-label">Flag claims above measured by</span>

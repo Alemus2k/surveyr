@@ -105,6 +105,74 @@ def test_site_endpoints_round_trip_zones_and_pay_apps(folder):
     assert client.get("/api/sites/a/grids").json()["nx"] > 0
 
 
+def _change_order(n: int, after: str = "11.200 m") -> dict:
+    return {"id": f"co{n}", "number": n, "date": "2026-09-20", "title": "Raise pad", "reason": "Revised drawings",
+            "requested_by": "Owner", "created_at": "2026-09-20T10:00:00Z",
+            "changes": [{"field": "grade", "zone_id": "z1", "zone_name": "Pad",
+                         "before": "Design surface", "after": after}]}
+
+
+def test_change_orders_and_zone_grade_specs_round_trip(folder):
+    client = TestClient(app)
+    client.post("/api/sites", json={"name": "A", "scans": [{"project_id": "week1", "date": "2026-09-07"}]})
+    site = client.get("/api/sites/a").json()
+    assert site["change_orders"] == []  # older site files load with an empty log
+    site["zones"] = [{"id": "z1", "name": "Pad", "polygon": [[0, 0], [10, 0], [10, 10]], "target_elevation_m": 11.2}]
+    site["change_orders"] = [_change_order(1)]
+
+    assert client.put("/api/sites/a", json=site).status_code == 200
+    saved = client.get("/api/sites/a").json()
+
+    assert saved["zones"][0]["target_elevation_m"] == 11.2
+    assert saved["zones"][0]["design_offset_m"] == 0.0
+    assert saved["change_orders"][0]["changes"][0]["after"] == "11.200 m"
+
+
+def test_logged_change_orders_are_append_only(folder):
+    client = TestClient(app)
+    client.post("/api/sites", json={"name": "A", "scans": [{"project_id": "week1", "date": "2026-09-07"}]})
+    site = client.get("/api/sites/a").json()
+    site["change_orders"] = [_change_order(1)]
+    client.put("/api/sites/a", json=site)
+
+    edited = {**site, "change_orders": [_change_order(1, after="9.000 m")]}
+    removed = {**site, "change_orders": []}
+    duplicate = {**site, "change_orders": [_change_order(1), {**_change_order(2), "number": 1}]}
+    appended = {**site, "change_orders": [_change_order(1), _change_order(2)]}
+
+    assert client.put("/api/sites/a", json=edited).status_code == 400
+    assert client.put("/api/sites/a", json=removed).status_code == 400
+    assert client.put("/api/sites/a", json=duplicate).status_code == 400
+    assert client.put("/api/sites/a", json=appended).status_code == 200
+    assert [co["number"] for co in client.get("/api/sites/a").json()["change_orders"]] == [1, 2]
+
+
+def test_a_logged_change_order_can_be_voided_once_but_never_unvoided(folder):
+    client = TestClient(app)
+    client.post("/api/sites", json={"name": "A", "scans": [{"project_id": "week1", "date": "2026-09-07"}]})
+    site = client.get("/api/sites/a").json()
+    order = {**_change_order(1), "changes": [{**_change_order(1)["changes"][0],
+                                              "values": {"before": None, "after": {"target_elevation_m": 11.2, "design_offset_m": 0}}}]}
+    site["change_orders"] = [order]
+    client.put("/api/sites/a", json=site)
+    void = {"date": "2026-09-21", "reason": "Issued in error", "voided_by": "PM", "voided_at": "2026-09-21T09:00:00Z",
+            "restored": [{"field": "grade", "zone_id": "z1", "zone_name": "Pad", "before": "Flat pad at 11.200 m",
+                          "after": "Design surface"}], "kept": []}
+    voided = {**site, "change_orders": [{**order, "voided": void}]}
+
+    assert client.put("/api/sites/a", json=voided).status_code == 200
+    saved = client.get("/api/sites/a").json()["change_orders"][0]
+    assert saved["voided"]["reason"] == "Issued in error"
+    assert saved["changes"][0]["values"]["after"] == {"target_elevation_m": 11.2, "design_offset_m": 0}
+
+    unvoided = {**site, "change_orders": [order]}
+    edited_void = {**site, "change_orders": [{**order, "voided": {**void, "reason": "Changed my mind"}}]}
+    void_and_edit = {**site, "change_orders": [{**order, "title": "Other", "voided": void}]}
+    assert client.put("/api/sites/a", json=unvoided).status_code == 400
+    assert client.put("/api/sites/a", json=edited_void).status_code == 400
+    assert client.put("/api/sites/a", json=void_and_edit).status_code == 400
+
+
 def test_sites_have_no_single_terrain_and_delete_only_their_own_file(folder):
     sites.create("A", [{"project_id": "week1", "date": "2026-09-07"}], None)
     client = TestClient(app)

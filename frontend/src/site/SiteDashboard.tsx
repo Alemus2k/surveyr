@@ -5,6 +5,8 @@ import { cm, GRADE_LABEL, gradeAccuracy, type Verdict } from "../control/qa";
 import { ConfirmDialog } from "../layout/ConfirmDialog";
 import { Icon } from "../layout/icons";
 import { formatVolume } from "../lib/format";
+import { ChangeOrderDialog } from "./ChangeOrderDialog";
+import { ChangeOrderLog } from "./ChangeOrderLog";
 import { formatDate, todayIso } from "./dates";
 import { PayAppCard } from "./PayAppCard";
 import { overallPct } from "./progress";
@@ -52,6 +54,8 @@ export function SiteDashboard(props: SiteDashboardProps) {
   const [drawing, setDrawing] = useState(false);
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const [deleting, setDeleting] = useState<string | null>(null); // zone awaiting confirmation
+  const [tab, setTab] = useState<"progress" | "changes">("progress");
+  const [ordering, setOrdering] = useState(false); // change-order dialog open
   const today = todayIso();
 
   if (!site) return <div className="empty-state">Loading site…</div>;
@@ -75,6 +79,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
   const movedLatest = progress.reduce((sum, p) => sum + (p.snapshots[last]?.cut ?? 0) + (p.snapshots[last]?.fill ?? 0), 0);
   const behind = grading.filter((p) => p.status === "behind" || p.status === "stalled");
   const flagged = checks.filter((c) => c.flagged);
+  const orders = site.change_orders ?? [];
   // each flight graded against the site's check points; flag offsets and poor fits
   const verdicts = new Map<string, Verdict & { rmse: number | null }>(
     state.qa.map((q) => [q.project_id, { ...gradeAccuracy(q.stats, site.tolerance_m), rmse: q.stats.rmse }])
@@ -141,173 +146,206 @@ export function SiteDashboard(props: SiteDashboardProps) {
             {state.loading && <span className="site-refresh"> · updating…</span>}
           </p>
         </div>
-        <button className="secondary-btn" onClick={copySummary}>
-          {copied === "done" ? "Copied to clipboard" : copied === "failed" ? "Couldn't copy" : "Copy progress summary"}
-        </button>
+        <div className="site-head-actions">
+          <button className="secondary-btn" onClick={() => setOrdering(true)}>
+            Job specs change order
+          </button>
+          <button className="secondary-btn" onClick={copySummary}>
+            {copied === "done" ? "Copied to clipboard" : copied === "failed" ? "Couldn't copy" : "Copy progress summary"}
+          </button>
+        </div>
       </header>
 
-      <div className="site-kpis">
-        <div className="kpi">
-          <span className="kpi-label">Earthworks complete</span>
-          <strong className="mono">{overall === null ? "—" : `${overall.toFixed(0)}%`}</strong>
-          <span className="kpi-sub">all grading zones, by volume</span>
-        </div>
-        <div className="kpi">
-          <span className="kpi-label">Moved last period</span>
-          <strong className="mono">{last > 0 ? `${formatVolume(movedLatest).value} m³` : "—"}</strong>
-          <span className="kpi-sub">{last > 0 ? `${formatDate(surfaces.dates[last - 1], true)} → ${formatDate(surfaces.dates[last], true)}, in zones` : "one scan so far"}</span>
-        </div>
-        <div className={`kpi ${behind.length ? "bad" : ""}`}>
-          <span className="kpi-label">Zones behind plan</span>
-          <strong className="mono">{behind.length}</strong>
-          <span className="kpi-sub">{behind.length ? behind.map((p) => p.zone.name).join(", ") : `of ${grading.length} grading zones`}</span>
-        </div>
-        <div className={`kpi ${flagged.length ? "bad" : ""}`}>
-          <span className="kpi-label">Pay-app claims to query</span>
-          <strong className="mono">{flagged.length}</strong>
-          <span className="kpi-sub">{checks.length ? `of ${checks.length} checked against the scans` : "no claims entered"}</span>
-        </div>
+      <div className="segmented site-tabs" role="tablist" aria-label="Site views">
+        <button role="tab" aria-selected={tab === "progress"} aria-pressed={tab === "progress"} onClick={() => setTab("progress")}>
+          Progress
+        </button>
+        <button role="tab" aria-selected={tab === "changes"} aria-pressed={tab === "changes"} onClick={() => setTab("changes")}>
+          Change orders{orders.length > 0 && <span className="tab-count mono">{orders.length}</span>}
+        </button>
       </div>
 
-      {suspect.map((s) => {
-        const v = verdicts.get(s.project_id)!;
-        return (
-          <div key={s.project_id} className="qa-banner" role="status">
-            <span>
-              <strong>{formatDate(s.date)} flight</strong>{" "}
-              {v.bias !== null
-                ? `sits ${cm(Math.abs(v.bias), false)} ${v.bias > 0 ? "high" : "low"} against the check points`
-                : `fits the check points poorly (RMSE ${cm(v.rmse ?? 0, false)})`}
-              {" "}— volumes involving it will be off until it's corrected.
-            </span>
-            <button className="secondary-btn" onClick={() => onReviewFlight(s.project_id)}>
-              Review flight
-            </button>
+      {tab === "changes" ? (
+        <ChangeOrderLog site={site} nameOf={(id) => name(id) ?? id} onUpdate={update} onNew={() => setOrdering(true)} />
+      ) : (
+        <>
+          <div className="site-kpis">
+            <div className="kpi">
+              <span className="kpi-label">Earthworks complete</span>
+              <strong className="mono">{overall === null ? "—" : `${overall.toFixed(0)}%`}</strong>
+              <span className="kpi-sub">all grading zones, by volume</span>
+            </div>
+            <div className="kpi">
+              <span className="kpi-label">Moved last period</span>
+              <strong className="mono">{last > 0 ? `${formatVolume(movedLatest).value} m³` : "—"}</strong>
+              <span className="kpi-sub">{last > 0 ? `${formatDate(surfaces.dates[last - 1], true)} → ${formatDate(surfaces.dates[last], true)}, in zones` : "one scan so far"}</span>
+            </div>
+            <div className={`kpi ${behind.length ? "bad" : ""}`}>
+              <span className="kpi-label">Zones behind plan</span>
+              <strong className="mono">{behind.length}</strong>
+              <span className="kpi-sub">{behind.length ? behind.map((p) => p.zone.name).join(", ") : `of ${grading.length} grading zones`}</span>
+            </div>
+            <div className={`kpi ${flagged.length ? "bad" : ""}`}>
+              <span className="kpi-label">Pay-app claims to query</span>
+              <strong className="mono">{flagged.length}</strong>
+              <span className="kpi-sub">{checks.length ? `of ${checks.length} checked against the scans` : "no claims entered"}</span>
+            </div>
           </div>
-        );
-      })}
 
-      <nav className="site-timeline" aria-label="Scans">
-        {surfaces.dates.map((d, k) => {
-          const v = verdicts.get(site.scans[k]?.project_id ?? "");
-          return (
-            <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
-              <span className="mono">{formatDate(d, true)}</span>
-              <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
-              {v && v.grade !== "none" && (
-                <span
-                  className={`qa-badge ${v.bias !== null ? "fair" : v.grade}`}
-                  title={`Check points: ${GRADE_LABEL[v.grade]}, RMSE ${cm(v.rmse ?? 0, false)}${v.bias !== null ? `, offset ${cm(v.bias)}` : ""}`}
-                >
-                  {v.bias !== null ? cm(v.bias) : `±${cm(v.rmse ?? 0, false)}`}
+          {suspect.map((s) => {
+            const v = verdicts.get(s.project_id)!;
+            return (
+              <div key={s.project_id} className="qa-banner" role="status">
+                <span>
+                  <strong>{formatDate(s.date)} flight</strong>{" "}
+                  {v.bias !== null
+                    ? `sits ${cm(Math.abs(v.bias), false)} ${v.bias > 0 ? "high" : "low"} against the check points`
+                    : `fits the check points poorly (RMSE ${cm(v.rmse ?? 0, false)})`}
+                  {" "}— volumes involving it will be off until it's corrected.
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="site-grid">
-        <section className="site-card site-map-card">
-          <div className="site-card-head">
-            <div className="segmented" role="group" aria-label="Map colouring">
-              {MODES.map(([m, label]) => (
-                <button
-                  key={m}
-                  aria-pressed={mode === m}
-                  onClick={() => setMode(m)}
-                  disabled={(m === "design" && !surfaces.design) || (m === "change" && scan === 0)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="site-card-tools">
-              <div className="segmented" role="group" aria-label="View">
-                <button aria-pressed={view === "plan"} onClick={() => setView("plan")}>
-                  Plan
-                </button>
-                <button
-                  aria-pressed={view === "3d"}
-                  onClick={() => {
-                    setView("3d");
-                    setDrawing(false);
-                  }}
-                >
-                  3D
+                <button className="secondary-btn" onClick={() => onReviewFlight(s.project_id)}>
+                  Review flight
                 </button>
               </div>
-              {view === "plan" && (
-                <button className={drawing ? "primary-btn compact" : "secondary-btn"} onClick={() => setDrawing((d) => !d)}>
-                  <Icon name="plus" size={14} /> {drawing ? "Drawing…" : "Draw zone"}
+            );
+          })}
+
+          <nav className="site-timeline" aria-label="Scans">
+            {surfaces.dates.map((d, k) => {
+              const v = verdicts.get(site.scans[k]?.project_id ?? "");
+              return (
+                <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
+                  <span className="mono">{formatDate(d, true)}</span>
+                  <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
+                  {v && v.grade !== "none" && (
+                    <span
+                      className={`qa-badge ${v.bias !== null ? "fair" : v.grade}`}
+                      title={`Check points: ${GRADE_LABEL[v.grade]}, RMSE ${cm(v.rmse ?? 0, false)}${v.bias !== null ? `, offset ${cm(v.bias)}` : ""}`}
+                    >
+                      {v.bias !== null ? cm(v.bias) : `±${cm(v.rmse ?? 0, false)}`}
+                    </span>
+                  )}
                 </button>
+              );
+            })}
+          </nav>
+
+          <div className="site-grid">
+            <section className="site-card site-map-card">
+              <div className="site-card-head">
+                <div className="segmented" role="group" aria-label="Map colouring">
+                  {MODES.map(([m, label]) => (
+                    <button
+                      key={m}
+                      aria-pressed={mode === m}
+                      onClick={() => setMode(m)}
+                      disabled={(m === "design" && !surfaces.design) || (m === "change" && scan === 0)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="site-card-tools">
+                  <div className="segmented" role="group" aria-label="View">
+                    <button aria-pressed={view === "plan"} onClick={() => setView("plan")}>
+                      Plan
+                    </button>
+                    <button
+                      aria-pressed={view === "3d"}
+                      onClick={() => {
+                        setView("3d");
+                        setDrawing(false);
+                      }}
+                    >
+                      3D
+                    </button>
+                  </div>
+                  {view === "plan" && (
+                    <button className={drawing ? "primary-btn compact" : "secondary-btn"} onClick={() => setDrawing((d) => !d)}>
+                      <Icon name="plus" size={14} /> {drawing ? "Drawing…" : "Draw zone"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {view === "3d" ? (
+                scanCloud && scanCloud.projectId === site.scans[scan]?.project_id ? (
+                  <Site3D
+                    cloud={scanCloud.cloud}
+                    elevationColors={scanCloud.colors}
+                    range={scanCloud.range}
+                    surfaces={surfaces}
+                    scan={scan}
+                    mode={mode}
+                    tolerance={site.tolerance_m}
+                    changeThreshold={site.change_threshold_m}
+                    zones={site.zones}
+                    selectedZone={selectedZone}
+                    accent={accent}
+                  />
+                ) : (
+                  <div className="site-3d site-3d-loading">
+                    <span className="spinner" aria-hidden="true" /> Loading the scan's points…
+                  </div>
+                )
+              ) : (
+                <SiteMap
+                  surfaces={surfaces}
+                  scan={scan}
+                  mode={mode}
+                  tolerance={site.tolerance_m}
+                  changeThreshold={site.change_threshold_m}
+                  zones={site.zones}
+                  selectedZone={selectedZone}
+                  onSelectZone={onSelectZone}
+                  drawing={drawing}
+                  onDrawn={zoneDrawn}
+                  onDrawCancel={() => setDrawing(false)}
+                  onDeleteZone={setDeleting}
+                />
               )}
-            </div>
-          </div>
-          {view === "3d" ? (
-            scanCloud && scanCloud.projectId === site.scans[scan]?.project_id ? (
-              <Site3D
-                cloud={scanCloud.cloud}
-                elevationColors={scanCloud.colors}
-                range={scanCloud.range}
-                surfaces={surfaces}
-                scan={scan}
-                mode={mode}
-                tolerance={site.tolerance_m}
-                changeThreshold={site.change_threshold_m}
+              <MapLegend mode={mode} tolerance={site.tolerance_m} threshold={site.change_threshold_m} />
+            </section>
+
+            <section className="site-card">
+              <h3>
+                Zones <span className="site-card-note">at {formatDate(surfaces.dates[scan])}</span>
+              </h3>
+              <ZoneTable progress={progress} scan={scan} selected={selectedZone} onSelect={onSelectZone} onDelete={setDeleting} />
+            </section>
+
+            <section className="site-card wide">
+              <h3>Progress against plan</h3>
+              <ProgressChart progress={grading} selected={selectedZone} today={today} onSelect={onSelectZone} />
+            </section>
+
+            <section className="site-card wide">
+              <h3>Pay-app check</h3>
+              <PayAppCard
+                checks={checks}
                 zones={site.zones}
-                selectedZone={selectedZone}
-                accent={accent}
+                periodEnds={surfaces.dates.slice(1)}
+                overbillPct={site.overbill_pct}
+                onAdd={(pa) => update((s) => ({ ...s, pay_apps: [...s.pay_apps, pa] }))}
+                onRemove={(id) => update((s) => ({ ...s, pay_apps: s.pay_apps.filter((p) => p.id !== id) }))}
               />
-            ) : (
-              <div className="site-3d site-3d-loading">
-                <span className="spinner" aria-hidden="true" /> Loading the scan's points…
-              </div>
-            )
-          ) : (
-            <SiteMap
-              surfaces={surfaces}
-              scan={scan}
-              mode={mode}
-              tolerance={site.tolerance_m}
-              changeThreshold={site.change_threshold_m}
-              zones={site.zones}
-              selectedZone={selectedZone}
-              onSelectZone={onSelectZone}
-              drawing={drawing}
-              onDrawn={zoneDrawn}
-              onDrawCancel={() => setDrawing(false)}
-              onDeleteZone={setDeleting}
-            />
-          )}
-          <MapLegend mode={mode} tolerance={site.tolerance_m} threshold={site.change_threshold_m} />
-        </section>
-
-        <section className="site-card">
-          <h3>
-            Zones <span className="site-card-note">at {formatDate(surfaces.dates[scan])}</span>
-          </h3>
-          <ZoneTable progress={progress} scan={scan} selected={selectedZone} onSelect={onSelectZone} onDelete={setDeleting} />
-        </section>
-
-        <section className="site-card wide">
-          <h3>Progress against plan</h3>
-          <ProgressChart progress={grading} selected={selectedZone} today={today} onSelect={onSelectZone} />
-        </section>
-
-        <section className="site-card wide">
-          <h3>Pay-app check</h3>
-          <PayAppCard
-            checks={checks}
-            zones={site.zones}
-            periodEnds={surfaces.dates.slice(1)}
-            overbillPct={site.overbill_pct}
-            onAdd={(pa) => update((s) => ({ ...s, pay_apps: [...s.pay_apps, pa] }))}
-            onRemove={(id) => update((s) => ({ ...s, pay_apps: s.pay_apps.filter((p) => p.id !== id) }))}
-          />
-        </section>
-      </div>
+            </section>
+          </div>
+        </>
+      )}
       {state.saveError && <p className="error-state">{state.saveError}</p>}
+      <ChangeOrderDialog
+        open={ordering}
+        site={site}
+        surfaces={surfaces}
+        cellsOf={state.cellsOf}
+        projects={projects}
+        onIssue={(change) => {
+          update(change);
+          setOrdering(false);
+          setTab("changes");
+        }}
+        onCancel={() => setOrdering(false)}
+      />
       <ConfirmDialog
         open={deletingZone !== null}
         title={`Delete “${deletingZone?.name ?? ""}”?`}

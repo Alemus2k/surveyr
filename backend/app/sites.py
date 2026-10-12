@@ -12,7 +12,7 @@ import json
 import os
 import re
 import threading
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -45,6 +45,10 @@ class Zone(BaseModel):
     polygon: List[List[float]] = Field(min_length=3, max_length=500)  # [easting, northing]
     start: Optional[str] = Field(None, pattern=_DATE)
     finish: Optional[str] = Field(None, pattern=_DATE)
+    # finished-grade spec inside the zone: a flat pad at this elevation, else
+    # the design surface raised (+) or lowered (−) by the offset
+    target_elevation_m: Optional[float] = Field(None, ge=-1000, le=10000)
+    design_offset_m: float = Field(0.0, ge=-50, le=50)
 
     @field_validator("polygon")
     @classmethod
@@ -64,6 +68,60 @@ class PayApp(BaseModel):
     note: str = Field("", max_length=200)
 
 
+SpecField = Literal["design_id", "tolerance_m", "grade", "start", "finish"]
+# a spec's stored value: scan id or date (str), tolerance (float),
+# finished grade ({"target_elevation_m": …, "design_offset_m": …}), or unset
+SpecValue = Optional[Union[float, str, Dict[str, Optional[float]]]]
+
+
+class SpecValues(BaseModel):
+    before: SpecValue = None
+    after: SpecValue = None
+
+
+class SpecChange(BaseModel):
+    """One spec edited by a change order, as it read before and after."""
+
+    field: SpecField
+    zone_id: Optional[str] = None  # None = a site-wide spec
+    zone_name: Optional[str] = Field(None, max_length=60)  # kept so the log reads right if the zone goes
+    before: str = Field(max_length=200)
+    after: str = Field(max_length=200)
+    values: Optional[SpecValues] = None  # the stored values, so a void can restore them exactly
+
+
+class KeptSpec(BaseModel):
+    """A spec a void left alone: a later order changed it again, or its zone is gone."""
+
+    field: SpecField
+    zone_id: Optional[str] = None
+    zone_name: Optional[str] = Field(None, max_length=60)
+    by_number: Optional[int] = None  # the later order now in effect; None = the zone was deleted
+
+
+class VoidRecord(BaseModel):
+    date: str = Field(pattern=_DATE)
+    reason: str = Field(min_length=1, max_length=1000)
+    voided_by: str = Field("", max_length=80)
+    voided_at: str = Field(max_length=40)  # ISO timestamp
+    restored: List[SpecChange] = Field(default_factory=list, max_length=200)  # what the void changed back
+    kept: List[KeptSpec] = Field(default_factory=list, max_length=200)
+
+
+class ChangeOrder(BaseModel):
+    """A logged revision of the job specs. Append-only once saved; may only gain a void record."""
+
+    id: str = Field(min_length=1, max_length=40)
+    number: int = Field(ge=1)
+    date: str = Field(pattern=_DATE)  # effective date
+    title: str = Field(min_length=1, max_length=80)
+    reason: str = Field("", max_length=1000)
+    requested_by: str = Field("", max_length=80)
+    created_at: str = Field(max_length=40)  # ISO timestamp it was logged
+    changes: List[SpecChange] = Field(min_length=1, max_length=200)
+    voided: Optional[VoidRecord] = None
+
+
 class Site(BaseModel):
     version: Literal[1] = 1
     name: str = Field(min_length=1, max_length=80)
@@ -75,6 +133,7 @@ class Site(BaseModel):
     control_id: Optional[str] = None  # check points every flight is graded against
     zones: List[Zone] = Field(default_factory=list, max_length=MAX_ZONES)
     pay_apps: List[PayApp] = Field(default_factory=list, max_length=500)
+    change_orders: List[ChangeOrder] = Field(default_factory=list, max_length=500)
 
 
 def _path(site_id: str) -> str:
@@ -146,9 +205,30 @@ def load(site_id: str) -> Site:
     return _sorted(site)
 
 
+def _check_change_orders(site_id: str, site: Site) -> None:
+    """Change orders are a record: new ones may be added and a logged one may be
+    voided once; otherwise logged orders (and their voids) never change."""
+    with open(_path(site_id)) as f:
+        logged = Site.model_validate(json.load(f)).change_orders
+    incoming = {co.id: co for co in site.change_orders}
+    for co in logged:
+        new = incoming.get(co.id)
+        if new is None:
+            raise SiteInvalid("logged change orders can't be removed")
+        if new == co:
+            continue
+        voiding = co.voided is None and new.voided is not None
+        if not voiding or new.model_copy(update={"voided": None}) != co:
+            raise SiteInvalid("logged change orders can't be edited, and a void can't be undone")
+    numbers = [co.number for co in site.change_orders]
+    if len(set(numbers)) != len(numbers):
+        raise SiteInvalid("change order numbers must be unique")
+
+
 def save(site_id: str, site: Site) -> Site:
     _info(site_id)
     _check_members(site)
+    _check_change_orders(site_id, site)
     _write(site_id, _sorted(site))
     return site
 

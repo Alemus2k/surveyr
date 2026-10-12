@@ -117,8 +117,19 @@ To build it yourself instead, run `npm run app:build` (see
     zone, and see it against what the scans measured — claims more than a set
     % above measured are flagged;
   - **Copy progress summary** for a weekly email.
-  Edit zones, scan dates, the design and tolerances in the **Site progress**
-  panel (flag icon). Saved as `<name>.site.json`; scans are never modified.
+  - **Job specs change order**: revise the specs — the design surface, the
+    on-grade tolerance, and each zone's finished grade (the design, the design
+    raised or lowered, or a flat pad at an elevation) and planned dates. Every
+    revision is numbered and logged in the **Change orders** tab with what each
+    spec was before and after; logged orders can't be edited or deleted.
+  - **Void** an order from the Change orders tab (with a reason) to put its
+    specs back to what they'd be had it never been issued. Specs a later order
+    changed again keep the later value. Voided orders stay in the log, marked
+    VOID with who voided them, when, why and what was restored; a void can't
+    be undone.
+  Edit zones, scan dates and the change / pay-app thresholds in the **Site
+  progress** panel (flag icon). Saved as `<name>.site.json`; scans are never
+  modified.
   All scans of a site must share a coordinate system — they're compared cell
   by cell with no re-alignment. A demo site, *Riverside Commons*, is included
   — with 12 check points, and one flight (21 Sep) that came back 3.5 cm high
