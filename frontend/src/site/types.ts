@@ -19,6 +19,61 @@ export interface Zone {
   polygon: [number, number][]; // easting, northing
   start: string | null; // planned dates, YYYY-MM-DD
   finish: string | null;
+  // finished-grade spec inside the zone: a flat pad at this elevation, else the
+  // design surface raised (+) or lowered (−) by the offset
+  target_elevation_m?: number | null;
+  design_offset_m?: number;
+}
+
+export type SpecField = "design_id" | "tolerance_m" | "grade" | "start" | "finish";
+
+/** A finished-grade spec: flat pad at an elevation, else the design ± an offset. */
+export interface GradeValue {
+  target_elevation_m: number | null;
+  design_offset_m: number;
+}
+
+/** A spec's stored value: scan id or date, tolerance in metres, finished grade, or unset. */
+export type SpecValue = string | number | GradeValue | null;
+
+/** One spec edited by a change order, as it read before and after. */
+export interface SpecChange {
+  field: SpecField;
+  zone_id: string | null; // null = a site-wide spec
+  zone_name: string | null; // kept so the log reads right if the zone is deleted
+  before: string;
+  after: string;
+  values?: { before: SpecValue; after: SpecValue } | null; // what a void restores (absent on early orders)
+}
+
+/** A spec a void left alone: a later order changed it again, or its zone is gone. */
+export interface KeptSpec {
+  field: SpecField;
+  zone_id: string | null;
+  zone_name: string | null;
+  by_number: number | null; // the later order in effect; null = the zone was deleted
+}
+
+export interface VoidRecord {
+  date: string; // effective date, YYYY-MM-DD
+  reason: string;
+  voided_by: string;
+  voided_at: string; // ISO timestamp
+  restored: SpecChange[]; // what the void changed back
+  kept: KeptSpec[];
+}
+
+/** A logged revision of the job specs. Append-only: the engine refuses edits, but allows one void. */
+export interface ChangeOrder {
+  id: string;
+  number: number;
+  date: string; // effective date, YYYY-MM-DD
+  title: string;
+  reason: string;
+  requested_by: string;
+  created_at: string; // ISO timestamp it was logged
+  changes: SpecChange[];
+  voided?: VoidRecord | null;
 }
 
 export interface PayApp {
@@ -42,6 +97,7 @@ export interface Site {
   control_id: string | null; // check points every flight is graded against
   zones: Zone[];
   pay_apps: PayApp[];
+  change_orders?: ChangeOrder[]; // absent in files saved before change orders existed
 }
 
 /** Every scan and the design on one shared grid; row-major, row 0 = south. */

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchSite, fetchSiteGrids, fetchSiteQA, saveSite, type FlightQA } from "../api";
 import { checkPayApp, toSurfaces, zoneCells, zoneProgress, type PayAppCheck, type Surfaces, type ZoneProgress } from "./progress";
+import { finishedGrade } from "./specs";
 import type { Site, SiteGrids, Zone } from "./types";
 
 const SAVE_DELAY_MS = 400;
 
 export interface SiteState {
   site: Site | null;
-  surfaces: Surfaces | null; // scans in date order, matching site.scans
+  surfaces: Surfaces | null; // scans in date order, matching site.scans; design = finished grade
   progress: ZoneProgress[]; // one per zone, in zone order
   checks: PayAppCheck[]; // one per pay app, in pay-app order
   qa: FlightQA[]; // each flight graded against the site's check points (empty without them)
@@ -16,6 +17,7 @@ export interface SiteState {
   saveError: string | null;
   update: (change: (s: Site) => Site) => void;
   updateZone: (id: string, patch: Partial<Zone>) => void;
+  cellsOf: (zone: Zone) => Int32Array; // grid cells inside a zone (cached per outline)
 }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -117,9 +119,23 @@ export function useSite(siteId: string | null, reloadKey = 0): SiteState {
     [update]
   );
 
+  // only called once the grids have loaded
+  const cellsOf = useCallback(
+    (z: Zone) => {
+      const g = grids!;
+      let hit = cellCache.get(z.polygon);
+      if (!hit || hit.grid !== g) {
+        hit = { grid: g, cells: zoneCells({ nx: g.nx, ny: g.ny, cell: g.cell_size, x0: g.x0, y0: g.y0 }, z.polygon) };
+        cellCache.set(z.polygon, hit);
+      }
+      return hit.cells;
+    },
+    [grids]
+  );
+
   // surfaces follow the site's (editable) scan dates, in date order
   const scanKey = site?.scans.map((s) => `${s.project_id}@${s.date}`).join("\n") ?? "";
-  const surfaces = useMemo(() => {
+  const scanned = useMemo(() => {
     if (!site || !grids || grids.nx === 0) return null;
     const all = toSurfaces(grids);
     const index = new Map(grids.scans.map((s, i) => [s.project_id, i]));
@@ -127,22 +143,26 @@ export function useSite(siteId: string | null, reloadKey = 0): SiteState {
     return { ...all, scans: kept.map((s) => all.scans[index.get(s.project_id)!]), dates: kept.map((s) => s.date) };
   }, [grids, scanKey]);
 
+  // everything is measured against the finished grade: the design with zone grade specs applied
+  const gradeKey =
+    site?.zones
+      .filter((z) => z.target_elevation_m != null || z.design_offset_m)
+      .map((z) => `${z.id}:${z.target_elevation_m}:${z.design_offset_m}:${z.polygon.length}`)
+      .join("|") ?? "";
+  const surfaces = useMemo(
+    () => (scanned && site ? { ...scanned, design: finishedGrade(scanned, site.zones, cellsOf) } : null),
+    [scanned, gradeKey, cellsOf]
+  );
+
   const progress = useMemo(() => {
-    if (!site || !surfaces || !grids) return [];
-    return site.zones.map((z) => {
-      let hit = cellCache.get(z.polygon);
-      if (!hit || hit.grid !== grids) {
-        hit = { grid: grids, cells: zoneCells(surfaces, z.polygon) };
-        cellCache.set(z.polygon, hit);
-      }
-      return zoneProgress(surfaces, z, site, hit.cells);
-    });
-  }, [site?.zones, site?.tolerance_m, site?.change_threshold_m, surfaces]);
+    if (!site || !surfaces) return [];
+    return site.zones.map((z) => zoneProgress(surfaces, z, site, cellsOf(z)));
+  }, [site?.zones, site?.tolerance_m, site?.change_threshold_m, surfaces, cellsOf]);
 
   const checks = useMemo(
     () => (site && surfaces ? site.pay_apps.map((pa) => checkPayApp(surfaces, pa, site.zones, site)) : []),
     [site?.pay_apps, site?.zones, site?.change_threshold_m, site?.overbill_pct, surfaces]
   );
 
-  return { site, surfaces, progress, checks, qa, loading, error, saveError, update, updateZone };
+  return { site, surfaces, progress, checks, qa, loading, error, saveError, update, updateZone, cellsOf };
 }
