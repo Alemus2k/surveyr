@@ -31,17 +31,17 @@
   padding: 0 3px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-md);
-  background: rgba(21, 23, 27, 0.86);
+  background: rgba(22, 22, 22, 0.86);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
   pointer-events: auto;
 }
 .viewport .tool-btn {
-  color: #9ba2ab;
+  color: #a3a3a3;
 }
 .viewport .tool-btn:hover {
-  background: #23272e;
-  color: #e4e6e9;
+  background: #272727;
+  color: #e6e6e6;
 }
 .viewport .tool-btn[aria-pressed="true"] {
   color: var(--accent-viewport);
@@ -51,7 +51,7 @@
   display: grid;
   place-items: center;
   width: 30px;
-  color: #9ba2ab;
+  color: #a3a3a3;
 }
 .tool-slider {
   width: 110px;
@@ -64,8 +64,8 @@
   padding: 3px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(14, 16, 19, 0.8);
-  color: #d4d8dd;
+  background: rgba(16, 16, 16, 0.8);
+  color: #d6d6d6;
   font-size: var(--text-xs);
   backdrop-filter: blur(6px);
 }
@@ -111,8 +111,8 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   background:
     radial-gradient(circle, transparent 55%, rgba(255, 255, 255, 0.04) 56%),
-    rgba(18, 19, 22, 0.85);
-  color: #a0a5ad;
+    rgba(19, 19, 19, 0.85);
+  color: #a3a3a3;
   font: 400 11px/1 var(--font-mono);
   pointer-events: none;
 }
@@ -158,8 +158,8 @@
   margin: -19px 0 0 -19px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 50%;
-  background: #1d1f24;
-  color: #e8e9eb;
+  background: #1a1a1a;
+  color: #e6e6e6;
   font: 600 11px/1 var(--font-ui);
   cursor: pointer;
   transition: border-color var(--duration-fast), color var(--duration-fast);

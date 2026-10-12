@@ -42,8 +42,8 @@ export function resolveTheme(choice: ThemeChoice, systemPrefersDark: boolean): R
 }
 
 // Surfaces the accent must stand out against (mirror tokens.css / the 3D scene).
-const PANEL_BG: Record<ResolvedTheme, string> = { dark: "#181b1f", light: "#ffffff" };
-const VIEWPORT_BG = "#07090c";
+const PANEL_BG: Record<ResolvedTheme, string> = { dark: "#1a1a1a", light: "#ffffff" };
+const VIEWPORT_BG = "#0b0b0b";
 const MIN_UI_CONTRAST = 3; // WCAG 2.x non-text / large-text minimum
 const HOVER_SHIFT = 0.12;
 

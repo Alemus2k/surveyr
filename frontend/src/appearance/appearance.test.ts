@@ -44,7 +44,7 @@ describe("accentTokens", () => {
 
   test("the viewport accent is always tuned for the dark 3D background", () => {
     const t = accentTokens("#1a1a66", "light");
-    expect(contrastRatio(t["--accent-viewport"], "#07090c")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(t["--accent-viewport"], "#0b0b0b")).toBeGreaterThanOrEqual(3);
   });
 
   test("provides translucent variants for fills and outlines", () => {

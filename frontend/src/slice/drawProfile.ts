@@ -18,7 +18,7 @@ export interface ProfileExtent {
 
 const PAD = { left: 52, right: 16, top: 14, bottom: 22 };
 const MAX_PROFILE_EXAGGERATION = 5;
-const BG = "#04060a";
+const BG = "#0b0b0b";
 const GRID = "rgba(255,255,255,0.07)";
 const LABEL = "rgba(230,238,247,0.55)";
 const FONT = "11px 'IBM Plex Mono', ui-monospace, monospace";

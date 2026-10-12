@@ -170,7 +170,7 @@
   padding: 8px 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  background: rgba(4, 6, 10, 0.78);
+  background: rgba(8, 8, 8, 0.78);
   color: #e6eef7;
   font-size: var(--text-sm);
   list-style: none;

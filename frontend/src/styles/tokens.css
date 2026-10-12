@@ -1,21 +1,22 @@
-/* Surveyr design tokens — survey workstation: graphite chrome, one restrained
+/* Surveyr design tokens — survey workstation: neutral graphite chrome (dark
+   greys are pure R=G=B, never blue-tinted), one restrained
    accent (user-selectable), IBM Plex for an engineering-instrument voice.
    Theme is set via data-theme on <html> ("dark" default, "light"). The 3D
    viewport stays dark in both themes, like a scanner/CAD viewport. */
 
 :root,
 html[data-theme="dark"] {
-  --bg-app: #0e1013;
-  --bg-chrome: #15171b;
-  --bg-panel: #181b1f;
-  --bg-raised: #1f2329;
-  --bg-input: #101215;
-  --bg-hover: #23272e;
-  --line: #22262c;
-  --line-strong: #30353d;
-  --text: #e4e6e9;
-  --text-muted: #9ba2ab;
-  --text-faint: #828a94;
+  --bg-app: #111111;
+  --bg-chrome: #161616;
+  --bg-panel: #1a1a1a;
+  --bg-raised: #212121;
+  --bg-input: #131313;
+  --bg-hover: #272727;
+  --line: #262626;
+  --line-strong: #343434;
+  --text: #e6e6e6;
+  --text-muted: #a3a3a3;
+  --text-faint: #8c8c8c;
   --accent: #eeb02b;
   --accent-hover: #f6c04a;
   --accent-ink: #1a1300;
@@ -59,7 +60,7 @@ html[data-theme="light"] {
 }
 
 :root {
-  --viewport-bg: #07090c;
+  --viewport-bg: #0b0b0b;
   /* IBM Plex: engineered, neutral letterforms with tabular figures, so numbers
      line up in the sans as well as the mono. Mono is for coordinates and
      instrument readouts, not general text. */
