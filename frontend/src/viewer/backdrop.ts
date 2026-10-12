@@ -11,7 +11,7 @@ export interface SceneBox {
 const FLOOR_COLOR = 0x303030;
 const WALL_COLOR = 0x3b3b3b;
 const FLOOR_SPAN_FACTOR = 4; // floor grid runs well past the scan, toward the horizon
-const AXIS_COLORS = { x: 0xd2645e, y: 0x67b884, z: 0x6890d8 } as const;
+export const AXIS_COLORS = { x: 0xd2645e, y: 0x67b884, z: 0x6890d8 } as const;
 
 /** Round a raw grid spacing to 1, 2 or 5 x 10^n so labels stay tidy. */
 export function niceStep(raw: number): number {
@@ -37,13 +37,41 @@ function axisLine(from: THREE.Vector3, to: THREE.Vector3, color: number): THREE.
   return new THREE.Line(geo, new THREE.LineBasicMaterial({ color }));
 }
 
+/** Height of the back walls and the up axis (scene units). */
+const wallTopOf = (box: SceneBox, step: number) => Math.max(box.height, step) * 1.15;
+
+/** Measurement chips drawn at the axis ends: each side's length and the highest point. */
+export interface AxisLabels {
+  east: string;
+  north: string;
+  up: string;
+}
+
+/** Scene points the axis labels sit at: the free end of each floor axis and the top of the up axis. */
+export function axisLabelAnchors(box: SceneBox, step: number): Record<keyof AxisLabels, THREE.Vector3> {
+  return {
+    east: new THREE.Vector3(-box.halfX, 0, -box.halfZ), // the axes meet at the +x, -z corner
+    north: new THREE.Vector3(box.halfX, 0, box.halfZ),
+    up: new THREE.Vector3(box.halfX, wallTopOf(box, step), -box.halfZ),
+  };
+}
+
+/**
+ * Label text for a scan: the east-west and north-south extents (true metres,
+ * horizontal scene units are unscaled) and the highest elevation, which comes
+ * from the data because the vertical may be exaggerated.
+ */
+export function axisMeasurements(box: SceneBox, highest: number, format: (m: number) => string): AxisLabels {
+  return { east: format(2 * box.halfX), north: format(2 * box.halfZ), up: format(highest) };
+}
+
 /**
  * Multi-axis backdrop: a wide floor grid plus two back-wall grids framing the
  * scan, with coloured X (east), Y (north) and Z (up) axis lines on the corner.
  */
 export function buildBackdrop(box: SceneBox, step: number): THREE.Group {
   const group = new THREE.Group();
-  const wallTop = Math.max(box.height, step) * 1.15;
+  const wallTop = wallTopOf(box, step);
 
   const floorHalf = Math.max(box.halfX, box.halfZ) * FLOOR_SPAN_FACTOR;
   const floor = gridPlane(floorHalf, -floorHalf, floorHalf, step, FLOOR_COLOR);
