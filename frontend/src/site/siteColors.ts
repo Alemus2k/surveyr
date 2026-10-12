@@ -6,9 +6,10 @@
 export type RGB = [number, number, number];
 export type SiteColorMode = "design" | "change" | "elevation";
 
-export const CUT: RGB = [239, 75, 75];
-export const FILL: RGB = [77, 157, 255];
-export const ON_GRADE: RGB = [62, 207, 122];
+// earthy rather than pure primaries: they sit on shaded relief without glowing
+export const CUT: RGB = [216, 88, 78];
+export const FILL: RGB = [72, 136, 214];
+export const ON_GRADE: RGB = [84, 168, 118];
 
 export const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
@@ -20,7 +21,7 @@ export const mix = (a: RGB, b: RGB, t: number): RGB => [a[0] + (b[0] - a[0]) * t
  */
 export function siteTint(mode: "design" | "change", d: number, deadband: number, scale: number, needsWork: boolean): { rgb: RGB; t: number } | null {
   if (!Number.isFinite(d)) return null;
-  if (Math.abs(d) <= deadband) return mode === "design" && needsWork ? { rgb: ON_GRADE, t: 0.5 } : null;
+  if (Math.abs(d) <= deadband) return mode === "design" && needsWork ? { rgb: ON_GRADE, t: 0.42 } : null;
   // in design mode ground above the reference is still to dig; in change mode ground that rose was placed
   const leaving = mode === "design" ? d > 0 : d < 0;
   return { rgb: leaving ? CUT : FILL, t: 0.35 + 0.6 * Math.min(1, Math.abs(d) / scale) };

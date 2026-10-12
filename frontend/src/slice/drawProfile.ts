@@ -21,7 +21,7 @@ const MAX_PROFILE_EXAGGERATION = 5;
 const BG = "#04060a";
 const GRID = "rgba(255,255,255,0.07)";
 const LABEL = "rgba(230,238,247,0.55)";
-const FONT = "11px 'Share Tech Mono', ui-monospace, monospace";
+const FONT = "11px 'IBM Plex Mono', ui-monospace, monospace";
 const DOT = 1.2;
 const JET_SWATCH = ["#1428ff", "#00dcff", "#28ff3c", "#fff000", "#ff1e0a"];
 

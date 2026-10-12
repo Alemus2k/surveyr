@@ -9,7 +9,7 @@ import type { Zone } from "./types";
 
 interface Site3DProps {
   cloud: PreparedCloud; // the selected scan's points
-  elevationColors: Float32Array; // jet ramp from the Cloud colour panel
+  elevationColors: Float32Array; // elevation ramp from the Cloud colour panel
   range: ColorRange;
   surfaces: Surfaces;
   scan: number; // index of the selected scan in surfaces

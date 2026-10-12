@@ -57,7 +57,7 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
         </label>
         <div className="metric-row">
           <dt>Size (W × D × H)</dt>
-          <dd className="mono">{size(analysis)}</dd>
+          <dd className="fig">{size(analysis)}</dd>
         </div>
         <p className="panel-note">
           Everything is converted to metres when the scan loads; the file itself is never changed. Check the size against
@@ -105,7 +105,7 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
           <span className="js-input">
             <input
               type="number"
-              className="mono"
+              className="fig"
               step={0.1}
               min={-1000}
               max={1000}

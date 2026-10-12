@@ -17,7 +17,7 @@ SUFFIX = service.COMPARE_SUFFIX
 MAX_LAYERS = 12
 # Distinct layer colours, chosen to stay apart from each other and from the
 # blue→red elevation ramp's busiest band.
-LAYER_PALETTE = ("#ff7a1a", "#22d3ee", "#e45bff", "#9be32d", "#ffd23f", "#ff5d73", "#5b8cff", "#f0f0f0")
+LAYER_PALETTE = ("#ef8a3d", "#4db5cf", "#c27ad6", "#8ebd4c", "#e2bd48", "#e56a7c", "#6d95ee", "#d6dae0")
 
 
 class CompositionInvalid(ValueError):

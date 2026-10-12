@@ -1,4 +1,4 @@
-import { jetRamp, normalize } from "../color";
+import { elevationRamp, normalize } from "../color";
 import type { SceneBox } from "./backdrop";
 
 /** Survey-space point that packed float32 coordinates are relative to. */
@@ -91,11 +91,11 @@ export function prepareCloud(xyz: Float32Array, base: Origin = ZERO_ORIGIN): Pre
   };
 }
 
-/** Per-point RGB (0..1) on the jet ramp for the given elevation window. */
+/** Per-point RGB (0..1) on the elevation ramp for the given elevation window. */
 export function colorize(z: Float32Array, range: ColorRange): Float32Array {
   const rgb = new Float32Array(z.length * 3);
   for (let i = 0; i < z.length; i++) {
-    const [r, g, b] = jetRamp(normalize(z[i], range.min, range.max));
+    const [r, g, b] = elevationRamp(normalize(z[i], range.min, range.max));
     rgb[i * 3] = r / 255;
     rgb[i * 3 + 1] = g / 255;
     rgb[i * 3 + 2] = b / 255;

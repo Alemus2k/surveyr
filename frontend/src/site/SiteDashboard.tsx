@@ -161,7 +161,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
           Progress
         </button>
         <button role="tab" aria-selected={tab === "changes"} aria-pressed={tab === "changes"} onClick={() => setTab("changes")}>
-          Change orders{orders.length > 0 && <span className="tab-count mono">{orders.length}</span>}
+          Change orders{orders.length > 0 && <span className="tab-count fig">{orders.length}</span>}
         </button>
       </div>
 
@@ -172,22 +172,22 @@ export function SiteDashboard(props: SiteDashboardProps) {
           <div className="site-kpis">
             <div className="kpi">
               <span className="kpi-label">Earthworks complete</span>
-              <strong className="mono">{overall === null ? "—" : `${overall.toFixed(0)}%`}</strong>
+              <strong className="fig">{overall === null ? "—" : `${overall.toFixed(0)}%`}</strong>
               <span className="kpi-sub">all grading zones, by volume</span>
             </div>
             <div className="kpi">
               <span className="kpi-label">Moved last period</span>
-              <strong className="mono">{last > 0 ? `${formatVolume(movedLatest).value} m³` : "—"}</strong>
+              <strong className="fig">{last > 0 ? `${formatVolume(movedLatest).value} m³` : "—"}</strong>
               <span className="kpi-sub">{last > 0 ? `${formatDate(surfaces.dates[last - 1], true)} → ${formatDate(surfaces.dates[last], true)}, in zones` : "one scan so far"}</span>
             </div>
             <div className={`kpi ${behind.length ? "bad" : ""}`}>
               <span className="kpi-label">Zones behind plan</span>
-              <strong className="mono">{behind.length}</strong>
+              <strong className="fig">{behind.length}</strong>
               <span className="kpi-sub">{behind.length ? behind.map((p) => p.zone.name).join(", ") : `of ${grading.length} grading zones`}</span>
             </div>
             <div className={`kpi ${flagged.length ? "bad" : ""}`}>
               <span className="kpi-label">Pay-app claims to query</span>
-              <strong className="mono">{flagged.length}</strong>
+              <strong className="fig">{flagged.length}</strong>
               <span className="kpi-sub">{checks.length ? `of ${checks.length} checked against the scans` : "no claims entered"}</span>
             </div>
           </div>
@@ -215,7 +215,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
               const v = verdicts.get(site.scans[k]?.project_id ?? "");
               return (
                 <button key={d + k} aria-pressed={k === scan} onClick={() => onScan(k === last ? null : site.scans[k].project_id)}>
-                  <span className="mono">{formatDate(d, true)}</span>
+                  <span className="fig">{formatDate(d, true)}</span>
                   <span className="tl-sub">{k === 0 ? "first scan" : k === last ? "latest" : `scan ${k + 1}`}</span>
                   {v && v.grade !== "none" && (
                     <span

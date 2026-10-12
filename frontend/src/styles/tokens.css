@@ -1,72 +1,83 @@
-/* Surveyr design tokens — point-cloud workstation: charcoal chrome, amber accent.
+/* Surveyr design tokens — survey workstation: graphite chrome, one restrained
+   accent (user-selectable), IBM Plex for an engineering-instrument voice.
    Theme is set via data-theme on <html> ("dark" default, "light"). The 3D
    viewport stays dark in both themes, like a scanner/CAD viewport. */
 
 :root,
 html[data-theme="dark"] {
-  --bg-app: #121316;
-  --bg-chrome: #18191d;
-  --bg-panel: #1d1f24;
-  --bg-raised: #25272d;
-  --bg-input: #15161a;
-  --bg-hover: #2b2e35;
-  --line: #2a2d34;
-  --line-strong: #3a3e47;
-  --text: #e8e9eb;
-  --text-muted: #a0a5ad;
-  --text-faint: #6c727c;
-  --accent: #f5b400;
-  --accent-hover: #ffc626;
-  --accent-ink: #1b1400;
-  --accent-soft: rgba(245, 180, 0, 0.14);
-  --accent-line: rgba(245, 180, 0, 0.55);
-  --good: #3ecf7a;
-  --bad: #ff6b6b;
-  --shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --bg-app: #0e1013;
+  --bg-chrome: #15171b;
+  --bg-panel: #181b1f;
+  --bg-raised: #1f2329;
+  --bg-input: #101215;
+  --bg-hover: #23272e;
+  --line: #22262c;
+  --line-strong: #30353d;
+  --text: #e4e6e9;
+  --text-muted: #9ba2ab;
+  --text-faint: #828a94;
+  --accent: #eeb02b;
+  --accent-hover: #f6c04a;
+  --accent-ink: #1a1300;
+  --accent-soft: rgba(238, 176, 43, 0.12);
+  --accent-line: rgba(238, 176, 43, 0.5);
+  --good: #4cbf86;
+  --good-soft: rgba(76, 191, 134, 0.13);
+  --bad: #ef6f69;
+  --bad-soft: rgba(239, 111, 105, 0.13);
+  --warn-soft: rgba(238, 176, 43, 0.08);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.025) inset, 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
   color-scheme: dark;
 }
 
 html[data-theme="light"] {
-  --bg-app: #d9dbdf;
-  --bg-chrome: #e6e7ea;
-  --bg-panel: #f2f3f5;
+  --bg-app: #e8eaed;
+  --bg-chrome: #f3f4f6;
+  --bg-panel: #ffffff;
   --bg-raised: #ffffff;
   --bg-input: #ffffff;
-  --bg-hover: #e4e6ea;
-  --line: #d3d6dc;
-  --line-strong: #b9bec7;
-  --text: #17191d;
-  --text-muted: #555b65;
-  --text-faint: #8a909a;
-  --accent: #c98a00;
-  --accent-hover: #b37a00;
+  --bg-hover: #eceef1;
+  --line: #e0e3e7;
+  --line-strong: #c9ced5;
+  --text: #15181c;
+  --text-muted: #525963;
+  --text-faint: #656c75;
+  --accent: #a96f00;
+  --accent-hover: #925f00;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(201, 138, 0, 0.13);
-  --accent-line: rgba(201, 138, 0, 0.6);
-  --good: #18a058;
-  --bad: #d64545;
-  --shadow-pop: 0 10px 28px rgba(20, 24, 32, 0.16), 0 0 0 1px rgba(20, 24, 32, 0.06);
+  --accent-soft: rgba(169, 111, 0, 0.1);
+  --accent-line: rgba(169, 111, 0, 0.5);
+  --good: #17844e;
+  --good-soft: rgba(23, 132, 78, 0.1);
+  --bad: #c53b3b;
+  --bad-soft: rgba(197, 59, 59, 0.09);
+  --warn-soft: rgba(169, 111, 0, 0.07);
+  --shadow-card: 0 1px 2px rgba(20, 24, 32, 0.06), 0 0 0 1px rgba(20, 24, 32, 0.02);
+  --shadow-pop: 0 16px 36px rgba(20, 24, 32, 0.16), 0 0 0 1px rgba(20, 24, 32, 0.06);
   color-scheme: light;
 }
 
 :root {
-  --viewport-bg: #04060a;
-  /* Rajdhani: squared HUD letterforms; small x-height, so sizes run ~1px larger
-     and body text uses the 500 weight (400 is too thin on dark screens). */
-  --font-ui: "Rajdhani", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Share Tech Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --weight-body: 500;
-  --weight-strong: 600;
-  --weight-heavy: 700;
+  --viewport-bg: #07090c;
+  /* IBM Plex: engineered, neutral letterforms with tabular figures, so numbers
+     line up in the sans as well as the mono. Mono is for coordinates and
+     instrument readouts, not general text. */
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --weight-body: 400;
+  --weight-strong: 500;
+  --weight-heavy: 600;
 
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 14.5px;
-  --text-lg: 17px;
+  --text-xs: 11.5px;
+  --text-sm: 12.5px;
+  --text-base: 13.5px;
+  --text-lg: 16px;
+  --tracking-label: 0.01em; /* small labels: sentence case, barely tracked */
 
   --radius-xs: 3px;
   --radius-sm: 5px;
-  --radius-md: 8px;
+  --radius-md: 7px;
 
   --topbar-h: 38px;
   --rail-w: 48px;
@@ -81,8 +92,8 @@ html[data-theme="light"] {
 /* Highlight variants for the always-dark 3D viewport. These are defaults only:
    useAppearance() overwrites every --accent* token from the user's chosen colour. */
 :root {
-  --accent-viewport: #f5b400;
-  --accent-viewport-soft: rgba(245, 180, 0, 0.14);
-  --accent-viewport-line: rgba(245, 180, 0, 0.5);
+  --accent-viewport: #eeb02b;
+  --accent-viewport-soft: rgba(238, 176, 43, 0.14);
+  --accent-viewport-line: rgba(238, 176, 43, 0.5);
   --accent-viewport-ink: #000000;
 }

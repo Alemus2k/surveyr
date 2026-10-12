@@ -15,16 +15,18 @@ const KINDS: ReadonlyArray<[ChartKind, string]> = [
 const SLOPE_CLASS_EDGES = [0, 2, 5, 10, 15, Infinity]; // degrees; common grading bands
 const ROSE_SECTORS = 16;
 const ROSE_MIN_SLOPE = 1; // degrees; flatter ground has no meaningful direction
-const SLOPE_COLOR = "#4d9dff";
+// data colours stay calm and fixed; the accent is kept for selection and markers
+const SLOPE_COLOR = "#4888d6";
+const ELEVATION_COLOR = "#b39a6b"; // sand
+const ASPECT_COLOR = "#8697ae"; // steel
 
 interface ChartsPanelProps {
   analysis: Analysis;
-  accent: string;
   threshold: number;
 }
 
 /** Charts for the open scan, all over scanned ground only. */
-export function ChartsPanel({ analysis, accent, threshold }: ChartsPanelProps) {
+export function ChartsPanel({ analysis, threshold }: ChartsPanelProps) {
   const [kind, setKind] = useState<ChartKind>("histogram");
   const { maps, grid } = analysis;
   const mask = maps.mask?.data;
@@ -60,7 +62,7 @@ export function ChartsPanel({ analysis, accent, threshold }: ChartsPanelProps) {
       </PanelSection>
 
       <PanelSection label="Aspect (which way slopes face)">
-        <AspectRoseChart rose={series.rose} color={accent} minSlope={ROSE_MIN_SLOPE} />
+        <AspectRoseChart rose={series.rose} color={ASPECT_COLOR} minSlope={ROSE_MIN_SLOPE} />
       </PanelSection>
 
       <PanelSection label="Distributions">
@@ -75,7 +77,7 @@ export function ChartsPanel({ analysis, accent, threshold }: ChartsPanelProps) {
         <DistributionChart
           data={analysis.histograms.elevation}
           kind={kind}
-          color={accent}
+          color={ELEVATION_COLOR}
           unit="m"
           format={kind === "cumulative" ? pct : num(2)}
         />

@@ -200,7 +200,7 @@ export default function App() {
     if (id === "color") return <ColorPanel cloud={cloud} range={range} onRange={(r) => setRangeState({ cloud, range: r })} />;
     if (id === "jobsite") return <JobsitePanel projectId={scanId} projectName={byId.get(scanId)?.name ?? scanId} analysis={analysis} />;
     if (id === "maps") return <MapsPanel analysis={analysis} threshold={threshold} accent={appearance.uiAccent} />;
-    return <ChartsPanel analysis={analysis} accent={appearance.uiAccent} threshold={threshold} />;
+    return <ChartsPanel analysis={analysis} threshold={threshold} />;
   };
 
   // on a site, say which scan the scan panels are describing
@@ -236,7 +236,7 @@ export default function App() {
       return (
         <div className="error-state">
           <p>Couldn't load this project.</p>
-          <p className="mono">{loadError}</p>
+          <p className="fig">{loadError}</p>
         </div>
       );
     if (isSite)

@@ -30,7 +30,7 @@ function NumberField({ label, unit, value, step, disabled, onChange }: NumberFie
       <span>{label}</span>
       <input
         type="number"
-        className="mono"
+        className="fig"
         step={step}
         value={Number(value.toFixed(4))}
         disabled={disabled}
@@ -131,7 +131,7 @@ export function LayersPanel({ state, projects, selected, onSelect }: LayersPanel
                     onChange={(e) => updateLayer(layer.project_id, { opacity: e.target.valueAsNumber })}
                     aria-label={`${name} opacity`}
                   />
-                  <output className="mono">{Math.round(layer.opacity * 100)}%</output>
+                  <output className="fig">{Math.round(layer.opacity * 100)}%</output>
                 </label>
 
                 <div className="layer-toggles">

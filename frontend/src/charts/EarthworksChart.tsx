@@ -57,8 +57,8 @@ export function EarthworksChart({ curve }: Props) {
         </span>
       </div>
       <p className="chart-readout">
-        Balanced pad at <strong className="mono">{formatLength(balance)}</strong> moves{" "}
-        <strong className="mono">
+        Balanced pad at <strong className="fig">{formatLength(balance)}</strong> moves{" "}
+        <strong className="fig">
           {moveQ.value} {moveQ.unit}
         </strong>{" "}
         each way.

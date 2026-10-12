@@ -112,7 +112,7 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
             value={spec.offset}
             onChange={(e) => onSpec({ ...spec, offset: e.target.valueAsNumber })}
           />
-          <output className="mono">{spec.offset >= 0 ? "+" : "−"}{Math.abs(spec.offset).toFixed(2)} m</output>
+          <output className="fig">{spec.offset >= 0 ? "+" : "−"}{Math.abs(spec.offset).toFixed(2)} m</output>
         </label>
         <div className="slice-field">
           <span id="thickness-label">Thickness</span>
@@ -122,7 +122,7 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
             <button aria-label="Thicker" onClick={() => setThickness(spec.thickness + thickStep)}>›</button>
           </div>
         </div>
-        <span className="slice-count mono">{total.toLocaleString()} pts</span>
+        <span className="slice-count fig">{total.toLocaleString()} pts</span>
         <button className="tool-btn slice-close" onClick={onClose} aria-label="Close slice" title="Close slice">
           <Icon name="close" size={16} />
         </button>

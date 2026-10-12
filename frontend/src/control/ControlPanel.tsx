@@ -210,19 +210,19 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
               <dl className="metric-list">
                 <div className="metric-row">
                   <dt>RMSE</dt>
-                  <dd className="mono">{cm(check.stats.rmse, false)}</dd>
+                  <dd className="fig">{cm(check.stats.rmse, false)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>Mean offset (bias)</dt>
-                  <dd className="mono">{cm(check.stats.mean ?? 0)}</dd>
+                  <dd className="fig">{cm(check.stats.mean ?? 0)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>95% of ground within</dt>
-                  <dd className="mono">±{cm(check.stats.ci95 ?? 0, false)}</dd>
+                  <dd className="fig">±{cm(check.stats.ci95 ?? 0, false)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>Worst point</dt>
-                  <dd className="mono">{cm(check.stats.max_abs ?? 0, false)}</dd>
+                  <dd className="fig">{cm(check.stats.max_abs ?? 0, false)}</dd>
                 </div>
               </dl>
             ) : (
@@ -249,7 +249,7 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
           {offset !== 0 && (
             <div className="notice-card ok">
               <p>
-                Elevation correction applied: <strong className="mono">{cm(offset)}</strong>. The scan file is unchanged.
+                Elevation correction applied: <strong className="fig">{cm(offset)}</strong>. The scan file is unchanged.
               </p>
               <button className="text-btn" disabled={settings.saving} onClick={() => setOffset(0)}>
                 Remove correction
@@ -272,9 +272,9 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
               {check.points.map((p) => (
                 <tr key={p.id} title={p.dz === null ? "No scan points within 2 m" : `${p.neighbours} scan points within ${p.radius_m} m`}>
                   <td>
-                    <span className="mono">{p.id}</span> {p.desc && <span className="control-desc">{p.desc}</span>}
+                    <span className="fig">{p.id}</span> {p.desc && <span className="control-desc">{p.desc}</span>}
                   </td>
-                  <td className={`num mono ${p.dz === null ? "faint" : Math.abs(p.dz) > tolerance ? "bad" : Math.abs(p.dz) > tolerance / 2 ? "warn" : ""}`}>
+                  <td className={`num fig ${p.dz === null ? "faint" : Math.abs(p.dz) > tolerance ? "bad" : Math.abs(p.dz) > tolerance / 2 ? "warn" : ""}`}>
                     {p.dz === null ? "not on scan" : cm(p.dz)}
                   </td>
                 </tr>

@@ -174,15 +174,15 @@ def _ellipse(cx, cy, a, b, n=28) -> List[List[float]]:
 
 
 ZONES = [
-    {"id": "pad", "name": "Building pad", "kind": "grading", "color": "#ff7a1a",
+    {"id": "pad", "name": "Building pad", "kind": "grading", "color": "#ef8a3d",
      "polygon": _box(100, 168, 80, 128), "start": "2026-08-03", "finish": "2026-09-18"},
-    {"id": "parking", "name": "Parking lot", "kind": "grading", "color": "#22d3ee",
+    {"id": "parking", "name": "Parking lot", "kind": "grading", "color": "#4db5cf",
      "polygon": _box(15, 85, 72, 126), "start": "2026-08-17", "finish": "2026-10-30"},
-    {"id": "pond", "name": "Detention pond", "kind": "grading", "color": "#5b8cff",
+    {"id": "pond", "name": "Detention pond", "kind": "grading", "color": "#6d95ee",
      "polygon": _ellipse(45, 30, 24, 16), "start": "2026-08-10", "finish": "2026-10-16"},
-    {"id": "road", "name": "Access road", "kind": "grading", "color": "#9be32d",
+    {"id": "road", "name": "Access road", "kind": "grading", "color": "#8ebd4c",
      "polygon": _box(100, 180, 38, 50, grow=4) , "start": "2026-09-01", "finish": "2026-10-23"},
-    {"id": "spoil", "name": "Spoil stockpile", "kind": "stockpile", "color": "#e45bff",
+    {"id": "spoil", "name": "Spoil stockpile", "kind": "stockpile", "color": "#c27ad6",
      "polygon": _ellipse(*STOCKPILE_AT, STOCKPILE_R + 3, STOCKPILE_R + 3), "start": None, "finish": None},
 ]
 # (date, zone, cut/fill, how far the claim is from the true quantity)

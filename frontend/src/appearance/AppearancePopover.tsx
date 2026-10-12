@@ -109,7 +109,7 @@ export function AppearancePopover({ api }: AppearancePopoverProps) {
               <label className="hex-field">
                 <span className="sr-only">Hex colour</span>
                 <input
-                  className="mono"
+                  className="fig"
                   value={hexDraft}
                   spellCheck={false}
                   maxLength={7}
@@ -126,7 +126,7 @@ export function AppearancePopover({ api }: AppearancePopoverProps) {
             </div>
             {uiAccent !== appearance.accent && (
               <p className="panel-note">
-                Shown as <span className="mono">{uiAccent}</span> in {api.theme} mode so it stays readable.
+                Shown as <span className="fig">{uiAccent}</span> in {api.theme} mode so it stays readable.
               </p>
             )}
           </section>

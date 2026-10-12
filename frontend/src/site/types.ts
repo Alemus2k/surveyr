@@ -2,7 +2,7 @@
 // pay-app claims (matches the engine's app/sites.py).
 
 /** Zone outline colours, distinct from each other and from the map's cut/fill/on-grade colours. */
-export const ZONE_PALETTE = ["#ff7a1a", "#22d3ee", "#e45bff", "#9be32d", "#ffd23f", "#ff5d73", "#f0f0f0", "#b38cff"];
+export const ZONE_PALETTE = ["#ef8a3d", "#4db5cf", "#c27ad6", "#8ebd4c", "#e2bd48", "#e56a7c", "#d6dae0", "#998af0"];
 
 export interface SiteScan {
   project_id: string;

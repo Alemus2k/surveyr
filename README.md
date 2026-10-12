@@ -341,7 +341,7 @@ licensed open-source software** — no paid APIs, proprietary SDKs or accounts.
 | React, Vite, TypeScript | interface | MIT / Apache-2.0 |
 | Three.js | 3D rendering | MIT |
 | Tauri 2 | desktop shell | MIT / Apache-2.0 |
-| Rajdhani, Share Tech Mono (@fontsource) | typefaces, bundled for offline use | OFL-1.1 |
+| IBM Plex Sans, IBM Plex Mono (@fontsource) | typefaces, bundled for offline use | OFL-1.1 |
 | pytest, httpx, vitest | tests | MIT / BSD-3-Clause / MIT |
 
 Possible future additions stay in the same spirit: **Potree** for very large

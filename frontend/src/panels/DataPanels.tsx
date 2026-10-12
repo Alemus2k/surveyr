@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { normalize, terrainRamp, type RGB255 } from "../color";
+import { elevationRamp, normalize, terrainRamp, type RGB255 } from "../color";
 import { hexToRgb } from "../appearance/colorMath";
 import { MapViewer, type ColorFn } from "../components/MapViewer";
 import type { Analysis } from "../types";
@@ -22,7 +22,7 @@ export function MapsPanel({ analysis, threshold, accent }: MapsPanelProps) {
     const slopeMax = Math.max(...maps.slope.data.flat(), 1);
     const { r, g, b } = hexToRgb(accent);
     return {
-      elev: ((v) => terrainRamp(normalize(v, maps.elevation.min ?? 0, maps.elevation.max ?? 1))) as ColorFn,
+      elev: ((v) => elevationRamp(normalize(v, maps.elevation.min ?? 0, maps.elevation.max ?? 1))) as ColorFn, // matches the 3D view
       slope: ((v) => terrainRamp(normalize(v, 0, slopeMax))) as ColorFn,
       aspect: ((v) => terrainRamp(normalize(v, 0, 360))) as ColorFn,
       cover: ((v) => (v <= 0 ? [60, 64, 72] : v < 2 ? [80, 140, 220] : [r, g, b])) as ColorFn,

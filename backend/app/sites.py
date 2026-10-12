@@ -41,7 +41,7 @@ class Zone(BaseModel):
     id: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=60)
     kind: Literal["grading", "stockpile"] = "grading"
-    color: str = Field("#f5b400", pattern=_COLOR)
+    color: str = Field("#eeb02b", pattern=_COLOR)
     polygon: List[List[float]] = Field(min_length=3, max_length=500)  # [easting, northing]
     start: Optional[str] = Field(None, pattern=_DATE)
     finish: Optional[str] = Field(None, pattern=_DATE)
