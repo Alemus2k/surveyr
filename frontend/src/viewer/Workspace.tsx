@@ -58,6 +58,7 @@ export function Workspace({ cloud, colors, range, accent, analysis }: WorkspaceP
   return (
     <>
       <PointCloudViewer
+        highest={analysis.stats.max}
         cloud={cloud}
         colors={colors}
         range={range}

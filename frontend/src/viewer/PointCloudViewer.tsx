@@ -28,12 +28,13 @@ interface PointCloudViewerProps {
   toolbar: ReactNode;
   outlines?: Outline[]; // closed outlines drawn over the points (job-site zones)
   legend?: ReactNode; // replaces the elevation colour scale
+  highest?: number | null; // elevation for the up-axis chip; matches the Terrain panel (highest ground cell)
 }
 
 /** Full-bleed 3D viewport (particles or gridded surface) with legend, compass and a toolbar slot. */
 export function PointCloudViewer(props: PointCloudViewerProps) {
   const { cloud, colors, range, pointScale, showGrid, slice, view, accent, onTopView, toolbar } = props;
-  const { renderMode, surfaceGrid, surfaceOpacity, outlines, legend } = props;
+  const { renderMode, surfaceGrid, surfaceOpacity, outlines, legend, highest } = props;
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ViewerScene | null>(null);
   const colorsRef = useRef(colors);
@@ -58,6 +59,9 @@ export function PointCloudViewer(props: PointCloudViewerProps) {
   }, [cloud, onHeading]);
 
   useEffect(() => sceneRef.current?.setColors(colors), [colors]);
+  useEffect(() => {
+    if (highest != null && Number.isFinite(highest)) sceneRef.current?.setHighest(highest);
+  }, [cloud, highest]);
   useEffect(() => sceneRef.current?.setPointScale(pointScale), [pointScale, cloud]);
   useEffect(() => sceneRef.current?.setGridVisible(showGrid), [showGrid, cloud]);
   useEffect(() => sceneRef.current?.setSlice(slice), [slice, cloud]);

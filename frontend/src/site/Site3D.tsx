@@ -19,6 +19,7 @@ interface Site3DProps {
   zones: Zone[];
   selectedZone: string | null;
   accent: string;
+  highest: number | null; // up-axis chip, matching the Terrain panel
 }
 
 const OUTLINE_LIFT_M = 0.25; // float zone outlines just above the ground
@@ -34,7 +35,7 @@ function cellLookup(s: Surfaces) {
 
 /** The selected scan as 3D points, coloured like the plan map, with zone outlines draped on the ground. */
 export function Site3D(props: Site3DProps) {
-  const { cloud, elevationColors, range, surfaces: s, scan, mode, tolerance, changeThreshold, zones, selectedZone, accent } = props;
+  const { cloud, elevationColors, range, surfaces: s, scan, mode, tolerance, changeThreshold, zones, selectedZone, accent, highest } = props;
   const [view, setView] = useState<ViewRequest | null>(null);
   const [pointScale, setPointScale] = useState(1);
   const at = useMemo(() => cellLookup(s), [s]);
@@ -97,6 +98,7 @@ export function Site3D(props: Site3DProps) {
   return (
     <div className="site-3d">
       <PointCloudViewer
+        highest={highest}
         cloud={cloud}
         colors={colors}
         range={range}
