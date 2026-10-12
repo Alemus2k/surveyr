@@ -101,7 +101,7 @@
   width: 9px;
   height: 9px;
   margin: -4.5px 0 0 -4.5px;
-  border: 2px solid #04060a;
+  border: 2px solid #0b0b0b;
   border-radius: 50%;
 }
 .slice-hover-readout {
@@ -110,7 +110,7 @@
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 4px;
-  background: rgba(10, 14, 20, 0.92);
+  background: rgba(14, 14, 14, 0.92);
   color: #e6eef7;
   font-size: 11px;
   line-height: 1.5;

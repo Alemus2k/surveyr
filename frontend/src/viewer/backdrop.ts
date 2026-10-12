@@ -8,8 +8,8 @@ export interface SceneBox {
 }
 
 // neutral graphite, kept quiet so the scan is the brightest thing in the scene
-const FLOOR_COLOR = 0x2b3038;
-const WALL_COLOR = 0x363c46;
+const FLOOR_COLOR = 0x303030;
+const WALL_COLOR = 0x3b3b3b;
 const FLOOR_SPAN_FACTOR = 4; // floor grid runs well past the scan, toward the horizon
 const AXIS_COLORS = { x: 0xd2645e, y: 0x67b884, z: 0x6890d8 } as const;
 
