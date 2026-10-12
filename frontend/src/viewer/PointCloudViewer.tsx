@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { jetCssGradient } from "../color";
+import { elevationCssGradient } from "../color";
 import type { SliceSpec } from "../slice/slice";
 import { Compass, useCompass } from "./Compass";
 import type { ColorRange, PreparedCloud } from "./prepare";
@@ -77,7 +77,7 @@ export function PointCloudViewer(props: PointCloudViewerProps) {
       {legend ?? (
         <div className="pc-legend" aria-label="Elevation colour scale">
           <span className="pc-chip mono">{range.max.toFixed(2)} m</span>
-          <div className="pc-legend-bar" style={{ background: jetCssGradient() }} />
+          <div className="pc-legend-bar" style={{ background: elevationCssGradient() }} />
           <span className="pc-chip mono">{range.min.toFixed(2)} m</span>
         </div>
       )}

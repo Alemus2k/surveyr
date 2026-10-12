@@ -65,7 +65,7 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
               <li key={p.id} className="project-row" data-active={p.id === activeId}>
                 <button className="project-open" onClick={() => onOpen(p.id)} title={isOpen ? "Show tab" : "Open in a tab"}>
                   <span className="project-name">{p.name}</span>
-                  <span className="project-id mono">
+                  <span className="project-id fig">
                     {p.type === "compare" ? "comparison" : p.type === "site" ? "job site" : p.site ? `in ${siteName(p.site)}` : p.id}
                     {isOpen && <span className="project-open-tag">open</span>}
                   </span>
@@ -92,8 +92,8 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
         </p>
       ) : (
         <p className="panel-note">
-          Imports <span className="mono">.ply</span>, <span className="mono">.las</span>,{" "}
-          <span className="mono">.laz</span> and <span className="mono">.xyz</span> point clouds — e.g. a Scaniverse
+          Imports <span className="fig">.ply</span>, <span className="fig">.las</span>,{" "}
+          <span className="fig">.laz</span> and <span className="fig">.xyz</span> point clouds — e.g. a Scaniverse
           PLY AirDropped from your phone. Closing a tab keeps the project; reopen it here.
         </p>
       )}

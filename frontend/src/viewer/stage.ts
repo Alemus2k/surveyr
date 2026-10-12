@@ -13,7 +13,7 @@ export interface StageFrame {
   span: number;
 }
 
-const SCENE_BG = 0x04060a;
+const SCENE_BG = 0x07090c; // --viewport-bg
 const GRID_DIVISIONS = 10; // ~grid cells across the content's long side
 const CAMERA_EASE = 0.16; // fraction of remaining distance covered per frame
 

@@ -13,6 +13,10 @@ describe("parseAppearance", () => {
     expect(parseAppearance(null)).toEqual(DEFAULT_APPEARANCE);
     expect(parseAppearance({ theme: "dark" })).toEqual({ ...DEFAULT_APPEARANCE, theme: "dark" });
   });
+
+  test("the old default amber moves to the refined default", () => {
+    expect(parseAppearance({ version: 1, theme: "dark", accent: "#f5b400" }).accent).toBe(DEFAULT_APPEARANCE.accent);
+  });
 });
 
 describe("resolveTheme", () => {
@@ -28,19 +32,19 @@ describe("resolveTheme", () => {
 
 describe("accentTokens", () => {
   test("default amber on dark keeps the original look", () => {
-    const t = accentTokens("#f5b400", "dark");
-    expect(t["--accent"]).toBe("#f5b400");
+    const t = accentTokens("#eeb02b", "dark");
+    expect(t["--accent"]).toBe("#eeb02b");
     expect(t["--accent-ink"]).toBe("#000000");
   });
 
   test("a pale highlight is darkened enough to read in light mode", () => {
     const t = accentTokens("#fff3a0", "light");
-    expect(contrastRatio(t["--accent"], "#f2f3f5")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(t["--accent"], "#ffffff")).toBeGreaterThanOrEqual(3);
   });
 
   test("the viewport accent is always tuned for the dark 3D background", () => {
     const t = accentTokens("#1a1a66", "light");
-    expect(contrastRatio(t["--accent-viewport"], "#04060a")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(t["--accent-viewport"], "#07090c")).toBeGreaterThanOrEqual(3);
   });
 
   test("provides translucent variants for fills and outlines", () => {

@@ -9,8 +9,8 @@ interface CutFillMapProps {
 }
 
 const ON_GRADE_M = 0.01; // within 1 cm counts as already on grade
-const CUT: [number, number, number] = [239, 75, 75];
-const FILL: [number, number, number] = [77, 157, 255];
+const CUT: [number, number, number] = [216, 88, 78];
+const FILL: [number, number, number] = [72, 136, 214];
 const NEUTRAL: [number, number, number] = [128, 134, 145];
 
 /** Plan view of where to dig (red) and where to fill (blue); north up. */

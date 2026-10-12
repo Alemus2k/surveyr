@@ -31,7 +31,7 @@ function NumberField({ label, unit, value, step, min, max, onChange }: NumberFie
       <span className="js-input">
         <input
           type="number"
-          className="mono"
+          className="fig"
           value={Number(value.toFixed(3))}
           step={step}
           min={min}
@@ -124,9 +124,9 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
           <span className="js-result-sub">Cut covers the fill — no trucks needed.</span>
         ) : (
           <>
-            <strong className="mono js-result-value">{q(formatVolume(h.loose))}</strong>
+            <strong className="fig js-result-value">{q(formatVolume(h.loose))}</strong>
             <span className="js-result-sub">
-              loose · <span className="mono">{h.loads.toLocaleString("en-GB")}</span> load{h.loads === 1 ? "" : "s"} of{" "}
+              loose · <span className="fig">{h.loads.toLocaleString("en-GB")}</span> load{h.loads === 1 ? "" : "s"} of{" "}
               {s.truckM3} m³ · {formatVolume(h.bank).value} m³ in the ground
             </span>
           </>
@@ -148,7 +148,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
         </div>
         {s.mode === "balanced" ? (
           <p className="panel-note">
-            Pad set at <strong className="mono">{formatLength(base)}</strong> so dug-out soil exactly makes the fill
+            Pad set at <strong className="fig">{formatLength(base)}</strong> so dug-out soil exactly makes the fill
             {s.shrinkPct > 0 ? ` after ${s.shrinkPct}% compaction` : ""}.
           </p>
         ) : (
@@ -201,17 +201,17 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
         <dl className="metric-list">
           <div className="metric-row">
             <dt>Fill (compacted)</dt>
-            <dd className="mono">{q(formatVolume(v.fill))}</dd>
+            <dd className="fig">{q(formatVolume(v.fill))}</dd>
           </div>
           <div className="metric-row">
             <dt>Cut / fill area</dt>
-            <dd className="mono">
+            <dd className="fig">
               {formatArea(v.cutArea).value} / {q(formatArea(v.fillArea))}
             </dd>
           </div>
           <div className="metric-row">
             <dt>Max dig / fill depth</dt>
-            <dd className="mono">
+            <dd className="fig">
               {v.maxCut.toFixed(2)} / {v.maxFill.toFixed(2)} <span className="unit">m</span>
             </dd>
           </div>

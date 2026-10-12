@@ -7,10 +7,11 @@ export interface SceneBox {
   height: number;
 }
 
-const FLOOR_COLOR = 0x323d4d;
-const WALL_COLOR = 0x4a5a72;
+// neutral graphite, kept quiet so the scan is the brightest thing in the scene
+const FLOOR_COLOR = 0x2b3038;
+const WALL_COLOR = 0x363c46;
 const FLOOR_SPAN_FACTOR = 4; // floor grid runs well past the scan, toward the horizon
-const AXIS_COLORS = { x: 0xff4d4d, y: 0x4dff88, z: 0x4d9dff } as const;
+const AXIS_COLORS = { x: 0xd2645e, y: 0x67b884, z: 0x6890d8 } as const;
 
 /** Round a raw grid spacing to 1, 2 or 5 x 10^n so labels stay tidy. */
 export function niceStep(raw: number): number {
@@ -28,7 +29,7 @@ function gridPlane(halfU: number, v0: number, v1: number, step: number, color: n
   for (let v = Math.ceil(v0 / step) * step; v <= v1 + 1e-9; v += step) pts.push(u0, v, 0, halfU, v, 0);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-  return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 }));
+  return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.7 }));
 }
 
 function axisLine(from: THREE.Vector3, to: THREE.Vector3, color: number): THREE.Line {

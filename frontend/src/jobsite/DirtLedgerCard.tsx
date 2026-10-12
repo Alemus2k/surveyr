@@ -45,29 +45,29 @@ export function DirtLedgerCard({ volumes, haul, ledger, truckM3, shrinkPct }: Di
       <dl className="ledger-rows">
         <div>
           <dt>Dug out (cut)</dt>
-          <dd className="mono">{v(volumes.cut)}</dd>
+          <dd className="fig">{v(volumes.cut)}</dd>
         </div>
         <div>
           <dt>− Used to fill depressions</dt>
-          <dd className="mono">{v(ledger.usedForFill)}</dd>
+          <dd className="fig">{v(ledger.usedForFill)}</dd>
         </div>
         <div className="ledger-sub">
           <dt>compacts to</dt>
-          <dd className="mono">{v(ledger.usedForFill * (1 - shrinkPct / 100))}</dd>
+          <dd className="fig">{v(ledger.usedForFill * (1 - shrinkPct / 100))}</dd>
         </div>
         <div className="ledger-total">
           <dt>{short ? "= Short — bring in" : "= Left over to remove"}</dt>
-          <dd className="mono">{v(short ? ledger.shortfall : surplus ? ledger.leftOver : 0)}</dd>
+          <dd className="fig">{v(short ? ledger.shortfall : surplus ? ledger.leftOver : 0)}</dd>
         </div>
         {(surplus || short) && (
           <>
             <div className="ledger-sub">
               <dt>loose in trucks</dt>
-              <dd className="mono">{v(haul.loose)}</dd>
+              <dd className="fig">{v(haul.loose)}</dd>
             </div>
             <div className="ledger-sub">
               <dt>truckloads ({truckM3} m³)</dt>
-              <dd className="mono">{haul.loads.toLocaleString("en-GB")}</dd>
+              <dd className="fig">{haul.loads.toLocaleString("en-GB")}</dd>
             </div>
           </>
         )}

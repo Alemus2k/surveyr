@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { jetCssGradient } from "../color";
+import { elevationCssGradient } from "../color";
 import { elevationHistogram, type ColorRange, type PreparedCloud } from "../viewer/prepare";
 
 const BINS = 60;
@@ -38,7 +38,7 @@ export function ColorPanel({ cloud, range, onRange }: ColorPanelProps) {
           <label>
             <span className="sr-only">Lowest colour elevation (m)</span>
             <input
-              className="mono"
+              className="fig"
               type="number"
               step={step}
               value={range.min.toFixed(2)}
@@ -48,7 +48,7 @@ export function ColorPanel({ cloud, range, onRange }: ColorPanelProps) {
           <label>
             <span className="sr-only">Highest colour elevation (m)</span>
             <input
-              className="mono"
+              className="fig"
               type="number"
               step={step}
               value={range.max.toFixed(2)}
@@ -96,7 +96,7 @@ export function ColorPanel({ cloud, range, onRange }: ColorPanelProps) {
             onChange={(e) => setMax(e.target.valueAsNumber)}
           />
         </div>
-        <div className="ramp-strip" style={{ background: jetCssGradient().replace("to top", "to right") }} />
+        <div className="ramp-strip" style={{ background: elevationCssGradient().replace("to top", "to right") }} />
         <div className="range-extent mono">
           <span>{zMin.toFixed(2)} m</span>
           <span>{zMax.toFixed(2)} m</span>

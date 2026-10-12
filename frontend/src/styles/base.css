@@ -15,7 +15,9 @@ body {
   font-family: var(--font-ui);
   font-size: var(--text-base);
   font-weight: var(--weight-body);
-  font-synthesis: none; /* Share Tech Mono has one weight; never fake-bold it */
+  font-variant-numeric: tabular-nums; /* figures line up in every table and readout */
+  font-synthesis: none; /* only the bundled weights; never fake-bold */
+  line-height: 1.4;
   color: var(--text);
   background: var(--bg-app);
   -webkit-font-smoothing: antialiased;
@@ -34,9 +36,16 @@ select {
   outline-offset: 1px;
 }
 
+/* figures: tabular sans, so columns line up without a typewriter look */
+.fig {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-strong);
+}
+/* instrument readouts: coordinates, hover readouts, viewport chips */
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* ---- tool button: square icon button used in toolbars and the rail ---- */
@@ -65,7 +74,6 @@ select {
 }
 .tool-btn[aria-pressed="true"] {
   background: var(--accent-soft);
-  border-color: var(--accent-line);
   color: var(--accent);
 }
 .tool-btn:disabled {
@@ -88,12 +96,13 @@ select {
   height: 100%;
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 12px;
 }
 .stepper button:hover {
   background: var(--bg-hover);
+  color: var(--text);
 }
 .stepper output {
   min-width: 64px;
@@ -121,10 +130,17 @@ select {
   font-size: var(--text-sm);
   cursor: pointer;
 }
+.segmented button {
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.segmented button:hover:not([aria-pressed="true"]):not(:disabled) {
+  color: var(--text);
+}
 .segmented button[aria-pressed="true"] {
   background: var(--bg-raised);
   color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-weight: var(--weight-strong);
+  box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 /* ---- range slider ---- */
@@ -162,7 +178,7 @@ select {
   font-size: var(--text-sm);
 }
 
-/* ---- primary action (amber, full width) ---- */
+/* ---- primary action (accent, full width) ---- */
 .primary-btn {
   width: 100%;
   height: 36px;
@@ -172,6 +188,7 @@ select {
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: var(--weight-heavy);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   transition: background var(--duration-fast);
 }
@@ -239,14 +256,17 @@ select {
 .secondary-btn {
   border: 1px solid var(--line-strong);
   background: var(--bg-raised);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 .secondary-btn:hover {
+  border-color: color-mix(in srgb, var(--line-strong) 60%, var(--text-faint));
   background: var(--bg-hover);
 }
 .danger-btn {
-  border: 1px solid var(--bad);
+  border: 1px solid transparent;
   background: var(--bad);
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 .danger-btn:hover {
   filter: brightness(1.08);
@@ -268,12 +288,14 @@ select {
   box-shadow: var(--shadow-pop);
 }
 .confirm-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(6, 8, 11, 0.6);
+  backdrop-filter: blur(2px);
 }
 .confirm-dialog h2 {
   margin: 0 0 8px;
   font-size: var(--text-lg);
   font-weight: var(--weight-heavy);
+  letter-spacing: -0.005em;
 }
 .confirm-body p {
   margin: 0;
@@ -294,8 +316,7 @@ select {
 .notice-card {
   margin-bottom: 12px;
   padding: 10px 12px;
-  border: 1px solid var(--line-strong);
-  border-left-width: 3px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--bg-raised);
   font-size: var(--text-sm);
@@ -312,10 +333,12 @@ select {
   margin-top: 8px;
 }
 .notice-card.warn {
-  border-left-color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--warn-soft);
 }
 .notice-card.ok {
-  border-left-color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 40%, transparent);
+  background: var(--good-soft);
 }
 .check-row {
   display: flex;

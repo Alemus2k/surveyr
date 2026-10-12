@@ -38,7 +38,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
       <span className="js-input">
         <input
           type="number"
-          className="mono"
+          className="fig"
           min={0}
           max={200}
           step={1}
@@ -71,7 +71,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
               <dt>Finished grade</dt>
               <dd>{describeGrade({ target_elevation_m: zone.target_elevation_m ?? null, design_offset_m: zone.design_offset_m ?? 0 })}</dd>
               <dt>Planned</dt>
-              <dd className="mono">
+              <dd className="fig">
                 {zone.start ? formatDate(zone.start) : "no start"} → {zone.finish ? formatDate(zone.finish) : "no finish"}
               </dd>
             </dl>
@@ -219,9 +219,9 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
           <dt>Design surface</dt>
           <dd>{site.design_id ? scanName(site.design_id) : "None"}</dd>
           <dt>On grade within</dt>
-          <dd className="mono">±{+(site.tolerance_m * 100).toFixed(1)} cm</dd>
+          <dd className="fig">±{+(site.tolerance_m * 100).toFixed(1)} cm</dd>
           <dt>Change orders</dt>
-          <dd className="mono">{site.change_orders?.length ?? 0}</dd>
+          <dd className="fig">{site.change_orders?.length ?? 0}</dd>
         </dl>
         <p className="panel-note">
           The design surface is the finished grade, as a point cloud or surface file; closer than the tolerance counts as
@@ -236,7 +236,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
           <span className="js-input">
             <input
               type="number"
-              className="mono"
+              className="fig"
               min={0}
               max={100}
               step={1}

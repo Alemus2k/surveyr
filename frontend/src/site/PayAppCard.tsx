@@ -70,7 +70,7 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
             <tbody>
               {checks.map((c) => (
                 <tr key={c.payApp.id} data-flagged={c.flagged || undefined}>
-                  <td className="mono">
+                  <td className="fig">
                     {c.fromDate ? `${formatDate(c.fromDate, true)} → ` : ""}
                     {formatDate(c.payApp.date, true)}
                   </td>
@@ -78,9 +78,9 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
                     {zoneName(c.payApp.zone_id)} · {c.payApp.kind === "cut" ? "dug" : "filled"}
                     {c.payApp.contractor && <span className="payapp-who">{c.payApp.contractor}</span>}
                   </td>
-                  <td className="num mono">{v(c.payApp.claimed_m3)} m³</td>
-                  <td className="num mono">{c.measured === null ? "—" : `${v(c.measured)} m³`}</td>
-                  <td className={`num mono ${c.flagged ? "late" : ""}`}>
+                  <td className="num fig">{v(c.payApp.claimed_m3)} m³</td>
+                  <td className="num fig">{c.measured === null ? "—" : `${v(c.measured)} m³`}</td>
+                  <td className={`num fig ${c.flagged ? "late" : ""}`}>
                     {c.diff === null
                       ? "no scans"
                       : `${c.diff >= 0 ? "+" : "−"}${v(Math.abs(c.diff))} m³${c.diffPct === null ? "" : ` (${c.diffPct >= 0 ? "+" : "−"}${Math.abs(c.diffPct).toFixed(0)}%)`}`}
@@ -131,7 +131,7 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
           <label className="js-field">
             <span className="field-label">Claimed</span>
             <span className="js-input">
-              <input type="number" className="mono" min={0} step={1} value={draft.claimed} onChange={(e) => setDraft({ ...draft, claimed: e.target.value })} />
+              <input type="number" className="fig" min={0} step={1} value={draft.claimed} onChange={(e) => setDraft({ ...draft, claimed: e.target.value })} />
               <span className="unit">m³</span>
             </span>
           </label>

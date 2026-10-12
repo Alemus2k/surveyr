@@ -28,4 +28,4 @@ export interface Composition {
 }
 
 /** Distinct layer colours (same order as the backend's default palette). */
-export const LAYER_PALETTE = ["#ff7a1a", "#22d3ee", "#e45bff", "#9be32d", "#ffd23f", "#ff5d73", "#5b8cff", "#f0f0f0"];
+export const LAYER_PALETTE = ["#ef8a3d", "#4db5cf", "#c27ad6", "#8ebd4c", "#e2bd48", "#e56a7c", "#6d95ee", "#d6dae0"];

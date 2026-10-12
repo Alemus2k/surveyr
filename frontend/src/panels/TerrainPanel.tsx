@@ -72,7 +72,7 @@ export function TerrainPanel({ analysis, threshold, onThreshold }: TerrainPanelP
                 <button className="preset" aria-pressed={active} onClick={() => onThreshold(p.degrees)}>
                   <span className="preset-text">
                     <span className="preset-label">{p.label}</span>
-                    <span className="preset-deg mono">≤ {p.degrees}°</span>
+                    <span className="preset-deg fig">≤ {p.degrees}°</span>
                   </span>
                   <svg viewBox="0 0 80 28" className="preset-curve" aria-hidden="true">
                     <path d={p.curve} />
@@ -92,7 +92,7 @@ export function TerrainPanel({ analysis, threshold, onThreshold }: TerrainPanelP
           {rows.map(([label, q]) => (
             <div key={label} className="metric-row">
               <dt>{label}</dt>
-              <dd className="mono">
+              <dd className="fig">
                 {typeof q === "string" ? q : (
                   <>
                     {q.value} <span className="unit">{q.unit}</span>

@@ -2,10 +2,10 @@
 
 :root {
   --series-cut: var(--bad);
-  --series-fill: #4d9dff;
+  --series-fill: #4888d6;
 }
 html[data-theme="light"] {
-  --series-fill: #2563eb;
+  --series-fill: #2f6fc4;
 }
 
 .chart-box {
@@ -21,8 +21,8 @@ html[data-theme="light"] {
 }
 .chart-label {
   fill: var(--text-muted);
-  font-family: var(--font-mono);
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 .chart-axis {
   stroke: var(--line-strong);

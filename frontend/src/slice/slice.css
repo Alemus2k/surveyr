@@ -27,11 +27,10 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--accent);
+  color: var(--text);
   font-weight: var(--weight-heavy);
   font-size: var(--text-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
 }
 .slice-field {
   display: inline-flex;

@@ -38,10 +38,9 @@
 }
 .appearance-head h2 {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: var(--weight-heavy);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
 }
 .appearance-section + .appearance-section {
   margin-top: 16px;

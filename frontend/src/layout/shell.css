@@ -39,7 +39,7 @@
 .brand-name {
   font-weight: var(--weight-heavy);
   font-size: var(--text-base);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.005em;
 }
 .project-tabs {
   display: flex;
@@ -61,8 +61,11 @@
   background: var(--bg-hover);
 }
 .project-tab[data-active="true"] {
-  color: var(--accent);
-  background: var(--bg-panel);
+  color: var(--text);
+  background: var(--bg-app);
+}
+.project-tab[data-active="true"] .tab-label {
+  font-weight: var(--weight-strong);
 }
 .project-tab[data-active="true"]::before {
   content: "";
@@ -70,6 +73,14 @@
   inset: 0 0 auto;
   height: 2px;
   background: var(--accent);
+}
+.project-tab[data-active="true"]::after {
+  /* the active tab opens into the workspace below it */
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 1px;
+  background: var(--bg-app);
 }
 .tab-label {
   height: 100%;
@@ -156,8 +167,18 @@
   color: var(--text);
 }
 .rail-btn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.rail-btn[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -7px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
   background: var(--accent);
-  color: var(--accent-ink);
 }
 
 /* ------------------------------------------------------------ side panel */
@@ -270,7 +291,7 @@ body.is-resizing .viewport {
   cursor: pointer;
 }
 .project-tab-add:hover {
-  color: var(--accent);
+  color: var(--text);
   background: var(--bg-hover);
 }
 .project-tab-add:disabled {

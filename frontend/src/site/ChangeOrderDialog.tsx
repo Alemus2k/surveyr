@@ -144,7 +144,7 @@ export function ChangeOrderDialog({ open, site, surfaces, cellsOf, projects, onI
               <span className="js-input">
                 <input
                   type="number"
-                  className="mono"
+                  className="fig"
                   min={0}
                   max={200}
                   step={0.5}
@@ -210,7 +210,7 @@ export function ChangeOrderDialog({ open, site, surfaces, cellsOf, projects, onI
                               <span className="js-input">
                                 <input
                                   type="number"
-                                  className="mono"
+                                  className="fig"
                                   step={mode === "flat" ? 0.001 : 0.01}
                                   aria-label={mode === "flat" ? `Pad elevation of ${zone.name}` : `Offset from design for ${zone.name}`}
                                   value={mode === "flat" ? spec.target_elevation_m ?? "" : spec.design_offset_m}

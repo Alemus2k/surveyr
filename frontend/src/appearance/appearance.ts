@@ -11,17 +11,18 @@ export interface Appearance {
   accent: string; // user's chosen highlight, "#rrggbb"
 }
 
-export const DEFAULT_ACCENT = "#f5b400";
+export const DEFAULT_ACCENT = "#eeb02b";
+const LEGACY_DEFAULT_ACCENT = "#f5b400"; // the old default amber: saved settings move to the refined one
 export const DEFAULT_APPEARANCE: Appearance = { version: 1, theme: "dark", accent: DEFAULT_ACCENT };
 
 export const ACCENT_PRESETS: ReadonlyArray<{ name: string; hex: string }> = [
-  { name: "Amber", hex: "#f5b400" },
-  { name: "Signal orange", hex: "#ff7a1a" },
-  { name: "Coral", hex: "#ff5d73" },
-  { name: "Violet", hex: "#a77bff" },
-  { name: "Survey blue", hex: "#3d8bff" },
-  { name: "Cyan", hex: "#22d3ee" },
-  { name: "Lime", hex: "#9be32d" },
+  { name: "Amber", hex: "#eeb02b" },
+  { name: "Signal orange", hex: "#f0832e" },
+  { name: "Coral", hex: "#ec6a78" },
+  { name: "Violet", hex: "#9d86f2" },
+  { name: "Survey blue", hex: "#4f8fea" },
+  { name: "Cyan", hex: "#3fc1d3" },
+  { name: "Lime", hex: "#93c84a" },
 ];
 
 const THEMES: readonly ThemeChoice[] = ["system", "light", "dark"];
@@ -30,7 +31,8 @@ const THEMES: readonly ThemeChoice[] = ["system", "light", "dark"];
 export function parseAppearance(raw: unknown): Appearance {
   const obj = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
   const theme = THEMES.includes(obj.theme as ThemeChoice) ? (obj.theme as ThemeChoice) : DEFAULT_APPEARANCE.theme;
-  const accent = (typeof obj.accent === "string" && parseHex(obj.accent)) || DEFAULT_APPEARANCE.accent;
+  const parsed = (typeof obj.accent === "string" && parseHex(obj.accent)) || DEFAULT_APPEARANCE.accent;
+  const accent = parsed === LEGACY_DEFAULT_ACCENT ? DEFAULT_ACCENT : parsed;
   return { version: 1, theme, accent };
 }
 
@@ -40,8 +42,8 @@ export function resolveTheme(choice: ThemeChoice, systemPrefersDark: boolean): R
 }
 
 // Surfaces the accent must stand out against (mirror tokens.css / the 3D scene).
-const PANEL_BG: Record<ResolvedTheme, string> = { dark: "#1d1f24", light: "#f2f3f5" };
-const VIEWPORT_BG = "#04060a";
+const PANEL_BG: Record<ResolvedTheme, string> = { dark: "#181b1f", light: "#ffffff" };
+const VIEWPORT_BG = "#07090c";
 const MIN_UI_CONTRAST = 3; // WCAG 2.x non-text / large-text minimum
 const HOVER_SHIFT = 0.12;
 

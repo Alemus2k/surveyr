@@ -32,25 +32,27 @@
 }
 .accuracy-card {
   padding: 10px 12px 12px;
-  border: 1px solid var(--line-strong);
-  border-left-width: 4px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--bg-raised);
   margin-bottom: 12px;
 }
 .accuracy-card.good {
-  border-left-color: var(--good);
+  border-color: color-mix(in srgb, var(--good) 40%, transparent);
+  background: var(--good-soft);
 }
 .accuracy-card.fair {
-  border-left-color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--warn-soft);
 }
 .accuracy-card.poor {
-  border-left-color: var(--bad);
+  border-color: color-mix(in srgb, var(--bad) 40%, transparent);
+  background: var(--bad-soft);
 }
 .accuracy-grade {
   font-size: var(--text-lg);
   font-weight: var(--weight-heavy);
-  letter-spacing: 0.04em;
+  letter-spacing: -0.005em;
 }
 .accuracy-card.good .accuracy-grade {
   color: var(--good);

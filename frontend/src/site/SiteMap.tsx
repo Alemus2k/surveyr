@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { elevationRamp } from "../color";
 import { niceStep } from "../viewer/backdrop";
 import { pointInPolygon, type Surfaces } from "./progress";
 import { mix, siteTint, tintScale, workMask, type RGB, type SiteColorMode } from "./siteColors";
@@ -21,14 +22,8 @@ interface SiteMapProps {
   onDeleteZone: (id: string) => void; // Delete key on the selected zone
 }
 
-const RAMP: RGB[] = [[38, 70, 160], [40, 160, 190], [120, 200, 110], [235, 210, 90], [215, 110, 60]];
 const CLOSE_PX = 12; // clicking this near the first vertex closes the polygon
-
-function ramp(t: number): RGB {
-  const x = Math.min(1, Math.max(0, t)) * (RAMP.length - 1);
-  const i = Math.min(RAMP.length - 2, Math.floor(x));
-  return mix(RAMP[i], RAMP[i + 1], x - i);
-}
+const ramp = (t: number): RGB => elevationRamp(t); // same ramp as the 3D view
 
 /** Simple hillshade (light from the north-west), 0..1, NaN where unscanned. */
 function hillshade(z: Float64Array, nx: number, ny: number, cell: number): Float64Array {
@@ -96,7 +91,7 @@ export function SiteMap(props: SiteMapProps) {
         const i = r * s.nx + c;
         const h = shade[i];
         if (!Number.isFinite(h)) continue;
-        const grey = 70 + 150 * h;
+        const grey = 52 + 128 * h; // mid-grey relief, so tints read and the map never glares
         let rgb: RGB = [grey, grey, grey];
         if (mode === "elevation") {
           rgb = mix(ramp((z[i] - range.lo) / (range.hi - range.lo || 1)), [0, 0, 0], 0.55 * (1 - h));
@@ -230,7 +225,7 @@ export function SiteMap(props: SiteMapProps) {
       <div className="site-map-north" aria-hidden="true">N ↑</div>
       <div className="site-map-scale" aria-hidden="true">
         <i style={{ width: `${(100 * bar) / widthM}%` }} />
-        <span className="mono">{bar} m</span>
+        <span className="fig">{bar} m</span>
       </div>
       {hover && !drawing && (
         <div

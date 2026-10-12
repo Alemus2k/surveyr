@@ -68,7 +68,7 @@ export function ZoneTable({ progress, scan, selected, onSelect, onDelete }: Zone
                 </td>
                 <td className="num">
                   {stockpile ? (
-                    <span className="mono">{vol(snap?.pileVolume ?? 0)}</span>
+                    <span className="fig">{vol(snap?.pileVolume ?? 0)}</span>
                   ) : snap?.pct === null || snap === undefined ? (
                     "—"
                   ) : (
@@ -76,19 +76,19 @@ export function ZoneTable({ progress, scan, selected, onSelect, onDelete }: Zone
                       <span className="pct-bar">
                         <i style={{ width: `${snap.pct}%`, background: p.zone.color }} />
                       </span>
-                      <span className="mono">{snap.pct.toFixed(0)}%</span>
+                      <span className="fig">{snap.pct.toFixed(0)}%</span>
                     </span>
                   )}
                 </td>
-                <td className="num mono">
+                <td className="num fig">
                   {stockpile || !snap ? "—" : (
                     <>
                       {formatVolume(snap.remainingCut).value} / {vol(snap.remainingFill)}
                     </>
                   )}
                 </td>
-                <td className="num mono">{snap && scan > 0 ? vol(snap.cut + snap.fill) : "—"}</td>
-                <td className="mono">
+                <td className="num fig">{snap && scan > 0 ? vol(snap.cut + snap.fill) : "—"}</td>
+                <td className="fig">
                   {stockpile ? "—" : (
                     <span className={p.status === "behind" ? "late" : undefined}>
                       {p.doneOn ? `done ${formatDate(p.doneOn)}` : p.forecast ? formatDate(p.forecast) : "—"}

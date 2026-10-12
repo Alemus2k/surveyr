@@ -29,29 +29,29 @@
   gap: 2px;
   height: 36px;
   padding: 0 3px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-md);
-  background: rgba(24, 25, 29, 0.88);
-  backdrop-filter: blur(6px);
+  background: rgba(21, 23, 27, 0.86);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
   pointer-events: auto;
 }
 .viewport .tool-btn {
-  color: #a0a5ad;
+  color: #9ba2ab;
 }
 .viewport .tool-btn:hover {
-  background: #2b2e35;
-  color: #e8e9eb;
+  background: #23272e;
+  color: #e4e6e9;
 }
 .viewport .tool-btn[aria-pressed="true"] {
   color: var(--accent-viewport);
   background: var(--accent-viewport-soft);
-  border-color: var(--accent-viewport-line);
 }
 .tool-icon {
   display: grid;
   place-items: center;
   width: 30px;
-  color: #a0a5ad;
+  color: #9ba2ab;
 }
 .tool-slider {
   width: 110px;
@@ -61,12 +61,13 @@
 
 /* ---- legend + badge chips ---- */
 .pc-chip {
-  padding: 4px 9px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(4, 6, 10, 0.78);
-  color: #e6eef7;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(14, 16, 19, 0.8);
+  color: #d4d8dd;
   font-size: var(--text-xs);
+  backdrop-filter: blur(6px);
 }
 .pc-legend {
   position: absolute;
@@ -80,10 +81,10 @@
   pointer-events: none;
 }
 .pc-legend-bar {
-  width: 14px;
+  width: 8px;
   height: min(240px, 38vh);
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 14px rgba(0, 0, 0, 0.4);
 }
 .pc-badges {
   position: absolute;
