@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { AXIS_COLORS, axisLabelAnchors, buildBackdrop, niceStep, type AxisLabels, type SceneBox } from "./backdrop";
+import { placeAxisChip, type Size } from "./axisLabelPlacement";
 import { setPointsViewportHeight } from "./materials";
 
 export type ViewPreset = "perspective" | "top" | "front";
@@ -32,23 +33,32 @@ function createAxisLabels(host: HTMLElement, initial: AxisLabels, anchors: Recor
     const value = document.createTextNode(initial[key]);
     chip.append(caption, value);
     layer.append(chip);
-    return { key, chip, value, anchor: anchors[key] };
+    return { key, chip, value, anchor: anchors[key], size: null as Size | null };
   });
   host.append(layer);
+  // chip sizes are read from layout only when the text or font changes, never per frame
+  const remeasure = () => chips.forEach((c) => (c.size = null));
+  document.fonts?.ready.then(remeasure).catch(() => {});
   const p = new THREE.Vector3();
   return {
     update(camera: THREE.Camera, width: number, height: number, visible: boolean) {
       layer.hidden = !visible;
       if (!visible) return;
-      for (const { chip, anchor } of chips) {
-        p.copy(anchor).project(camera);
+      for (const c of chips) {
+        p.copy(c.anchor).project(camera);
         const onScreen = p.z > -1 && p.z < 1;
-        chip.style.visibility = onScreen ? "visible" : "hidden";
-        if (onScreen) chip.style.transform = `translate(${((p.x + 1) / 2) * width}px, ${((1 - p.y) / 2) * height}px)`;
+        c.chip.style.visibility = onScreen ? "visible" : "hidden";
+        if (!onScreen) continue;
+        c.size ??= { width: c.chip.offsetWidth, height: c.chip.offsetHeight };
+        const anchor = { x: ((p.x + 1) / 2) * width, y: ((1 - p.y) / 2) * height };
+        // stays beside its axis end, but clamped inside the view so it's never clipped
+        const at = placeAxisChip(c.key, anchor, c.size, { width, height });
+        c.chip.style.transform = `translate(${at.x}px, ${at.y}px)`;
       }
     },
     setText(labels: AxisLabels) {
       for (const c of chips) c.value.data = labels[c.key];
+      remeasure();
     },
     dispose: () => layer.remove(),
   };

@@ -211,13 +211,4 @@
   font-family: var(--font-ui);
   font-weight: var(--weight-strong);
 }
-/* nudge each chip off its anchor so it never sits on the line it labels */
-.axis-label-east {
-  translate: calc(-100% - 8px) -50%;
-}
-.axis-label-north {
-  translate: 8px -50%;
-}
-.axis-label-up {
-  translate: -50% calc(-100% - 6px);
-}
+/* per-axis offsets and edge clamping are done in JS (axisLabelPlacement.ts) */
