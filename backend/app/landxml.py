@@ -141,20 +141,63 @@ def read_tin(path: str, surface: Optional[str] = None) -> Tuple[np.ndarray, np.n
     return np.array(pts, dtype=float), tri, name
 
 
-def sample_tin(pts: np.ndarray, tri: np.ndarray, across: int = LATTICE_ACROSS) -> np.ndarray:
-    """A regular lattice of points on the TIN (linear interpolation inside each triangle)."""
-    from matplotlib.tri import LinearTriInterpolator, Triangulation
+_CHUNK_CANDIDATES = 4_000_000  # lattice-point/triangle pairs tested per batch (bounds memory)
 
+
+def sample_tin(pts: np.ndarray, tri: np.ndarray, across: int = LATTICE_ACROSS) -> np.ndarray:
+    """A regular lattice of points on the TIN (linear interpolation inside each triangle).
+
+    Pure NumPy (the bundled engine leaves Matplotlib out): each triangle tests
+    the lattice points inside its bounding box with barycentric coordinates.
+    Lattice points no triangle covers (outside the TIN, or in a hole) are dropped.
+    """
     used = np.unique(tri)
     lo, hi = pts[used, :2].min(axis=0), pts[used, :2].max(axis=0)
     step = float(np.max(hi - lo)) / across or 1.0
-    xs = np.arange(lo[0] + step / 2, hi[0], step)
-    ys = np.arange(lo[1] + step / 2, hi[1], step)
-    gx, gy = np.meshgrid(xs, ys)
-    interp = LinearTriInterpolator(Triangulation(pts[:, 0], pts[:, 1], tri), pts[:, 2])
-    gz = interp(gx, gy)
-    keep = ~np.ma.getmaskarray(gz)  # lattice points outside the TIN are masked
-    return np.column_stack([gx[keep], gy[keep], np.asarray(gz)[keep]])
+    x0, y0 = lo[0] + step / 2, lo[1] + step / 2
+    nx = max(1, int(np.ceil((hi[0] - x0) / step)))
+    ny = max(1, int(np.ceil((hi[1] - y0) / step)))
+    z = np.full(nx * ny, np.nan)
+
+    a, b, c = pts[tri[:, 0]], pts[tri[:, 1]], pts[tri[:, 2]]
+    txy = np.stack([a[:, :2], b[:, :2], c[:, :2]], axis=1)  # (M, 3 corners, 2)
+    c0 = np.clip(np.ceil((txy[:, :, 0].min(axis=1) - x0) / step), 0, nx).astype(np.int64)
+    c1 = np.clip(np.floor((txy[:, :, 0].max(axis=1) - x0) / step), -1, nx - 1).astype(np.int64)
+    r0 = np.clip(np.ceil((txy[:, :, 1].min(axis=1) - y0) / step), 0, ny).astype(np.int64)
+    r1 = np.clip(np.floor((txy[:, :, 1].max(axis=1) - y0) / step), -1, ny - 1).astype(np.int64)
+    w = np.maximum(c1 - c0 + 1, 0)
+    counts = w * np.maximum(r1 - r0 + 1, 0)
+
+    start = 0
+    while start < len(tri):
+        # a batch of triangles whose bounding boxes hold at most _CHUNK_CANDIDATES lattice points
+        end = start + max(1, int(np.searchsorted(np.cumsum(counts[start:]), _CHUNK_CANDIDATES)))
+        t = np.repeat(np.arange(start, end), counts[start:end])
+        if len(t):
+            first = np.repeat(np.cumsum(counts[start:end]) - counts[start:end], counts[start:end])
+            off = np.arange(len(t)) - first
+            col = c0[t] + off % w[t]
+            row = r0[t] + off // w[t]
+            px, py = x0 + col * step, y0 + row * step
+            ax, ay = a[t, 0], a[t, 1]
+            v0x, v0y = b[t, 0] - ax, b[t, 1] - ay
+            v1x, v1y = c[t, 0] - ax, c[t, 1] - ay
+            v2x, v2y = px - ax, py - ay
+            den = v0x * v1y - v1x * v0y
+            ok = np.abs(den) > 1e-12  # skip degenerate (zero-area) triangles
+            with np.errstate(divide="ignore", invalid="ignore"):
+                wb = (v2x * v1y - v1x * v2y) / den
+                wc = (v0x * v2y - v2x * v0y) / den
+            wa = 1.0 - wb - wc
+            eps = -1e-9  # points on an edge belong to both neighbours; either value is the same
+            inside = ok & (wa >= eps) & (wb >= eps) & (wc >= eps)
+            idx = (row * nx + col)[inside]
+            z[idx] = (wa * a[t, 2] + wb * b[t, 2] + wc * c[t, 2])[inside]
+        start = end
+
+    keep = ~np.isnan(z)
+    rows, cols = np.divmod(np.nonzero(keep)[0], nx)
+    return np.column_stack([x0 + cols * step, y0 + rows * step, z[keep]])
 
 
 _cache: Dict[tuple, Tuple[np.ndarray, str]] = {}

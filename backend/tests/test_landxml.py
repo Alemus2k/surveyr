@@ -128,3 +128,20 @@ def test_xml_without_a_surface_is_rejected(client):
     assert res.status_code == 400
     assert "LandXML" in res.json()["detail"]
     assert client.get("/api/projects").json() == []
+
+
+def test_sampling_works_without_matplotlib(grading):
+    """The bundled desktop engine excludes Matplotlib: LandXML must not need it."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys; sys.modules['matplotlib'] = None\n"
+        "from app import landxml\n"
+        f"pts, tri, _ = landxml.read_tin(r'{grading}')\n"
+        "print(len(landxml.sample_tin(pts, tri, across=50)))\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                         cwd=str(__import__('pathlib').Path(__file__).resolve().parents[1]))
+    assert out.returncode == 0, out.stderr
+    assert int(out.stdout) > 2000
