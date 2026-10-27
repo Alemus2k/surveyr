@@ -58,6 +58,12 @@ To build it yourself instead, run `npm run app:build` (see
 - **Import scans** with **Import scan…** (Projects panel) or the **+** at the end
   of the tabs: `.ply`, `.xyz`, `.las` or `.laz`. A Scaniverse PLY sent from a
   phone works as-is.
+- **Design surfaces** from the civil engineer import the same way as
+  **LandXML** (`.xml`) TINs. Units come from the file; when it holds several
+  surfaces (existing ground and finished grade, say) the finished-grade one is
+  used — pick another under **Manual adjustments → Design surface**. The TIN is
+  sampled on a fine grid (≈800 points across), so it works everywhere a scan
+  does: as a job site's design, in the 3D view, slices and accuracy checks.
 - **Tabs**: each open project is a tab; close with × or middle-click and reopen
   from **Projects**. Deleting a project there moves its files to the
   Trash / Recycle Bin.
@@ -367,8 +373,9 @@ point clouds, **OpenStreetMap** for any basemap.
   surfaces. Results also depend on cell size.
 - **Job-site scans** must already share a coordinate system (RTK drone /
   rover on the site's control); there is no automatic alignment between
-  flights yet, and a design surface is imported as a point cloud, not
-  LandXML. Volumes are prismatic cells on a ~1 m grid.
+  flights yet. Volumes are prismatic cells on a ~1 m grid. LandXML import
+  reads TIN surfaces only (no alignments, breaklines-only surfaces or
+  corridors yet).
 - **Alignment** of comparison layers is manual for now (move / rotate / exact
   values); point-pair snapping and automatic refinement are planned.
 - Treat every figure as decision support; final judgements remain the

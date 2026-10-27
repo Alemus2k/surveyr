@@ -131,7 +131,16 @@ def put_composition(comp_id: str, body: compare.Composition) -> compare.Composit
 
 
 def _settings_response(project_id: str) -> dict:
-    return {"settings": scan_settings.load(project_id), "detected": scan_settings.detect(project_id)}
+    """Settings, detected units and — for a LandXML file — its surfaces and which one is in use."""
+    out = {"settings": scan_settings.load(project_id), "detected": scan_settings.detect(project_id), "surfaces": None}
+    source = service.discover_projects()[project_id].get("source", "")
+    if source.lower().endswith(".xml"):
+        from . import landxml
+
+        info = landxml.read_info(os.path.join(service.DATA_DIR, source))
+        names = [s["name"] for s in info["surfaces"]]
+        out["surfaces"] = {"available": info["surfaces"], "default": landxml.default_surface(names)}
+    return out
 
 
 @app.get("/api/projects/{project_id}/settings")

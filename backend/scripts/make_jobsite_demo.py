@@ -12,7 +12,9 @@ progress view has something realistic to measure:
   stockpile grows then shrinks
 
 Writes into data/:
-  riverside_design.laz            finished-grade design surface
+  riverside_grading.xml           the engineer's grading surfaces as LandXML, in US
+                                  survey feet: "FG - Finished grade" (the design) and
+                                  "EG - Existing ground"
   riverside_<date>.laz (x6)       the scans, in UTM zone 17N metres
   riverside_commons.site.json     zones, planned dates and pay-app claims
   riverside_control.control.json  12 surveyed check points on undisturbed ground
@@ -27,11 +29,13 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from typing import Callable, Dict, List
 
 import numpy as np
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
+sys.path.insert(0, BASE)  # for app.landxml
 DATA = os.path.join(BASE, "data")
 PREFIX = "riverside"
 SITE_FILE = "riverside_commons.site.json"
@@ -210,6 +214,31 @@ def _in_polygon(x: np.ndarray, y: np.ndarray, poly: List[List[float]]) -> np.nda
 
 
 # ------------------------------------------------------------------ output
+def grid_tin(fn: Callable, step: float):
+    """A regular-grid TIN of ``fn`` over the site: points (E, N, Z in metres) and triangles."""
+    xs, ys = np.arange(0.0, W + step / 2, step), np.arange(0.0, H + step / 2, step)
+    gx, gy = np.meshgrid(xs, ys)
+    pts = np.column_stack([gx.ravel() + E0, gy.ravel() + N0, fn(gx, gy).ravel()])
+    nx = len(xs)
+    tri = []
+    for r in range(len(ys) - 1):
+        for c in range(nx - 1):
+            a, b, d, e = r * nx + c, r * nx + c + 1, (r + 1) * nx + c, (r + 1) * nx + c + 1
+            tri += [(a, b, e), (a, e, d)]
+    return pts, np.array(tri)
+
+
+def write_grading_xml(path: str) -> None:
+    """The design as an engineer would hand it over: LandXML TINs in US survey feet."""
+    from app import landxml
+
+    surfaces = []
+    for name, fn, step in (("EG - Existing ground", existing, 2.0), ("FG - Finished grade", design, 1.0)):
+        pts, tri = grid_tin(fn, step)
+        surfaces.append((name, pts / US_FT, tri))
+    landxml.write(path, surfaces, unit="USSurveyFoot", crs_name="UTM zone 17N (US survey feet)")
+
+
 def write_laz(path: str, x: np.ndarray, y: np.ndarray, z: np.ndarray, date: str) -> None:
     import datetime
 
@@ -281,8 +310,7 @@ def main() -> None:
     rng = np.random.default_rng(7)
     n = int(W * H * POINTS_PER_M2)
 
-    x, y = sample_points(rng, int(W * H * 2))
-    write_laz(os.path.join(DATA, f"{PREFIX}_design.laz"), x, y, design(x, y), DATES[0])
+    write_grading_xml(os.path.join(DATA, f"{PREFIX}_grading.xml"))
     scans = []
     for k, date in enumerate(DATES):
         x, y = sample_points(rng, n)
@@ -303,7 +331,7 @@ def main() -> None:
         "version": 1,
         "name": "Riverside Commons",
         "scans": scans,
-        "design_id": f"{PREFIX}_design",
+        "design_id": f"{PREFIX}_grading",
         "tolerance_m": 0.05,
         "change_threshold_m": 0.05,
         "overbill_pct": 10.0,

@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from "react";
 
-const ACCEPT = ".ply,.las,.laz,.xyz";
+const ACCEPT = ".ply,.las,.laz,.xyz,.xml"; // .xml = LandXML design surface
 
 interface ImportScanButtonProps {
   onFile: (file: File) => void;

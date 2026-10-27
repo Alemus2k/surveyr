@@ -14,18 +14,22 @@ from typing import BinaryIO, Optional, Union
 
 from . import io
 
-SUPPORTED_EXTENSIONS = (".ply", ".las", ".laz", ".xyz")
+SUPPORTED_EXTENSIONS = (".ply", ".las", ".laz", ".xyz", ".xml")  # .xml = LandXML surface
 MAX_IMPORT_BYTES = 1024 * 1024 * 1024  # 1 GiB; phone scans are typically 5–100 MB
 DEMO_FILES = ("synthetic_topo.xyz", "scan_a.las", "scan_b.las")
 SITE_DEMO_DATES = ("2026-07-27", "2026-08-10", "2026-08-24", "2026-09-07", "2026-09-21", "2026-10-05")
 SITE_DEMO_FILES = (
-    "riverside_design.laz",
     *(f"riverside_{d}.laz" for d in SITE_DEMO_DATES),
     "riverside_commons.site.json",
 )
 # Demo sets by seed version. A folder records the last version it received, so
 # each set arrives once — including on installs seeded before the set existed.
-DEMO_SETS = ((1, DEMO_FILES), (2, SITE_DEMO_FILES), (3, ("riverside_control.control.json",)))
+DEMO_SETS = (
+    (1, DEMO_FILES),
+    (2, SITE_DEMO_FILES),
+    (3, ("riverside_control.control.json",)),
+    (4, ("riverside_grading.xml",)),  # the demo design as LandXML (sites seeded earlier keep their LAZ design)
+)
 SEED_MARKER = ".surveyr-seeded"
 _CHUNK = 1024 * 1024
 _STEM_MAX = 60
@@ -78,7 +82,8 @@ def import_scan(
         try:
             cloud = io.load_point_cloud(str(dest))
         except Exception as exc:  # any parse failure means "not a point cloud we can read"
-            raise ImportRejected(f"could not read this file as a point cloud ({exc})") from exc
+            what = "a LandXML surface" if dest.suffix == ".xml" else "a point cloud"
+            raise ImportRejected(f"could not read this file as {what} ({exc})") from exc
         if cloud.size == 0:
             raise ImportRejected("could not read this file as a point cloud (it has no points)")
     except BaseException:

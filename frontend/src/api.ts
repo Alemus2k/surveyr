@@ -18,6 +18,13 @@ export interface ProjectRef {
   name: string;
   type?: ProjectType;
   site?: string; // the job site this scan belongs to, if any
+  source?: string; // file name(s) on disk
+}
+
+/** A LandXML file's design surfaces (TINs). */
+export interface LandXMLSurfaces {
+  available: { name: string; desc: string; points: number; faces: number }[];
+  default: string; // used when no surface has been picked
 }
 
 /** API root: injected by the desktop app, else the Vite dev-server proxy. */
@@ -96,6 +103,7 @@ export interface ScanSettings {
   up_axis: "z" | "y";
   ground_only: boolean;
   z_offset_m: number; // elevation correction added after unit conversion
+  surface: string | null; // LandXML: which surface; null = the default
 }
 
 /** What a scan's units appear to be: "crs" = stated by the file, "size" = a guess. */
@@ -110,6 +118,7 @@ export interface UnitDetection {
 export interface ScanSettingsResponse {
   settings: ScanSettings;
   detected: UnitDetection;
+  surfaces: LandXMLSurfaces | null; // only for LandXML files
 }
 
 export async function fetchScanSettings(id: string): Promise<ScanSettingsResponse> {

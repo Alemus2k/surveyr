@@ -1,9 +1,10 @@
-"""Point-cloud IO: load `.las`/`.laz`, `.ply`, and `.xyz` into a PointCloud.
+"""Point-cloud IO: load `.las`/`.laz`, `.ply`, `.xyz` and LandXML `.xml` into a PointCloud.
 
 Formats supported with free/open-source tooling only:
   - LAS / LAZ  -> laspy (pure Python + numpy; LAZ needs the optional `lazrs` backend)
   - PLY        -> small built-in reader (ASCII + binary_little_endian, vertex element)
   - XYZ        -> whitespace-delimited "x y z" text
+  - LandXML    -> a TIN surface, sampled on a fine lattice (see landxml.py)
 
 Wherever the source provides extra per-point channels (intensity, echo return
 info, GPS time, classification, scan angle) they are copied into the
@@ -12,7 +13,7 @@ PointCloud channel map so downstream code can use them when present.
 from __future__ import annotations
 
 import os
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 
@@ -28,8 +29,13 @@ _LAS_CHANNELS = (
 )
 
 
-def load_point_cloud(path: str) -> PointCloud:
+def load_point_cloud(path: str, surface: Optional[str] = None) -> PointCloud:
+    """Read a scan. ``surface`` picks one surface of a LandXML file (default: the design-looking one)."""
     ext = os.path.splitext(path)[1].lower()
+    if ext == ".xml":
+        from . import landxml
+
+        return PointCloud(landxml.load_surface(path, surface)[0])
     if ext == ".xyz":
         return _load_xyz(path)
     if ext in (".las", ".laz"):

@@ -44,7 +44,7 @@ def discover_projects() -> Dict[str, dict]:
     """
     found: Dict[str, dict] = {}
     for fname in sorted(os.listdir(DATA_DIR)):
-        if fname.lower().endswith((".xyz", ".las", ".laz", ".ply")):
+        if fname.lower().endswith(storage.SUPPORTED_EXTENSIONS):
             pid = os.path.splitext(fname)[0]
             found[pid] = {"id": pid, "name": pid.replace("_", " ").title(),
                           "source": fname, "type": "single"}
@@ -229,7 +229,7 @@ def _load_cloud(project_id: str):
     if info["type"] in GROUP_TYPES:
         raise NotAnalyzable(project_id)
     settings = scan_settings.load(project_id)
-    raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]))
+    raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]), surface=settings.surface)
     cloud = PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels))
     ground = scan_settings.ground_mask(cloud.channels.get("classification")) if settings.ground_only else None
     if ground is not None:

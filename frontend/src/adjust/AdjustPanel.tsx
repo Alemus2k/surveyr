@@ -80,6 +80,29 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
         </p>
       </PanelSection>
 
+      {current.surfaces && (
+        <PanelSection label="Design surface">
+          <label className="dialog-field">
+            <span className="field-label">Surface from this LandXML file</span>
+            <select
+              value={settings.surface ?? current.surfaces.default}
+              disabled={saving}
+              onChange={(e) => set({ surface: e.target.value === current.surfaces!.default ? null : e.target.value })}
+            >
+              {current.surfaces.available.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name} ({s.faces.toLocaleString()} triangles)
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="panel-note">
+            Engineers' files often hold existing ground and finished grade together. The one named like finished grade
+            is picked by default; it's sampled on a fine grid so every tool can use it.
+          </p>
+        </PanelSection>
+      )}
+
       <PanelSection label="Classification">
         <label className="check-row">
           <input

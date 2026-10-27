@@ -193,11 +193,11 @@ def test_seeding_adds_the_site_demo_to_folders_seeded_before_it_existed(tmp_path
     (target / storage.SEED_MARKER).touch()  # seeded by an older version
 
     storage.seed_demo_data(target, demo)
-    (target / "riverside_design.laz").unlink()  # the user deletes part of it
+    (target / "riverside_2026-07-27.laz").unlink()  # the user deletes part of it
     storage.seed_demo_data(target, demo)
 
     assert (target / "riverside_commons.site.json").exists()
-    assert not (target / "riverside_design.laz").exists()  # never comes back
+    assert not (target / "riverside_2026-07-27.laz").exists()  # never comes back
 
 
 # ---------------------------------------------------------------- demo accuracy

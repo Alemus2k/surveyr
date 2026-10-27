@@ -66,7 +66,11 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                 <button className="project-open" onClick={() => onOpen(p.id)} title={isOpen ? "Show tab" : "Open in a tab"}>
                   <span className="project-name">{p.name}</span>
                   <span className="project-id fig">
-                    {p.type === "compare" ? "comparison" : p.type === "site" ? "job site" : p.site ? `in ${siteName(p.site)}` : p.id}
+                    {p.type === "compare"
+                      ? "comparison"
+                      : p.type === "site"
+                        ? "job site"
+                        : `${p.source?.toLowerCase().endsWith(".xml") ? "LandXML surface · " : ""}${p.site ? `in ${siteName(p.site)}` : p.id}`}
                     {isOpen && <span className="project-open-tag">open</span>}
                   </span>
                 </button>
@@ -94,7 +98,8 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
         <p className="panel-note">
           Imports <span className="fig">.ply</span>, <span className="fig">.las</span>,{" "}
           <span className="fig">.laz</span> and <span className="fig">.xyz</span> point clouds — e.g. a Scaniverse
-          PLY AirDropped from your phone. Closing a tab keeps the project; reopen it here.
+          PLY AirDropped from your phone — and LandXML <span className="fig">.xml</span> design surfaces from the
+          engineer. Closing a tab keeps the project; reopen it here.
         </p>
       )}
 
