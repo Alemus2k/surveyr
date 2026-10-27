@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState, type CSSProperties } from "react";
 import { AdjustPanel } from "./adjust/AdjustPanel";
 import { useScanSettings } from "./adjust/useScanSettings";
 import type { ProjectRef } from "./api";
@@ -27,6 +27,7 @@ import { NewSiteDialog } from "./site/NewSiteDialog";
 import { SiteDashboard } from "./site/SiteDashboard";
 import { SitePanel } from "./site/SitePanel";
 import { formatDate } from "./site/dates";
+import { claimLaunchIntro, LaunchIntro, prefersReducedMotion } from "./intro/LaunchIntro";
 import { useSite } from "./site/useSite";
 import { TerrainPanel } from "./panels/TerrainPanel";
 import { colorize, type ColorRange, type PreparedCloud } from "./viewer/prepare";
@@ -83,6 +84,12 @@ export default function App() {
   const scanSettings = useScanSettings(ready ? scanId : null, bumpSettings);
   const [panelWidth, setPanelWidth, resetPanelWidth] = usePanelWidth();
   const appearance = useAppearance();
+  // the launch animation: key of the run playing, or null; "Play now" replays it
+  const [introRun, setIntroRun] = useState<number | null>(null);
+  // once per page load, before the first paint so the app never flashes up first
+  useLayoutEffect(() => {
+    if (appearance.appearance.intro && !prefersReducedMotion() && claimLaunchIntro()) setIntroRun(0);
+  }, []); // launch only
 
   const [panelChoice, setPanel] = useState<PanelId | null>("terrain");
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD_DEG);
@@ -285,7 +292,7 @@ export default function App() {
         onSelect={tabs.select}
         onClose={tabs.close}
         readout={readout || null}
-        appearance={<AppearancePopover api={appearance} />}
+        appearance={<AppearancePopover api={appearance} onPlayIntro={() => setIntroRun((n) => (n ?? 0) + 1)} />}
         onImport={importScan}
         importing={projects.busy}
       />
@@ -329,6 +336,8 @@ export default function App() {
         onCreate={createSite}
         onCancel={() => setNewSiteOpen(false)}
       />
+
+      {introRun !== null && <LaunchIntro key={introRun} accent={appearance.viewportAccent} onDone={() => setIntroRun(null)} />}
 
       {projects.notice && (
         <div className={`toast toast-${projects.notice.tone}`} role="status">

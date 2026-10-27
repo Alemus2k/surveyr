@@ -13,10 +13,11 @@ const THEME_OPTIONS: ReadonlyArray<[ThemeChoice, string]> = [
 
 interface AppearancePopoverProps {
   api: AppearanceApi;
+  onPlayIntro: () => void;
 }
 
 /** Top-bar Appearance button + popover: theme and highlight colour (room for more). */
-export function AppearancePopover({ api }: AppearancePopoverProps) {
+export function AppearancePopover({ api, onPlayIntro }: AppearancePopoverProps) {
   const { appearance, update, reset, uiAccent } = api;
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -129,6 +130,25 @@ export function AppearancePopover({ api }: AppearancePopoverProps) {
                 Shown as <span className="fig">{uiAccent}</span> in {api.theme} mode so it stays readable.
               </p>
             )}
+          </section>
+
+          <section className="appearance-section">
+            <h3 className="section-label">Launch</h3>
+            <div className="intro-setting">
+              <label className="check-row">
+                <input type="checkbox" checked={appearance.intro} onChange={(e) => update({ intro: e.target.checked })} />
+                Play launch animation
+              </label>
+              <button
+                className="text-btn"
+                onClick={() => {
+                  setOpen(false);
+                  onPlayIntro();
+                }}
+              >
+                Play now
+              </button>
+            </div>
           </section>
         </div>
       )}

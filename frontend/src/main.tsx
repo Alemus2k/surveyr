@@ -17,6 +17,7 @@ import "./charts/charts.css";
 import "./jobsite/jobsite.css";
 import "./site/site.css";
 import "./control/control.css";
+import "./intro/intro.css";
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

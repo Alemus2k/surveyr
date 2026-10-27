@@ -179,3 +179,11 @@
   border-color: var(--accent);
   outline: none;
 }
+
+.intro-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--text-sm);
+}

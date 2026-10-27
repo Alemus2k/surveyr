@@ -4,7 +4,7 @@ import { contrastRatio } from "./colorMath";
 
 describe("parseAppearance", () => {
   test("accepts a valid saved settings object", () => {
-    const saved = { version: 1, theme: "light", accent: "#22d3ee" };
+    const saved = { version: 1, theme: "light", accent: "#22d3ee", intro: false };
     expect(parseAppearance(saved)).toEqual(saved);
   });
 
@@ -12,6 +12,7 @@ describe("parseAppearance", () => {
     expect(parseAppearance({ version: 1, theme: "neon", accent: "blue" })).toEqual(DEFAULT_APPEARANCE);
     expect(parseAppearance(null)).toEqual(DEFAULT_APPEARANCE);
     expect(parseAppearance({ theme: "dark" })).toEqual({ ...DEFAULT_APPEARANCE, theme: "dark" });
+    expect(parseAppearance({ intro: "yes" }).intro).toBe(true);
   });
 
   test("the old default amber moves to the refined default", () => {

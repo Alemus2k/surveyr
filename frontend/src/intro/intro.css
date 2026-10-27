@@ -1,0 +1,157 @@
+/* Launch intro. Layers are driven per frame from overlay.ts (opacity,
+   transform, clip-path only); this file sets their resting geometry. */
+
+.intro {
+  --intro-ink: #f2f2f2;
+  --intro-hud: color-mix(in srgb, var(--intro-accent) 85%, white);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: var(--font-ui);
+}
+
+.intro-canvas,
+.intro-canvas canvas,
+.intro-eye,
+.intro-hud {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.intro-canvas canvas {
+  display: block;
+}
+
+.intro-eye {
+  pointer-events: none;
+}
+.intro-lids {
+  fill: #000;
+}
+.intro-seam {
+  fill: none;
+  stroke: var(--intro-hud);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 6px var(--intro-accent));
+  opacity: 0;
+}
+
+/* first-person HUD */
+.intro-hud {
+  opacity: 0;
+  pointer-events: none;
+  color: var(--intro-hud);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--intro-accent) 60%, transparent);
+}
+.intro-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 0 solid var(--intro-hud);
+}
+.intro-corner-tl { top: 6vh; left: 6vw; border-top-width: 1.5px; border-left-width: 1.5px; }
+.intro-corner-tr { top: 6vh; right: 6vw; border-top-width: 1.5px; border-right-width: 1.5px; }
+.intro-corner-bl { bottom: 6vh; left: 6vw; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.intro-corner-br { bottom: 6vh; right: 6vw; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+.intro-reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  translate: -50% -50%;
+  border: 1.5px solid var(--intro-hud);
+  border-radius: 50%;
+  mask: conic-gradient(#000 0 20%, transparent 0 25%, #000 0 45%, transparent 0 50%, #000 0 70%, transparent 0 75%, #000 0 95%, transparent 0);
+}
+.intro-reticle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--intro-hud);
+}
+.intro-readout {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.intro-readout-tl { top: calc(6vh + 46px); left: 6vw; }
+.intro-readout-bl { bottom: calc(6vh + 46px); left: 6vw; }
+.intro-readout-br { bottom: calc(6vh + 46px); right: 6vw; text-align: right; }
+.intro-alt {
+  display: inline-block;
+  min-width: 4.5ch;
+  font-variant-numeric: tabular-nums;
+}
+
+/* wordmark */
+.intro-word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  visibility: hidden;
+  text-align: center;
+}
+.intro-wordmark {
+  margin: 0;
+  color: var(--intro-ink);
+  font-size: clamp(48px, 7vw, 88px);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.005em; /* same as .brand-name, so it lands exactly */
+  line-height: 1;
+  transform-origin: 0 0;
+  opacity: 0;
+}
+.intro-tagline {
+  margin: 18px 0 0;
+  color: #9a9a9a;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+.intro-skip {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  color: #6f6f6f;
+  font: 11px var(--font-mono);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color var(--duration-fast, 150ms);
+}
+.intro-skip:hover,
+.intro-skip:focus-visible {
+  color: #d0d0d0;
+}
+
+/* the real brand stays hidden until the wordmark lands on it */
+html[data-intro] .topbar-brand .brand-name {
+  visibility: hidden;
+}
+html[data-intro] .topbar-brand .brand-mark {
+  opacity: 0;
+}
+.topbar-brand .brand-mark {
+  transition: opacity 400ms ease-out;
+}

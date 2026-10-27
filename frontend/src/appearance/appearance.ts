@@ -9,11 +9,12 @@ export interface Appearance {
   version: 1;
   theme: ThemeChoice;
   accent: string; // user's chosen highlight, "#rrggbb"
+  intro: boolean; // play the launch animation when the app opens
 }
 
 export const DEFAULT_ACCENT = "#eeb02b";
 const LEGACY_DEFAULT_ACCENT = "#f5b400"; // the old default amber: saved settings move to the refined one
-export const DEFAULT_APPEARANCE: Appearance = { version: 1, theme: "dark", accent: DEFAULT_ACCENT };
+export const DEFAULT_APPEARANCE: Appearance = { version: 1, theme: "dark", accent: DEFAULT_ACCENT, intro: true };
 
 export const ACCENT_PRESETS: ReadonlyArray<{ name: string; hex: string }> = [
   { name: "Amber", hex: "#eeb02b" },
@@ -33,7 +34,8 @@ export function parseAppearance(raw: unknown): Appearance {
   const theme = THEMES.includes(obj.theme as ThemeChoice) ? (obj.theme as ThemeChoice) : DEFAULT_APPEARANCE.theme;
   const parsed = (typeof obj.accent === "string" && parseHex(obj.accent)) || DEFAULT_APPEARANCE.accent;
   const accent = parsed === LEGACY_DEFAULT_ACCENT ? DEFAULT_ACCENT : parsed;
-  return { version: 1, theme, accent };
+  const intro = typeof obj.intro === "boolean" ? obj.intro : DEFAULT_APPEARANCE.intro;
+  return { version: 1, theme, accent, intro };
 }
 
 export function resolveTheme(choice: ThemeChoice, systemPrefersDark: boolean): ResolvedTheme {
