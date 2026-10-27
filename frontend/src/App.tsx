@@ -253,7 +253,7 @@ export default function App() {
           projects={projects.projects}
           scanId={pickedScan}
           onScan={(scan) => setSiteScanSel(scan && tabs.active ? { site: tabs.active, scan } : null)}
-          scanCloud={cloud && colors && range && siteScanId ? { projectId: siteScanId, cloud, colors, range } : null}
+          scanCloud={cloud && colors && range && siteScanId ? { projectId: siteScanId, cloud, colors, range, highest: analysis?.stats.max ?? null } : null}
           accent={appearance.viewportAccent}
           selectedZone={selectedZone}
           onSelectZone={selectZone}

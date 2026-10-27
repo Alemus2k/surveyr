@@ -178,3 +178,37 @@
     transform-origin: bottom right;
   }
 }
+
+/* ---- axis measurement chips (positioned each frame by the stage) ---- */
+.axis-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.axis-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--axis-color) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: rgba(16, 16, 16, 0.84);
+  color: #e6e6e6;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  will-change: transform;
+}
+.axis-label-caption {
+  color: var(--axis-color);
+  font-family: var(--font-ui);
+  font-weight: var(--weight-strong);
+}
+/* per-axis offsets and edge clamping are done in JS (axisLabelPlacement.ts) */

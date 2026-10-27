@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { SliceSpec } from "../slice/slice";
-import { niceStep } from "./backdrop";
+import { formatLength } from "../lib/format";
+import { axisMeasurements, niceStep } from "./backdrop";
 import { createPointsMaterial, createSurfaceMaterials, randomAttribute, surfaceMeshes } from "./materials";
 import { cloudToScene, type ColorRange, type PreparedCloud } from "./prepare";
 import { createStage, type ViewPreset } from "./stage";
@@ -33,6 +34,8 @@ export interface ViewerScene {
   setSurfaceOpacity: (opacity: number) => void;
   /** Replace the drawn outlines (e.g. job-site zones). */
   setOutlines: (outlines: Outline[]) => void;
+  /** The highest elevation shown on the up axis (defaults to the highest point). */
+  setHighest: (elevation: number) => void;
   goTo: (preset: ViewPreset) => void;
   resize: (w: number, h: number) => void;
   dispose: () => void;
@@ -53,7 +56,11 @@ export function createViewerScene(
   colors: Float32Array,
   onHeading: (radians: number) => void
 ): ViewerScene {
-  const stage = createStage(host, { box: cloud.box, span: cloud.span }, onHeading);
+  const stage = createStage(
+    host,
+    { box: cloud.box, span: cloud.span, axisLabels: axisMeasurements(cloud.box, cloud.zMax, formatLength) },
+    onHeading
+  );
 
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(cloud.positions, 3));
@@ -111,6 +118,9 @@ export function createViewerScene(
     },
     setSurfaceOpacity(opacity) {
       surfaceMats.shade.uniforms.uOpacity.value = opacity;
+    },
+    setHighest(elevation) {
+      stage.setAxisLabels(axisMeasurements(cloud.box, elevation, formatLength));
     },
     setOutlines(list) {
       for (const child of [...outlines.children]) {

@@ -24,6 +24,7 @@ export interface ScanCloud {
   cloud: PreparedCloud;
   colors: Float32Array; // elevation colours from the Cloud colour panel
   range: ColorRange;
+  highest: number | null; // highest ground cell, as in the Terrain panel
 }
 
 interface SiteDashboardProps {
@@ -281,6 +282,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
                     zones={site.zones}
                     selectedZone={selectedZone}
                     accent={accent}
+                    highest={scanCloud.highest}
                   />
                 ) : (
                   <div className="site-3d site-3d-loading">

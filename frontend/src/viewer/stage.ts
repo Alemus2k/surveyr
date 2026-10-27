@@ -2,7 +2,8 @@
 // heading and preset fly-tos. Single-project and comparison viewers build on it.
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { buildBackdrop, niceStep, type SceneBox } from "./backdrop";
+import { AXIS_COLORS, axisLabelAnchors, buildBackdrop, niceStep, type AxisLabels, type SceneBox } from "./backdrop";
+import { placeAxisChip, type Size } from "./axisLabelPlacement";
 import { setPointsViewportHeight } from "./materials";
 
 export type ViewPreset = "perspective" | "top" | "front";
@@ -11,6 +12,56 @@ export type ViewPreset = "perspective" | "top" | "front";
 export interface StageFrame {
   box: SceneBox;
   span: number;
+  axisLabels?: AxisLabels; // measurement chips at the axis ends (shown with the grid)
+}
+
+const LABEL_CAPTION: Record<keyof AxisLabels, string> = { east: "E–W", north: "N–S", up: "Highest" };
+const LABEL_COLOR: Record<keyof AxisLabels, number> = { east: AXIS_COLORS.x, north: AXIS_COLORS.y, up: AXIS_COLORS.z };
+
+/** HTML chips that follow the axis ends on screen; crisp text in the UI font at any zoom. */
+function createAxisLabels(host: HTMLElement, initial: AxisLabels, anchors: Record<keyof AxisLabels, THREE.Vector3>) {
+  const layer = document.createElement("div");
+  layer.className = "axis-labels";
+  layer.setAttribute("aria-hidden", "true"); // the same figures are in the Terrain panel
+  const chips = (Object.keys(initial) as (keyof AxisLabels)[]).map((key) => {
+    const chip = document.createElement("span");
+    chip.className = `axis-label axis-label-${key}`;
+    chip.style.setProperty("--axis-color", `#${LABEL_COLOR[key].toString(16).padStart(6, "0")}`);
+    const caption = document.createElement("span");
+    caption.className = "axis-label-caption";
+    caption.textContent = LABEL_CAPTION[key];
+    const value = document.createTextNode(initial[key]);
+    chip.append(caption, value);
+    layer.append(chip);
+    return { key, chip, value, anchor: anchors[key], size: null as Size | null };
+  });
+  host.append(layer);
+  // chip sizes are read from layout only when the text or font changes, never per frame
+  const remeasure = () => chips.forEach((c) => (c.size = null));
+  document.fonts?.ready.then(remeasure).catch(() => {});
+  const p = new THREE.Vector3();
+  return {
+    update(camera: THREE.Camera, width: number, height: number, visible: boolean) {
+      layer.hidden = !visible;
+      if (!visible) return;
+      for (const c of chips) {
+        p.copy(c.anchor).project(camera);
+        const onScreen = p.z > -1 && p.z < 1;
+        c.chip.style.visibility = onScreen ? "visible" : "hidden";
+        if (!onScreen) continue;
+        c.size ??= { width: c.chip.offsetWidth, height: c.chip.offsetHeight };
+        const anchor = { x: ((p.x + 1) / 2) * width, y: ((1 - p.y) / 2) * height };
+        // stays beside its axis end, but clamped inside the view so it's never clipped
+        const at = placeAxisChip(c.key, anchor, c.size, { width, height });
+        c.chip.style.transform = `translate(${at.x}px, ${at.y}px)`;
+      }
+    },
+    setText(labels: AxisLabels) {
+      for (const c of chips) c.value.data = labels[c.key];
+      remeasure();
+    },
+    dispose: () => layer.remove(),
+  };
 }
 
 const SCENE_BG = 0x0b0b0b; // --viewport-bg
@@ -28,6 +79,8 @@ export interface Stage {
   /** Called every frame before rendering. */
   onFrame: (cb: () => void) => void;
   setGridVisible: (visible: boolean) => void;
+  /** Update the measurement chips (no-op when the stage was built without them). */
+  setAxisLabels: (labels: AxisLabels) => void;
   goTo: (preset: ViewPreset) => void;
   resize: (w: number, h: number) => void;
   dispose: () => void;
@@ -47,8 +100,10 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SCENE_BG);
   scene.fog = new THREE.Fog(SCENE_BG, frame.span * 2.5, frame.span * 6);
-  const backdrop = buildBackdrop(frame.box, niceStep(frame.span / GRID_DIVISIONS));
+  const gridStep = niceStep(frame.span / GRID_DIVISIONS);
+  const backdrop = buildBackdrop(frame.box, gridStep);
   scene.add(backdrop);
+  const labels = frame.axisLabels ? createAxisLabels(host, frame.axisLabels, axisLabelAnchors(frame.box, gridStep)) : null;
 
   const camera = new THREE.PerspectiveCamera(50, width / height, frame.span / 1000, frame.span * 20);
   camera.position.copy(presetPosition("perspective", frame));
@@ -69,6 +124,7 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
     flyTo = null; // user input cancels a preset fly-to
   });
 
+  let viewW = width, viewH = height; // kept by resize(), so frames never read layout
   let raf = 0;
   const animate = () => {
     if (flyTo) {
@@ -79,6 +135,7 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
     onHeading(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z));
     for (const cb of frameCallbacks) cb();
     renderer.render(scene, camera);
+    labels?.update(camera, viewW, viewH, backdrop.visible);
     raf = requestAnimationFrame(animate);
   };
   raf = requestAnimationFrame(animate);
@@ -101,11 +158,16 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
     setGridVisible(visible) {
       backdrop.visible = visible;
     },
+    setAxisLabels(text) {
+      labels?.setText(text);
+    },
     goTo(preset) {
       controls.target.set(0, frame.box.height / 2, 0);
       flyTo = presetPosition(preset, frame);
     },
     resize(w, h) {
+      viewW = w;
+      viewH = h;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -114,6 +176,7 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
     dispose() {
       cancelAnimationFrame(raf);
       controls.dispose();
+      labels?.dispose();
       renderer.domElement.remove();
       renderer.dispose();
       scene.traverse((o) => {
