@@ -77,6 +77,7 @@ NOISE = 0.02  # m, per-point vertical noise
 BATTER = 6.0  # m, width over which a graded area blends back into existing ground
 TRUTH_CELL = 0.25
 DISTURBED_M = 0.05  # ground moved by more than this counts as disturbed
+TOLERANCE = 0.05  # the site's on-grade tolerance: closer than this to target counts as finished
 
 DATES = ["2026-07-27", "2026-08-10", "2026-08-24", "2026-09-07", "2026-09-21", "2026-10-05",
          "2026-10-19", "2026-11-02"]
@@ -677,7 +678,11 @@ def _truth_grid():
 
 
 def truth(trees: np.ndarray, brush: np.ndarray) -> Dict:
-    """Exact answers on a fine grid (no noise, no tolerance) for everything the demo shows."""
+    """Exact answers on a fine grid (no scan noise) for everything the demo shows.
+
+    Earthworks "left" follow the app's definition: ground within the on-grade
+    tolerance of its target is finished and counts as zero.
+    """
     gx, gy = _truth_grid()
     area = TRUTH_CELL**2
     exist = existing(gx, gy)
@@ -690,6 +695,7 @@ def truth(trees: np.ndarray, brush: np.ndarray) -> Dict:
         rows = []
         for k, g in enumerate(surfaces):
             diff = (g - target)[m]
+            diff = np.where(np.abs(diff) <= TOLERANCE, 0.0, diff)
             row = {"date": DATES[k],
                    "remaining_cut": float(np.clip(diff, 0, None).sum() * area),
                    "remaining_fill": float(np.clip(-diff, 0, None).sum() * area)}
@@ -779,7 +785,7 @@ def site_file(exact: Dict) -> Dict:
         "name": "Riverside Commons",
         "scans": [{"project_id": f"{PREFIX}_{d}", "date": d} for d in DATES],
         "design_id": f"{PREFIX}_grading",
-        "tolerance_m": 0.05,
+        "tolerance_m": TOLERANCE,
         "change_threshold_m": 0.05,
         "overbill_pct": 10.0,
         "control_id": CONTROL_ID,
