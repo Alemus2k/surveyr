@@ -58,6 +58,81 @@ class Zone(BaseModel):
         return v
 
 
+def _check_pairs(v: List[List[float]]) -> List[List[float]]:
+    if any(len(p) != 2 for p in v):
+        raise ValueError("vertices must be [easting, northing] pairs")
+    return v
+
+
+class _Shape(BaseModel):
+    """Something drawn on the site plan, with an id and a display name."""
+
+    id: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=60)
+
+
+class Layer(_Shape):
+    """A material layer placed on a finished surface (base course, paving, topsoil…),
+    measured as the rise between the scan flown before it was placed and later scans."""
+
+    material: str = Field("", max_length=60)
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+    base_scan: Optional[str] = None  # project id of the scan it sits on; None = the scan before it first appears
+    target_thickness_m: float = Field(gt=0, le=5)
+    tolerance_m: float = Field(0.03, ge=0, le=1)  # thinner than target − tolerance is flagged
+    density_t_m3: Optional[float] = Field(None, gt=0, le=10)  # for tonnage; None = volume only
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class Flatwork(_Shape):
+    """Paved walking surface checked against accessibility (ADA) slope limits."""
+
+    kind: Literal["walk", "ramp", "landing", "parking"] = "walk"
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class Alignment(_Shape):
+    """A centreline to cut cross-sections along (road, trench, swale)."""
+
+    points: List[List[float]] = Field(min_length=2, max_length=500)
+    interval_m: float = Field(10.0, gt=0, le=1000)  # station spacing
+    half_width_m: float = Field(10.0, gt=0, le=500)  # how far each section reaches either side
+
+    _pairs = field_validator("points")(_check_pairs)
+
+
+class Monitor(_Shape):
+    """An area watched for settlement or heave between flights."""
+
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+    baseline_scan: Optional[str] = None  # project id; None = the first scan after the area stops changing
+    alert_m: float = Field(0.025, gt=0, le=2)  # movement that raises a flag
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class AsBuilt(_Shape):
+    """A record of something that gets buried: where it ran and how deep, from the scan that saw it."""
+
+    kind: Literal["trench"] = "trench"
+    scan: str  # project id of the flight that captured it open
+    line: List[List[float]] = Field(min_length=2, max_length=500)
+    note: str = Field("", max_length=200)
+
+    _pairs = field_validator("line")(_check_pairs)
+
+
+class Pond(BaseModel):
+    """A detention / retention basin whose storage is checked against the design."""
+
+    zone_id: str
+    spill_elevation_m: float = Field(ge=-1000, le=10000)  # outlet: storage is the volume below it
+    required_storage_m3: Optional[float] = Field(None, ge=0)
+
+
 class PayApp(BaseModel):
     id: str = Field(min_length=1, max_length=40)
     date: str = Field(pattern=_DATE)  # period end: the scan that measures it
@@ -134,6 +209,16 @@ class Site(BaseModel):
     zones: List[Zone] = Field(default_factory=list, max_length=MAX_ZONES)
     pay_apps: List[PayApp] = Field(default_factory=list, max_length=500)
     change_orders: List[ChangeOrder] = Field(default_factory=list, max_length=500)
+    # what else to measure on each flight (all optional; older site files simply lack them)
+    lod: Optional[List[List[float]]] = Field(None, min_length=3, max_length=2000)  # limits of disturbance polygon
+    layers: List[Layer] = Field(default_factory=list, max_length=100)
+    flatwork: List[Flatwork] = Field(default_factory=list, max_length=200)
+    alignments: List[Alignment] = Field(default_factory=list, max_length=50)
+    monitors: List[Monitor] = Field(default_factory=list, max_length=100)
+    asbuilts: List[AsBuilt] = Field(default_factory=list, max_length=200)
+    ponds: List[Pond] = Field(default_factory=list, max_length=20)
+
+    _lod_pairs = field_validator("lod")(lambda v: v if v is None else _check_pairs(v))
 
 
 def _path(site_id: str) -> str:
