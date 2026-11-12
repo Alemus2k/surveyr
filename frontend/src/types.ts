@@ -22,6 +22,12 @@ export interface PointStats {
   outliers_removed: number;
   /** True when only ground-classified points (LAS class 2) were used. */
   ground_only?: boolean;
+  /** Every point in the scan, all classes, before the ground filter. */
+  total?: number;
+  /** What the scan recorded besides position: "rgb", "intensity", "classification", "return_number", … */
+  channels?: string[];
+  /** Points per ASPRS class code (2 ground, 3–5 vegetation, 1 unclassified, …). */
+  classes?: Record<string, number>;
 }
 
 export interface Dimensions {

@@ -761,16 +761,42 @@ html[data-theme="light"] .site-dialog input[type="date"] {
   gap: 8px;
   flex-wrap: wrap;
 }
+/* the dashboard's tabs: one per question a job site answers; scrolls sideways when narrow */
 .site-tabs {
-  align-self: flex-start;
-  min-width: 300px;
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line-strong);
+  scrollbar-width: thin;
 }
 .site-tabs button {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  padding: 0 12px;
+  height: 36px;
+  margin-bottom: -1px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: var(--weight-strong);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.site-tabs button:hover {
+  color: var(--text);
+}
+.site-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+.site-tab-hint {
+  margin: -4px 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
 }
 .tab-count {
   min-width: 18px;
@@ -779,6 +805,11 @@ html[data-theme="light"] .site-dialog input[type="date"] {
   background: var(--accent-soft);
   color: var(--accent);
   font-size: var(--text-xs);
+  text-align: center;
+}
+.tab-count.alert {
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+  color: var(--bad);
 }
 .spec-list {
   display: grid;
@@ -1041,4 +1072,43 @@ html[data-theme="light"] .site-dialog input[type="date"] {
 }
 .co-void-meta {
   grid-template-columns: minmax(140px, 1fr) minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------------ PlanView extras (markers, dashed outlines) */
+.site-zone[data-dashed] {
+  stroke-dasharray: 6 4;
+}
+.plan-marker {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translate(-6px, -50%);
+  pointer-events: auto;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.plan-marker i {
+  width: 11px;
+  height: 11px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.plan-marker b {
+  padding: 0 5px;
+  border-radius: var(--radius-xs);
+  background: rgba(10, 12, 16, 0.8);
+  color: #fff;
+  font-weight: var(--weight-strong);
+}
+.plan-marker.good i {
+  background: var(--good);
+}
+.plan-marker.warn i {
+  background: var(--accent);
+}
+.plan-marker.bad i {
+  background: var(--bad);
 }

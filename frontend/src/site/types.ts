@@ -98,6 +98,70 @@ export interface Site {
   zones: Zone[];
   pay_apps: PayApp[];
   change_orders?: ChangeOrder[]; // absent in files saved before change orders existed
+  // what else to measure on each flight — all optional: older site files lack them
+  lod?: [number, number][] | null; // limits of disturbance polygon
+  layers?: Layer[];
+  flatwork?: Flatwork[];
+  alignments?: Alignment[];
+  monitors?: Monitor[];
+  asbuilts?: AsBuilt[];
+  ponds?: Pond[];
+}
+
+/** A material layer placed on a finished surface (base course, paving, topsoil…), measured as
+ *  the rise between the scan flown before it was placed and later scans. */
+export interface Layer {
+  id: string;
+  name: string;
+  material: string;
+  polygon: [number, number][];
+  base_scan: string | null; // project id of the scan it sits on; null = the scan before it first appears
+  target_thickness_m: number;
+  tolerance_m: number; // thinner than target − tolerance is flagged
+  density_t_m3: number | null; // for tonnage; null = volume only
+}
+
+/** Paved walking surface checked against accessibility (ADA) slope limits. */
+export interface Flatwork {
+  id: string;
+  name: string;
+  kind: "walk" | "ramp" | "landing" | "parking";
+  polygon: [number, number][];
+}
+
+/** A centreline to cut cross-sections along. */
+export interface Alignment {
+  id: string;
+  name: string;
+  points: [number, number][];
+  interval_m: number; // station spacing
+  half_width_m: number; // how far each section reaches either side
+}
+
+/** An area watched for settlement or heave between flights. */
+export interface Monitor {
+  id: string;
+  name: string;
+  polygon: [number, number][];
+  baseline_scan: string | null; // project id; null = the first scan after the area stops changing
+  alert_m: number; // movement that raises a flag
+}
+
+/** A record of something that gets buried, from the scan that saw it open. */
+export interface AsBuilt {
+  id: string;
+  name: string;
+  kind: "trench";
+  scan: string; // project id of the flight that captured it
+  line: [number, number][];
+  note: string;
+}
+
+/** A detention / retention basin whose storage is checked against the design. */
+export interface Pond {
+  zone_id: string;
+  spill_elevation_m: number; // outlet: storage is the volume below it
+  required_storage_m3: number | null;
 }
 
 /** Every scan and the design on one shared grid; row-major, row 0 = south. */

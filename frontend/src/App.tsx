@@ -251,6 +251,8 @@ export default function App() {
     if (isSite)
       return (
         <SiteDashboard
+          siteId={tabs.active}
+          reloadKey={settingsVersion}
           state={site}
           projects={projects.projects}
           scanId={pickedScan}
