@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ProjectRef } from "../api";
+import { QuantityInput } from "../components/QuantityInput";
+import { getUnitSystem, unitOf } from "../lib/units";
 import { todayIso } from "./dates";
 import type { Surfaces } from "./progress";
 import {
@@ -110,7 +112,7 @@ export function ChangeOrderDialog({ open, site, surfaces, cellsOf, projects, onI
           <div className="co-meta">
             <label className="dialog-field co-meta-title">
               <span className="field-label">Title</span>
-              <input ref={titleInput} value={meta.title} maxLength={80} placeholder="e.g. Raise building pad 150 mm" onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
+              <input ref={titleInput} value={meta.title} maxLength={80} placeholder={getUnitSystem() === "us" ? "e.g. Raise building pad 0.50 ft" : "e.g. Raise building pad 150 mm"} onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
             </label>
             <label className="dialog-field">
               <span className="field-label">Effective date</span>
@@ -142,19 +144,15 @@ export function ChangeOrderDialog({ open, site, surfaces, cellsOf, projects, onI
             <label className="dialog-field" data-changed={changed("tolerance_m")}>
               <span className="field-label">{SPEC_LABEL.tolerance_m}</span>
               <span className="js-input">
-                <input
-                  type="number"
-                  className="fig"
-                  min={0}
-                  max={200}
-                  step={0.5}
-                  value={Math.round(draft.tolerance_m * 1000) / 10}
-                  onChange={(e) =>
-                    Number.isFinite(e.target.valueAsNumber) &&
-                    setDraft({ ...draft, tolerance_m: Math.min(2, Math.max(0.001, e.target.valueAsNumber / 100)) })
-                  }
+                <QuantityInput
+                  kind="small"
+                  min={0.001}
+                  max={2}
+                  metricStep={0.5}
+                  value={draft.tolerance_m}
+                  onChange={(m) => setDraft((d) => ({ ...d, tolerance_m: m }))}
                 />
-                <span className="unit">cm</span>
+                <span className="unit">{unitOf("small")}</span>
               </span>
             </label>
           </div>
@@ -208,19 +206,25 @@ export function ChangeOrderDialog({ open, site, surfaces, cellsOf, projects, onI
                             </select>
                             {mode !== "design" && (
                               <span className="js-input">
-                                <input
-                                  type="number"
-                                  className="fig"
-                                  step={mode === "flat" ? 0.001 : 0.01}
-                                  aria-label={mode === "flat" ? `Pad elevation of ${zone.name}` : `Offset from design for ${zone.name}`}
-                                  value={mode === "flat" ? spec.target_elevation_m ?? "" : spec.design_offset_m}
-                                  onChange={(e) => {
-                                    const v = e.target.valueAsNumber;
-                                    if (!Number.isFinite(v)) return;
-                                    setZone(zone.id, mode === "flat" ? { target_elevation_m: v } : { design_offset_m: Math.min(50, Math.max(-50, v)) });
-                                  }}
-                                />
-                                <span className="unit">m</span>
+                                {mode === "flat" ? (
+                                  <QuantityInput
+                                    kind="elevation"
+                                    metricStep={0.001}
+                                    aria-label={`Pad elevation of ${zone.name}`}
+                                    value={spec.target_elevation_m}
+                                    onChange={(m) => setZone(zone.id, { target_elevation_m: m })}
+                                  />
+                                ) : (
+                                  <QuantityInput
+                                    kind="length"
+                                    min={-50}
+                                    max={50}
+                                    aria-label={`Offset from design for ${zone.name}`}
+                                    value={spec.design_offset_m}
+                                    onChange={(m) => setZone(zone.id, { design_offset_m: m })}
+                                  />
+                                )}
+                                <span className="unit">{unitOf("length")}</span>
                               </span>
                             )}
                           </span>

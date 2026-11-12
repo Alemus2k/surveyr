@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { ProjectRef } from "../api";
+import { QuantityInput } from "../components/QuantityInput";
 import { Icon } from "../layout/icons";
+import { unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { CompositionState } from "./useComposition";
 import { LAYER_PALETTE, type LayerSettings, type LayerTransform } from "./types";
@@ -37,6 +39,17 @@ function NumberField({ label, unit, value, step, disabled, onChange }: NumberFie
         onChange={(e) => Number.isFinite(e.target.valueAsNumber) && onChange(e.target.valueAsNumber)}
       />
       <span className="unit">{unit}</span>
+    </label>
+  );
+}
+
+/** A layer shift, typed in the user's length unit and stored in metres. */
+function LengthField({ label, value, disabled, onChange }: Omit<NumberFieldProps, "unit" | "step">) {
+  return (
+    <label className="xf-field">
+      <span>{label}</span>
+      <QuantityInput kind="length" decimals={4} value={value} disabled={disabled} onChange={onChange} />
+      <span className="unit">{unitOf("length")}</span>
     </label>
   );
 }
@@ -156,9 +169,9 @@ export function LayersPanel({ state, projects, selected, onSelect }: LayersPanel
                 {isSel && (
                   <div className="layer-transform">
                     <div className="xf-grid">
-                      <NumberField label="East" unit="m" step={0.01} value={layer.transform.tx} disabled={layer.locked} onChange={(v) => setTransform(layer, { tx: v })} />
-                      <NumberField label="North" unit="m" step={0.01} value={layer.transform.ty} disabled={layer.locked} onChange={(v) => setTransform(layer, { ty: v })} />
-                      <NumberField label="Up" unit="m" step={0.01} value={layer.transform.tz} disabled={layer.locked} onChange={(v) => setTransform(layer, { tz: v })} />
+                      <LengthField label="East" value={layer.transform.tx} disabled={layer.locked} onChange={(v) => setTransform(layer, { tx: v })} />
+                      <LengthField label="North" value={layer.transform.ty} disabled={layer.locked} onChange={(v) => setTransform(layer, { ty: v })} />
+                      <LengthField label="Up" value={layer.transform.tz} disabled={layer.locked} onChange={(v) => setTransform(layer, { tz: v })} />
                       <NumberField label="Yaw" unit="°" step={0.5} value={layer.transform.yaw_deg} disabled={layer.locked} onChange={(v) => setTransform(layer, { yaw_deg: Math.max(-360, Math.min(360, v)) })} />
                     </div>
                     <div className="layer-actions">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SliceDock, type SliceExtent, type SliceLayer } from "../slice/SliceDock";
 import type { SliceSpec } from "../slice/slice";
-import { niceStep } from "../viewer/backdrop";
+import { niceLengthStep, useUnitSystem } from "../lib/units";
 import type { ProjectRef } from "../api";
 import { Icon } from "../layout/icons";
 import { Compass, useCompass } from "../viewer/Compass";
@@ -32,6 +32,7 @@ export function CompareViewer({ state, projects, selected, gizmoMode, onGizmoMod
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<CompareScene | null>(null);
   const { dialRef, onHeading } = useCompass();
+  const units = useUnitSystem(); // grid spacing is built into the scene, so a unit switch rebuilds it
   const [pointScale, setPointScale] = useState(1);
   const [showGrid, setShowGrid] = useState(true);
   const [sliceOpen, setSliceOpen] = useState(false);
@@ -59,7 +60,7 @@ export function CompareViewer({ state, projects, selected, gizmoMode, onGizmoMod
   const slice: SliceSpec | null = frame
     ? sliceState?.frame === frame
       ? sliceState.spec
-      : { axis: "ew", offset: 0, thickness: niceStep(frame.span / SLICE_THICKNESS_DIVISOR) }
+      : { axis: "ew", offset: 0, thickness: niceLengthStep(frame.span / SLICE_THICKNESS_DIVISOR).metres }
     : null;
   const names = new Map(projects.map((p) => [p.id, p.name]));
   // each visible layer as the 3D view places it (only computed while the slice is open)
@@ -104,7 +105,7 @@ export function CompareViewer({ state, projects, selected, gizmoMode, onGizmoMod
       s.dispose();
       sceneRef.current = null;
     };
-  }, [frame, onHeading]);
+  }, [frame, onHeading, units]);
 
   useEffect(() => {
     const inputs: CompareLayerInput[] = loaded.flatMap(({ s, d }) => {
@@ -112,15 +113,15 @@ export function CompareViewer({ state, projects, selected, gizmoMode, onGizmoMod
       return c ? [{ settings: s, data: d, colors: c }] : [];
     });
     sceneRef.current?.sync(inputs, range);
-  }, [loaded, colors, range, frame]);
+  }, [loaded, colors, range, frame, units]);
 
   const selectedLayer = comp?.layers.find((l) => l.project_id === selected);
   const gizmoTarget = selectedLayer && !selectedLayer.locked && selectedLayer.visible ? selected : null;
-  useEffect(() => sceneRef.current?.select(gizmoTarget, gizmoMode), [gizmoTarget, gizmoMode, frame, loaded.length]);
-  useEffect(() => sceneRef.current?.setPointScale(pointScale), [pointScale, frame]);
-  useEffect(() => sceneRef.current?.setGridVisible(showGrid), [showGrid, frame]);
-  useEffect(() => sceneRef.current?.setSlice(sliceOpen ? slice : null), [sliceOpen, slice, frame]);
-  useEffect(() => sceneRef.current?.setAccent(accent), [accent, frame]);
+  useEffect(() => sceneRef.current?.select(gizmoTarget, gizmoMode), [gizmoTarget, gizmoMode, frame, loaded.length, units]);
+  useEffect(() => sceneRef.current?.setPointScale(pointScale), [pointScale, frame, units]);
+  useEffect(() => sceneRef.current?.setGridVisible(showGrid), [showGrid, frame, units]);
+  useEffect(() => sceneRef.current?.setSlice(sliceOpen ? slice : null), [sliceOpen, slice, frame, units]);
+  useEffect(() => sceneRef.current?.setAccent(accent), [accent, frame, units]);
 
   const goTo = (preset: ViewPreset) => sceneRef.current?.goTo(preset);
 

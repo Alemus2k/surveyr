@@ -1,4 +1,4 @@
-import { formatVolume } from "../lib/format";
+import { formatCapacity, formatVolume } from "../lib/units";
 import type { DirtLedger, Haul, Volumes } from "./earthworks";
 
 interface DirtLedgerCardProps {
@@ -66,7 +66,7 @@ export function DirtLedgerCard({ volumes, haul, ledger, truckM3, shrinkPct }: Di
               <dd className="fig">{v(haul.loose)}</dd>
             </div>
             <div className="ledger-sub">
-              <dt>truckloads ({truckM3} m³)</dt>
+              <dt>truckloads ({formatCapacity(truckM3)})</dt>
               <dd className="fig">{haul.loads.toLocaleString("en-GB")}</dd>
             </div>
           </>

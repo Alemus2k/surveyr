@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { formatArea, formatLength, formatVolume, type Quantity } from "../lib/format";
+import { formatArea, formatDimensions, formatLength, formatVolume, type Quantity } from "../lib/units";
 import { maskedValues, percentAtOrBelow } from "../charts/terrainStats";
 import type { Analysis } from "../types";
 import { PanelSection } from "./SidePanel";
@@ -40,7 +40,7 @@ export function TerrainPanel({ analysis, threshold, onThreshold }: TerrainPanelP
       ? ([
           [
             "Size (W × D × H)",
-            `${analysis.dimensions.width_m.toFixed(2)} × ${analysis.dimensions.depth_m.toFixed(2)} × ${analysis.dimensions.height_m.toFixed(2)} m`,
+            formatDimensions(analysis.dimensions.width_m, analysis.dimensions.depth_m, analysis.dimensions.height_m),
           ],
         ] as Array<[string, string]>)
       : []),

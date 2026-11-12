@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { SliceDock, type SliceExtent, type SliceLayer } from "../slice/SliceDock";
 import type { Analysis } from "../types";
 import type { SliceSpec } from "../slice/slice";
-import { niceStep } from "./backdrop";
+import { niceLengthStep } from "../lib/units";
 import { PointCloudViewer, type ViewRequest } from "./PointCloudViewer";
 import type { ColorRange, PreparedCloud } from "./prepare";
 import type { RenderMode, ViewPreset } from "./scene";
@@ -44,7 +44,7 @@ export function Workspace({ cloud, colors, range, accent, analysis }: WorkspaceP
   const slice: SliceSpec =
     sliceState?.cloud === cloud
       ? sliceState.spec
-      : { axis: "ew", offset: 0, thickness: niceStep(cloud.span / SLICE_THICKNESS_DIVISOR) };
+      : { axis: "ew", offset: 0, thickness: niceLengthStep(cloud.span / SLICE_THICKNESS_DIVISOR).metres };
   const sliceLayers = useMemo<SliceLayer[]>(
     () => [{ key: "scan", label: "Scan", source: { positions: cloud.positions, elevation: cloud.z }, colors, solid: null }],
     [cloud, colors]

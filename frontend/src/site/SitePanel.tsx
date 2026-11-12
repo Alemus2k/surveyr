@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchControlSets, type ControlSetRef, type ProjectRef } from "../api";
 import { Icon } from "../layout/icons";
+import { QuantityInput } from "../components/QuantityInput";
+import { formatSmall, unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import { dateInName, formatDate, todayIso } from "./dates";
 import { describeGrade } from "./specs";
@@ -32,20 +34,12 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
   const scanName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
   const available = projects.filter((p) => isScan(p) && !site.scans.some((s) => s.project_id === p.id) && p.id !== site.design_id);
   const set = (patch: Partial<Site>) => update((s) => ({ ...s, ...patch }));
-  const cmField = (label: string, value: number, onChange: (m: number) => void, hint: string) => (
+  const smallField = (label: string, value: number, onChange: (m: number) => void, hint: string) => (
     <label className="js-field">
       <span className="field-label">{label}</span>
       <span className="js-input">
-        <input
-          type="number"
-          className="fig"
-          min={0}
-          max={200}
-          step={1}
-          value={Math.round(value * 1000) / 10}
-          onChange={(e) => Number.isFinite(e.target.valueAsNumber) && onChange(Math.min(2, Math.max(0.001, e.target.valueAsNumber / 100)))}
-        />
-        <span className="unit">cm</span>
+        <QuantityInput kind="small" min={0.001} max={2} metricStep={1} value={value} onChange={onChange} />
+        <span className="unit">{unitOf("small")}</span>
       </span>
       <span className="field-hint">{hint}</span>
     </label>
@@ -219,7 +213,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
           <dt>Design surface</dt>
           <dd>{site.design_id ? scanName(site.design_id) : "None"}</dd>
           <dt>On grade within</dt>
-          <dd className="fig">±{+(site.tolerance_m * 100).toFixed(1)} cm</dd>
+          <dd className="fig">±{formatSmall(site.tolerance_m, { style: "trim" })}</dd>
           <dt>Change orders</dt>
           <dd className="fig">{site.change_orders?.length ?? 0}</dd>
         </dl>
@@ -230,7 +224,7 @@ export function SitePanel({ state, projects, selectedZone, onSelectZone }: SiteP
       </PanelSection>
 
       <PanelSection label="Tolerances">
-        {cmField("Ignore changes under", site.change_threshold_m, (m) => set({ change_threshold_m: m }), "Scan-to-scan differences smaller than this are treated as noise.")}
+        {smallField("Ignore changes under", site.change_threshold_m, (m) => set({ change_threshold_m: m }), "Scan-to-scan differences smaller than this are treated as noise.")}
         <label className="js-field">
           <span className="field-label">Flag claims above measured by</span>
           <span className="js-input">

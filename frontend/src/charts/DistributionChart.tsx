@@ -8,14 +8,15 @@ interface Props {
   kind: ChartKind;
   color: string;
   unit: string;
-  format?: (v: number) => string;
+  format?: (v: number) => string; // the tallest bar's count
+  edge?: (v: number) => string; // the axis ends (default: as format)
 }
 
 const H = 140;
 const PAD = { left: 8, right: 8, top: 18, bottom: 22 };
 
 /** Distribution chart drawn at its container's real width: bars, area, or cumulative %. */
-export function DistributionChart({ data, kind, color, unit, format }: Props) {
+export function DistributionChart({ data, kind, color, unit, format, edge }: Props) {
   const [ref, W] = useElementWidth<HTMLDivElement>();
   const { counts, edges } = data;
   if (counts.length === 0) return <p className="panel-note">No data</p>;
@@ -31,6 +32,7 @@ export function DistributionChart({ data, kind, color, unit, format }: Props) {
   const yFor = (norm: number) => PAD.top + (1 - norm) * plotH;
   const bottom = yFor(0);
   const fmt = format ?? ((v: number) => (isCum ? `${Math.round(v)}%` : `${v}`));
+  const fmtEdge = edge ?? fmt;
 
   const linePoints: Array<[number, number]> = [];
   if (isCum) {
@@ -55,10 +57,10 @@ export function DistributionChart({ data, kind, color, unit, format }: Props) {
           {isCum ? "100%" : `max ${fmt(max)}`}
         </text>
         <text x={PAD.left} y={H - 6} className="chart-label">
-          {fmt(e0)}
+          {fmtEdge(e0)}
         </text>
         <text x={W - PAD.right} y={H - 6} className="chart-label" textAnchor="end">
-          {fmt(e1)} {unit}
+          {fmtEdge(e1)} {unit}
         </text>
         {kind === "histogram" ? (
           counts.map((c, i) => {

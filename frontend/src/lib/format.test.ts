@@ -1,5 +1,9 @@
-import { describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { formatArea, formatLength, formatVolume } from "./format";
+import { setUnitSystem } from "./units";
+
+// these pin the metric wording; US wording is covered in lib/units.test.ts
+beforeAll(() => setUnitSystem("metric"));
 
 describe("formatArea", () => {
   test("uses square metres for small scans", () => {

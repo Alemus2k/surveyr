@@ -3,6 +3,7 @@
 // change orders, which log every edit as it read before and after. Voiding an
 // order puts its specs back to what they'd be had it never been issued.
 
+import { formatElevation, formatLength, formatSmall } from "../lib/units";
 import { formatDate } from "./dates";
 import type { Surfaces } from "./progress";
 import type { ChangeOrder, GradeValue, KeptSpec, Site, SpecChange, SpecField, SpecValue, VoidRecord, Zone } from "./types";
@@ -37,10 +38,11 @@ export const gradeMode = (g: GradeValue): GradeMode =>
 
 const hasGradeSpec = (z: Zone) => z.target_elevation_m != null || !!z.design_offset_m;
 
+/** A finished grade in words, in the user's units (logged as written; ``values`` stay metric). */
 export function describeGrade(g: GradeValue): string {
   const mode = gradeMode(g);
-  if (mode === "flat") return `Flat pad at ${g.target_elevation_m!.toFixed(3)} m`;
-  if (mode === "offset") return `Design surface ${g.design_offset_m > 0 ? "+" : "−"}${Math.abs(g.design_offset_m).toFixed(3)} m`;
+  if (mode === "flat") return `Flat pad at ${formatElevation(g.target_elevation_m!, { metricDigits: 3 })}`;
+  if (mode === "offset") return `Design surface ${formatLength(g.design_offset_m, { signed: true, metricDigits: 3 })}`;
   return "Design surface";
 }
 
@@ -88,7 +90,7 @@ function withSpec(d: SpecDraft, field: SpecField, zoneId: string | null, v: Spec
 
 export function describeSpec(field: SpecField, v: SpecValue, nameOf: (id: string) => string): string {
   if (field === "design_id") return v ? nameOf(v as string) : "None";
-  if (field === "tolerance_m") return `±${+((v as number) * 100).toFixed(1)} cm`;
+  if (field === "tolerance_m") return `±${formatSmall(v as number, { style: "trim" })}`;
   if (field === "grade") return describeGrade(v as GradeValue);
   return v ? formatDate(v as string) : "Not set";
 }

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { ProjectRef } from "../api";
 import type { ColorRange, PreparedCloud } from "../viewer/prepare";
-import { cm, GRADE_LABEL, gradeAccuracy, type Verdict } from "../control/qa";
+import { formatOffset, GRADE_LABEL, gradeAccuracy, type Verdict } from "../control/qa";
 import { ConfirmDialog } from "../layout/ConfirmDialog";
 import { Icon } from "../layout/icons";
-import { formatVolume } from "../lib/format";
+import { formatSmall, formatVolume, quantityText } from "../lib/units";
 import { ChangeOrderDialog } from "./ChangeOrderDialog";
 import { ChangeOrderLog } from "./ChangeOrderLog";
 import { formatDate, todayIso } from "./dates";
@@ -178,7 +178,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
             </div>
             <div className="kpi">
               <span className="kpi-label">Moved last period</span>
-              <strong className="fig">{last > 0 ? `${formatVolume(movedLatest).value} m³` : "—"}</strong>
+              <strong className="fig">{last > 0 ? quantityText(formatVolume(movedLatest)) : "—"}</strong>
               <span className="kpi-sub">{last > 0 ? `${formatDate(surfaces.dates[last - 1], true)} → ${formatDate(surfaces.dates[last], true)}, in zones` : "one scan so far"}</span>
             </div>
             <div className={`kpi ${behind.length ? "bad" : ""}`}>
@@ -200,8 +200,8 @@ export function SiteDashboard(props: SiteDashboardProps) {
                 <span>
                   <strong>{formatDate(s.date)} flight</strong>{" "}
                   {v.bias !== null
-                    ? `sits ${cm(Math.abs(v.bias), false)} ${v.bias > 0 ? "high" : "low"} against the check points`
-                    : `fits the check points poorly (RMSE ${cm(v.rmse ?? 0, false)})`}
+                    ? `sits ${formatOffset(Math.abs(v.bias), false)} ${v.bias > 0 ? "high" : "low"} against the check points`
+                    : `fits the check points poorly (RMSE ${formatOffset(v.rmse ?? 0, false)})`}
                   {" "}— volumes involving it will be off until it's corrected.
                 </span>
                 <button className="secondary-btn" onClick={() => onReviewFlight(s.project_id)}>
@@ -221,9 +221,9 @@ export function SiteDashboard(props: SiteDashboardProps) {
                   {v && v.grade !== "none" && (
                     <span
                       className={`qa-badge ${v.bias !== null ? "fair" : v.grade}`}
-                      title={`Check points: ${GRADE_LABEL[v.grade]}, RMSE ${cm(v.rmse ?? 0, false)}${v.bias !== null ? `, offset ${cm(v.bias)}` : ""}`}
+                      title={`Check points: ${GRADE_LABEL[v.grade]}, RMSE ${formatOffset(v.rmse ?? 0, false)}${v.bias !== null ? `, offset ${formatOffset(v.bias)}` : ""}`}
                     >
-                      {v.bias !== null ? cm(v.bias) : `±${cm(v.rmse ?? 0, false)}`}
+                      {v.bias !== null ? formatOffset(v.bias) : `±${formatOffset(v.rmse ?? 0, false)}`}
                     </span>
                   )}
                 </button>
@@ -366,7 +366,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
 }
 
 function MapLegend({ mode, tolerance, threshold }: { mode: MapMode; tolerance: number; threshold: number }) {
-  const cm = (m: number) => `${Math.round(m * 100)} cm`;
+  const small = (m: number) => formatSmall(m, { style: "whole" });
   if (mode === "elevation")
     return (
       <div className="site-legend">
@@ -383,13 +383,13 @@ function MapLegend({ mode, tolerance, threshold }: { mode: MapMode; tolerance: n
       </span>
       {mode === "design" && (
         <span>
-          <i className="sw ok" /> finished to grade (±{cm(tolerance)})
+          <i className="sw ok" /> finished to grade (±{small(tolerance)})
         </span>
       )}
       <span>
         <i className="sw fill" /> {mode === "design" ? "below design — still to fill" : "placed since last scan"}
       </span>
-      {mode === "change" && <span className="site-legend-note">changes under {cm(threshold)} ignored</span>}
+      {mode === "change" && <span className="site-legend-note">changes under {small(threshold)} ignored</span>}
     </div>
   );
 }

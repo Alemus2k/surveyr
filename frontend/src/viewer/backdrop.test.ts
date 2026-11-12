@@ -1,12 +1,25 @@
-import { describe, expect, test } from "vitest";
-import { formatLength } from "../lib/format";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { formatLength, setUnitSystem } from "../lib/units";
 import { axisLabelAnchors, axisMeasurements } from "./backdrop";
 import { prepareCloud } from "./prepare";
 
 // a 200 m (east) x 140 m (north) site, ground from 98 m to 103.5 m above datum
 const XYZ = new Float32Array([0, 0, 98, 200, 0, 100, 0, 140, 101, 200, 140, 103.5]);
 
+beforeEach(() => setUnitSystem("metric"));
+afterEach(() => setUnitSystem("us")); // back to the default
+
 describe("axis measurements", () => {
+  test("label in feet in US units", () => {
+    setUnitSystem("us");
+    const cloud = prepareCloud(XYZ);
+    expect(axisMeasurements(cloud.box, cloud.zMax, formatLength)).toEqual({
+      east: "656.17 ft", // 200 / 0.3048
+      north: "459.32 ft",
+      up: "339.57 ft",
+    });
+  });
+
   test("label each side's true length and the highest point", () => {
     const cloud = prepareCloud(XYZ);
     expect(axisMeasurements(cloud.box, cloud.zMax, formatLength)).toEqual({

@@ -1,5 +1,7 @@
 // Grading a scan's vertical accuracy against surveyed check points.
 
+import { formatSmall } from "../lib/units";
+
 export interface AccuracyStats {
   n: number;
   mean: number | null; // scan minus control (m): + means the scan is high
@@ -39,9 +41,7 @@ export const GRADE_LABEL: Record<Grade, string> = {
   none: "No check",
 };
 
-/** ±centimetres, e.g. "+3.4 cm". */
-export function cm(m: number, signed = true): string {
-  const v = (m * 100).toFixed(1);
-  if (Number(v) === 0) return "0.0 cm"; // no "+0.0" or "−0.0"
-  return signed && m > 0 ? `+${v} cm` : `${v.replace("-", "−")} cm`;
+/** A vertical offset in the user's units, e.g. "+0.11 ft" (US) or "+3.4 cm" (metric). */
+export function formatOffset(m: number, signed = true): string {
+  return formatSmall(m, { signed });
 }

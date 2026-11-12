@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { elevationRamp } from "../color";
-import { niceStep } from "../viewer/backdrop";
+import { formatCoordinate, formatElevation, formatSigned, niceLengthStep } from "../lib/units";
 import { pointInPolygon, type Surfaces } from "./progress";
 import { mix, siteTint, tintScale, workMask, type RGB, type SiteColorMode } from "./siteColors";
 import type { Zone } from "./types";
@@ -177,11 +177,11 @@ export function SiteMap(props: SiteMapProps) {
   const elev = at(z), dsg = at(s.design), before = at(prev);
   const [he, hn] = hover ? [s.x0 + (hover.c + 0.5) * s.cell, s.y0 + (hover.r + 0.5) * s.cell] : [0, 0];
   const hoverZone = hover ? [...zones].reverse().find((zn) => pointInPolygon(he, hn, zn.polygon)) : undefined;
-  const signed = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)} m`;
+  const signed = formatSigned;
 
-  // scale bar: a round length about a fifth of the map width
+  // scale bar: a round length (in the user's unit) about a fifth of the map width
   const widthM = s.nx * s.cell;
-  const bar = niceStep(widthM / 5);
+  const bar = niceLengthStep(widthM / 5);
 
   return (
     <div className="site-map" style={{ aspectRatio: `${s.nx} / ${s.ny}` }} data-drawing={drawing || undefined}>
@@ -224,8 +224,8 @@ export function SiteMap(props: SiteMapProps) {
       })}
       <div className="site-map-north" aria-hidden="true">N ↑</div>
       <div className="site-map-scale" aria-hidden="true">
-        <i style={{ width: `${(100 * bar) / widthM}%` }} />
-        <span className="fig">{bar} m</span>
+        <i style={{ width: `${(100 * bar.metres) / widthM}%` }} />
+        <span className="fig">{bar.label}</span>
       </div>
       {hover && !drawing && (
         <div
@@ -239,15 +239,15 @@ export function SiteMap(props: SiteMapProps) {
           {hoverZone && <div className="site-readout-zone">{hoverZone.name}</div>}
           <div>
             <span>E</span>
-            <span>{he.toFixed(1)}</span>
+            <span>{formatCoordinate(he)}</span>
           </div>
           <div>
             <span>N</span>
-            <span>{hn.toFixed(1)}</span>
+            <span>{formatCoordinate(hn)}</span>
           </div>
           <div>
             <span>Elevation</span>
-            <span>{elev === null ? "—" : `${elev.toFixed(2)} m`}</span>
+            <span>{elev === null ? "—" : formatElevation(elev)}</span>
           </div>
           {dsg !== null && (
             <div>

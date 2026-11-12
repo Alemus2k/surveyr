@@ -13,14 +13,6 @@ const WALL_COLOR = 0x3b3b3b;
 const FLOOR_SPAN_FACTOR = 4; // floor grid runs well past the scan, toward the horizon
 export const AXIS_COLORS = { x: 0xd2645e, y: 0x67b884, z: 0x6890d8 } as const;
 
-/** Round a raw grid spacing to 1, 2 or 5 x 10^n so labels stay tidy. */
-export function niceStep(raw: number): number {
-  if (!(raw > 0)) return 1;
-  const pow = 10 ** Math.floor(Math.log10(raw));
-  const m = raw / pow;
-  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * pow;
-}
-
 /** Grid lines on a local (u, v) plane spanning [-halfU, halfU] x [0, sizeV]. */
 function gridPlane(halfU: number, v0: number, v1: number, step: number, color: number): THREE.LineSegments {
   const pts: number[] = [];
@@ -57,8 +49,8 @@ export function axisLabelAnchors(box: SceneBox, step: number): Record<keyof Axis
 }
 
 /**
- * Label text for a scan: the east-west and north-south extents (true metres,
- * horizontal scene units are unscaled) and the highest elevation, which comes
+ * Label text for a scan: the east-west and north-south extents (true lengths,
+ * horizontal scene units are unscaled metres) and the highest elevation, which comes
  * from the data because the vertical may be exaggerated.
  */
 export function axisMeasurements(box: SceneBox, highest: number, format: (m: number) => string): AxisLabels {

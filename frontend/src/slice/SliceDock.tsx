@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Icon } from "../layout/icons";
+import { formatElevation, formatLength, formatSigned, niceLengthStep, useUnitSystem } from "../lib/units";
 import type { SceneBox } from "../viewer/backdrop";
-import { niceStep } from "../viewer/backdrop";
 import { drawProfile, profileLayout, type ProfileSeries } from "./drawProfile";
 import {
   elevationAt,
@@ -58,7 +58,8 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
   );
   const total = series.reduce((n, s) => n + s.sample.u.length, 0);
   const half = sliceHalfRange(extent, spec.axis);
-  const thickStep = niceStep(extent.span / 200);
+  const units = useUnitSystem();
+  const thickStep = niceLengthStep(extent.span / 200).metres; // a round step in the user's unit
 
   useEffect(() => {
     const cv = canvas.current;
@@ -68,7 +69,7 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
     const ro = new ResizeObserver(paint);
     ro.observe(cv);
     return () => ro.disconnect();
-  }, [series, extent]);
+  }, [series, extent, units]); // the elevation labels are painted in the user's unit
 
   const [hover, setHover] = useState<Hover | null>(null);
   useEffect(() => setHover(null), [series, extent]);
@@ -112,13 +113,13 @@ export function SliceDock({ layers, extent, spec, onSpec, onClose }: SliceDockPr
             value={spec.offset}
             onChange={(e) => onSpec({ ...spec, offset: e.target.valueAsNumber })}
           />
-          <output className="fig">{spec.offset >= 0 ? "+" : "−"}{Math.abs(spec.offset).toFixed(2)} m</output>
+          <output className="fig">{formatSigned(spec.offset)}</output>
         </label>
         <div className="slice-field">
           <span id="thickness-label">Thickness</span>
           <div className="stepper" role="group" aria-labelledby="thickness-label">
             <button aria-label="Thinner" onClick={() => setThickness(spec.thickness - thickStep)}>‹</button>
-            <output>{spec.thickness.toFixed(2)} m</output>
+            <output>{formatLength(spec.thickness)}</output>
             <button aria-label="Thicker" onClick={() => setThickness(spec.thickness + thickStep)}>›</button>
           </div>
         </div>
@@ -140,7 +141,6 @@ function HoverReadout({ hover, along }: { hover: Hover; along: string }) {
   const multi = readings.length > 1;
   const [a, b] = readings;
   const gap = multi && readings.length === 2 && a.z !== null && b.z !== null ? b.z - a.z : null;
-  const signed = (v: number) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)} m`;
   return (
     <div className="slice-hover" aria-hidden="true">
       <div className="slice-hover-line" style={{ left: x }} />
@@ -156,7 +156,7 @@ function HoverReadout({ hover, along }: { hover: Hover; along: string }) {
       >
         <div className="slice-hover-row muted">
           <span>{along}</span>
-          <span>{signed(u)}</span>
+          <span>{formatSigned(u)}</span>
         </div>
         {readings.map((r, i) => (
           <div key={i} className="slice-hover-row">
@@ -164,13 +164,13 @@ function HoverReadout({ hover, along }: { hover: Hover; along: string }) {
               {multi && <i style={{ background: r.colour }} />}
               {multi ? r.label : "Elevation"}
             </span>
-            <span>{r.z === null ? "—" : `${r.z.toFixed(2)} m`}</span>
+            <span>{r.z === null ? "—" : formatElevation(r.z)}</span>
           </div>
         ))}
         {gap !== null && (
           <div className="slice-hover-row gap">
             <span>Δ</span>
-            <span>{signed(gap)}</span>
+            <span>{formatSigned(gap)}</span>
           </div>
         )}
       </div>

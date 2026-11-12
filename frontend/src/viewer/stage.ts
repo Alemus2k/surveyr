@@ -2,7 +2,8 @@
 // heading and preset fly-tos. Single-project and comparison viewers build on it.
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { AXIS_COLORS, axisLabelAnchors, buildBackdrop, niceStep, type AxisLabels, type SceneBox } from "./backdrop";
+import { niceLengthStep } from "../lib/units";
+import { AXIS_COLORS, axisLabelAnchors, buildBackdrop, type AxisLabels, type SceneBox } from "./backdrop";
 import { placeAxisChip, type Size } from "./axisLabelPlacement";
 import { setPointsViewportHeight } from "./materials";
 
@@ -100,7 +101,7 @@ export function createStage(host: HTMLElement, frame: StageFrame, onHeading: (ra
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SCENE_BG);
   scene.fog = new THREE.Fog(SCENE_BG, frame.span * 2.5, frame.span * 6);
-  const gridStep = niceStep(frame.span / GRID_DIVISIONS);
+  const gridStep = niceLengthStep(frame.span / GRID_DIVISIONS).metres; // round in the user's unit
   const backdrop = buildBackdrop(frame.box, gridStep);
   scene.add(backdrop);
   const labels = frame.axisLabels ? createAxisLabels(host, frame.axisLabels, axisLabelAnchors(frame.box, gridStep)) : null;

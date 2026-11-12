@@ -1,4 +1,4 @@
-import { niceStep } from "../viewer/backdrop";
+import { elevationTicks } from "../lib/units";
 import type { SliceSample } from "./slice";
 
 /** One layer's points in the band, drawn in a flat colour or per-point colours. */
@@ -16,7 +16,7 @@ export interface ProfileExtent {
   zMax: number;
 }
 
-const PAD = { left: 52, right: 16, top: 14, bottom: 22 };
+const PAD = { left: 64, right: 16, top: 14, bottom: 22 }; // left fits "1234.50 ft"
 const MAX_PROFILE_EXAGGERATION = 5;
 const BG = "#0b0b0b";
 const GRID = "rgba(255,255,255,0.07)";
@@ -88,16 +88,15 @@ export function drawProfile(canvas: HTMLCanvasElement, series: ProfileSeries[], 
   // elevation grid lines + labels
   ctx.font = FONT;
   ctx.textBaseline = "middle";
-  const step = niceStep((zHi - zLo) / 3);
-  for (let z = Math.ceil(zLo / step) * step; z <= zHi + 1e-9; z += step) {
-    const y = toY(z);
+  for (const tick of elevationTicks(zLo, zHi, 3)) {
+    const y = toY(tick.metres);
     ctx.strokeStyle = GRID;
     ctx.beginPath();
     ctx.moveTo(PAD.left, y);
     ctx.lineTo(w - PAD.right, y);
     ctx.stroke();
     ctx.fillStyle = LABEL;
-    ctx.fillText(`${z.toFixed(2)} m`, 6, y);
+    ctx.fillText(tick.label, 6, y);
   }
 
   // points, layer by layer

@@ -1,4 +1,4 @@
-import { formatVolume } from "../lib/format";
+import { formatVolume, quantityText } from "../lib/units";
 import { formatDate } from "./dates";
 import { overallPct, type PayAppCheck, type ZoneProgress } from "./progress";
 
@@ -11,7 +11,7 @@ const STATUS_TEXT: Record<string, string> = {
   unplanned: "no planned finish",
 };
 
-const m3 = (v: number) => `${formatVolume(v).value} m³`;
+const m3 = (v: number) => quantityText(formatVolume(v));
 
 /** Plain-text progress report for the latest scan, to paste into an email or log. */
 export function siteSummary(name: string, progress: ZoneProgress[], checks: PayAppCheck[], overbillPct: number): string {

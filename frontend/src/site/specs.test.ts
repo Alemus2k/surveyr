@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { setUnitSystem } from "../lib/units";
 import { zoneCells, zoneProgress, type Surfaces } from "./progress";
 import {
   applySpecs,
@@ -13,6 +14,9 @@ import {
   voidChangeOrder,
 } from "./specs";
 import type { Site, Zone } from "./types";
+
+beforeEach(() => setUnitSystem("metric")); // the log wording below is metric
+afterEach(() => setUnitSystem("us")); // back to the default
 
 // 10 x 10 m grid of 1 m cells at (0, 0); design flat at 100 m, west half scanned at 101 m.
 const N = 10;
@@ -100,6 +104,19 @@ describe("change orders", () => {
     const draft = specsOf(site());
     draft.zones[0].design_offset_m = -0.2;
     expect(diffSpecs(site(), draft, names)[0].after).toBe("Design surface −0.200 m");
+  });
+
+  test("new log entries are worded in the active units; their values stay metric", () => {
+    setUnitSystem("us");
+    const draft = specsOf(site());
+    draft.tolerance_m = 0.03;
+    draft.zones[0] = { ...draft.zones[0], target_elevation_m: 101.25 };
+    const [tolerance, grade] = diffSpecs(site(), draft, names);
+    expect([tolerance.before, tolerance.after]).toEqual(["±0.16 ft", "±0.10 ft"]); // 5 cm, 3 cm
+    expect(tolerance.values).toEqual({ before: 0.05, after: 0.03 });
+    expect(grade.after).toBe("Flat pad at 332.19 ft"); // 101.25 / 0.3048 = 332.185
+    draft.zones[0] = { ...draft.zones[0], target_elevation_m: null, design_offset_m: -0.2 };
+    expect(diffSpecs(site(), draft, names)[1].after).toBe("Design surface −0.66 ft");
   });
 
   test("applying a flat pad clears any offset; zone names and outlines are untouched", () => {

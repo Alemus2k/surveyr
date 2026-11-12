@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toDisplay, unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { AspectRoseChart } from "./AspectRoseChart";
@@ -44,7 +45,7 @@ export function ChartsPanel({ analysis, threshold }: ChartsPanelProps) {
   }, [analysis]);
 
   const pct = (v: number) => `${Math.round(v)}%`;
-  // counts are integers; axis edges are fractional metres/degrees
+  // counts are integers; axis edges are fractional elevations (in the user's unit) / degrees
   const num = (digits: number) => (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(digits));
 
   return (
@@ -78,8 +79,9 @@ export function ChartsPanel({ analysis, threshold }: ChartsPanelProps) {
           data={analysis.histograms.elevation}
           kind={kind}
           color={ELEVATION_COLOR}
-          unit="m"
+          unit={unitOf("elevation")}
           format={kind === "cumulative" ? pct : num(2)}
+          edge={(z) => num(2)(toDisplay(z, "elevation"))}
         />
         <h4 className="chart-title">Slope</h4>
         <DistributionChart
@@ -88,6 +90,7 @@ export function ChartsPanel({ analysis, threshold }: ChartsPanelProps) {
           color={SLOPE_COLOR}
           unit="°"
           format={kind === "cumulative" ? pct : num(1)}
+          edge={num(1)}
         />
       </PanelSection>
     </>
