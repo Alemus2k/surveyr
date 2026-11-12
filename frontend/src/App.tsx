@@ -4,6 +4,7 @@ import { useScanSettings } from "./adjust/useScanSettings";
 import type { ProjectRef } from "./api";
 import { AppearancePopover } from "./appearance/AppearancePopover";
 import { useAppearance } from "./appearance/useAppearance";
+import { formatDistance, useUnitSystem } from "./lib/units";
 import { CompareViewer } from "./compare/CompareViewer";
 import type { GizmoMode } from "./compare/compareScene";
 import { LayersPanel } from "./compare/LayersPanel";
@@ -84,6 +85,7 @@ export default function App() {
   const scanSettings = useScanSettings(ready ? scanId : null, bumpSettings);
   const [panelWidth, setPanelWidth, resetPanelWidth] = usePanelWidth();
   const appearance = useAppearance();
+  useUnitSystem(); // every figure is formatted in the active units: a switch re-renders the whole app
   // the launch animation: key of the run playing, or null; "Play now" replays it
   const [introRun, setIntroRun] = useState<number | null>(null);
   // once per page load, before the first paint so the app never flashes up first
@@ -117,7 +119,7 @@ export default function App() {
     ? site.site && `${site.site.scans.length} scans · ${site.site.zones.length} zones`
     : isCompare
     ? composition.comp && `${composition.comp.layers.length} layers`
-    : analysis && `${(analysis.points.kept / 1000).toFixed(0)}k pts · ${analysis.grid.cell_size} m cell`;
+    : analysis && `${(analysis.points.kept / 1000).toFixed(0)}k pts · ${formatDistance(analysis.grid.cell_size)} cell`;
 
   const importScan = async (file: File) => {
     const id = await projects.importScan(file);

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { elevationRamp, normalize, terrainRamp, type RGB255 } from "../color";
 import { hexToRgb } from "../appearance/colorMath";
 import { MapViewer, type ColorFn } from "../components/MapViewer";
+import { formatDistance } from "../lib/units";
 import type { Analysis } from "../types";
 import { PanelSection } from "./SidePanel";
 
@@ -41,7 +42,7 @@ export function MapsPanel({ analysis, threshold, accent }: MapsPanelProps) {
           <MapViewer title="Coverage (highlight = 2+ passes)" data={maps.coverage.data} toColor={fns.cover} />
         )}
       </div>
-      <p className="panel-note">Gridded at {analysis.grid.cell_size} m. North is up.</p>
+      <p className="panel-note">Gridded at {formatDistance(analysis.grid.cell_size)}. North is up.</p>
     </PanelSection>
   );
 }

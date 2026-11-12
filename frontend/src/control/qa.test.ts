@@ -1,5 +1,8 @@
-import { describe, expect, test } from "vitest";
-import { cm, gradeAccuracy } from "./qa";
+import { afterEach, describe, expect, test } from "vitest";
+import { setUnitSystem } from "../lib/units";
+import { formatOffset, gradeAccuracy } from "./qa";
+
+afterEach(() => setUnitSystem("us")); // back to the default
 
 const stats = (mean: number, std: number, n = 12) => ({
   n,
@@ -34,10 +37,19 @@ describe("gradeAccuracy", () => {
   });
 });
 
-test("cm formats signed centimetres", () => {
-  expect(cm(0.0343)).toBe("+3.4 cm");
-  expect(cm(-0.012)).toBe("−1.2 cm");
-  expect(cm(-0.012, false)).toBe("−1.2 cm");
-  expect(cm(0.0002)).toBe("0.0 cm");
-  expect(cm(-0.0004)).toBe("0.0 cm");
+test("offsets format as signed centimetres in metric", () => {
+  setUnitSystem("metric");
+  expect(formatOffset(0.0343)).toBe("+3.4 cm");
+  expect(formatOffset(-0.012)).toBe("−1.2 cm");
+  expect(formatOffset(-0.012, false)).toBe("−1.2 cm");
+  expect(formatOffset(0.0002)).toBe("0.0 cm");
+  expect(formatOffset(-0.0004)).toBe("0.0 cm");
+});
+
+test("offsets format as signed hundredths of a foot in US units", () => {
+  setUnitSystem("us");
+  expect(formatOffset(0.0343)).toBe("+0.11 ft"); // 0.0343 / 0.3048 = 0.1125
+  expect(formatOffset(-0.012)).toBe("−0.04 ft");
+  expect(formatOffset(0.0343, false)).toBe("0.11 ft");
+  expect(formatOffset(0.0002)).toBe("0.00 ft");
 });

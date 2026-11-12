@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../layout/icons";
+import { setUnitSystem, useUnitSystem, type UnitSystem } from "../lib/units";
 import { ACCENT_PRESETS, DEFAULT_ACCENT, type ThemeChoice } from "./appearance";
 import { ColorWheel } from "./ColorWheel";
 import { hexToHsv, hsvToHex, parseHex, type Hsv } from "./colorMath";
@@ -11,14 +12,20 @@ const THEME_OPTIONS: ReadonlyArray<[ThemeChoice, string]> = [
   ["dark", "Dark"],
 ];
 
+const UNIT_OPTIONS: ReadonlyArray<[UnitSystem, string]> = [
+  ["us", "US (ft, yd³)"],
+  ["metric", "Metric (m, m³)"],
+];
+
 interface AppearancePopoverProps {
   api: AppearanceApi;
   onPlayIntro: () => void;
 }
 
-/** Top-bar Appearance button + popover: theme and highlight colour (room for more). */
+/** Top-bar Appearance button + popover: theme, display units and highlight colour (room for more). */
 export function AppearancePopover({ api, onPlayIntro }: AppearancePopoverProps) {
   const { appearance, update, reset, uiAccent } = api;
+  const units = useUnitSystem();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   // The wheel keeps its own HSV so hue survives at zero saturation (hex can't hold it).
@@ -85,6 +92,23 @@ export function AppearancePopover({ api, onPlayIntro }: AppearancePopoverProps) 
                 </button>
               ))}
             </div>
+          </section>
+
+          <section className="appearance-section">
+            <h3 className="section-label">Units</h3>
+            <div className="segmented" role="group" aria-label="Units">
+              {UNIT_OPTIONS.map(([value, label]) => (
+                <button key={value} aria-pressed={units === value} onClick={() => setUnitSystem(value)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="panel-note">
+              {units === "us"
+                ? "Feet to hundredths, cubic yards, square feet and acres."
+                : "Metres, centimetres, cubic metres, square metres and hectares."}{" "}
+              Only what's shown changes; scans and saved values stay as they are.
+            </p>
           </section>
 
           <section className="appearance-section">

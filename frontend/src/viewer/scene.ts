@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import type { SliceSpec } from "../slice/slice";
-import { formatLength } from "../lib/format";
-import { axisMeasurements, niceStep } from "./backdrop";
+import { formatLength, niceLengthStep, type LengthStep } from "../lib/units";
+import { axisMeasurements } from "./backdrop";
 import { createPointsMaterial, createSurfaceMaterials, randomAttribute, surfaceMeshes } from "./materials";
 import { cloudToScene, type ColorRange, type PreparedCloud } from "./prepare";
 import { createStage, type ViewPreset } from "./stage";
@@ -41,9 +41,9 @@ export interface ViewerScene {
   dispose: () => void;
 }
 
-/** Grid spacing drawn on the surface, in world units (plan view). */
-export function surfaceGridStep(cloud: PreparedCloud): number {
-  return niceStep(cloud.span / SURFACE_GRID_DIVISIONS);
+/** Grid spacing drawn on the surface (plan view): a round number in the user's unit. */
+export function surfaceGridStep(cloud: PreparedCloud): LengthStep {
+  return niceLengthStep(cloud.span / SURFACE_GRID_DIVISIONS);
 }
 
 /**
@@ -77,7 +77,7 @@ export function createViewerScene(
   stage.scene.add(outlines);
   const toScene = cloudToScene(cloud);
 
-  const surfaceMats = createSurfaceMaterials({ opacity: 0.85, gridStep: surfaceGridStep(cloud) });
+  const surfaceMats = createSurfaceMaterials({ opacity: 0.85, gridStep: surfaceGridStep(cloud).metres });
   let surface: { group: THREE.Group; geo: THREE.BufferGeometry; grid: SurfaceGrid } | null = null;
   let mode: RenderMode = "points";
   const applyMode = () => {

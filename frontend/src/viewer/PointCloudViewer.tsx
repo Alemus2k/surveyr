@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { elevationCssGradient } from "../color";
+import { formatElevation, useUnitSystem } from "../lib/units";
 import type { SliceSpec } from "../slice/slice";
 import { Compass, useCompass } from "./Compass";
 import type { ColorRange, PreparedCloud } from "./prepare";
@@ -33,6 +34,11 @@ interface PointCloudViewerProps {
 
 /** Full-bleed 3D viewport (particles or gridded surface) with legend, compass and a toolbar slot. */
 export function PointCloudViewer(props: PointCloudViewerProps) {
+  const units = useUnitSystem(); // grid spacing and axis chips are built into the scene, so a switch rebuilds it
+  return <SceneViewer key={units} {...props} />;
+}
+
+function SceneViewer(props: PointCloudViewerProps) {
   const { cloud, colors, range, pointScale, showGrid, slice, view, accent, onTopView, toolbar } = props;
   const { renderMode, surfaceGrid, surfaceOpacity, outlines, legend, highest } = props;
   const host = useRef<HTMLDivElement>(null);
@@ -80,16 +86,16 @@ export function PointCloudViewer(props: PointCloudViewerProps) {
 
       {legend ?? (
         <div className="pc-legend" aria-label="Elevation colour scale">
-          <span className="pc-chip mono">{range.max.toFixed(2)} m</span>
+          <span className="pc-chip mono">{formatElevation(range.max)}</span>
           <div className="pc-legend-bar" style={{ background: elevationCssGradient() }} />
-          <span className="pc-chip mono">{range.min.toFixed(2)} m</span>
+          <span className="pc-chip mono">{formatElevation(range.min)}</span>
         </div>
       )}
 
       <div className="pc-badges">
         {cloud.exaggeration > 1.05 && <span className="pc-chip mono">Vertical ×{cloud.exaggeration.toFixed(1)}</span>}
         {renderMode === "surface" && (
-          <span className="pc-chip mono">Surface grid {surfaceGridStep(cloud)} m</span>
+          <span className="pc-chip mono">Surface grid {surfaceGridStep(cloud).label}</span>
         )}
       </div>
 

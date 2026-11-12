@@ -1,5 +1,17 @@
 import { useMemo, useState } from "react";
-import { formatArea, formatLength, formatVolume, type Quantity } from "../lib/format";
+import { QuantityInput } from "../components/QuantityInput";
+import {
+  formatArea,
+  formatCapacity,
+  formatDistance,
+  formatLength,
+  formatVolume,
+  lengthParts,
+  quantityText,
+  unitOf,
+  type Quantity,
+  type QuantityKind,
+} from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { CutFillMap } from "./CutFillMap";
@@ -39,6 +51,29 @@ function NumberField({ label, unit, value, step, min, max, onChange }: NumberFie
           onChange={(e) => Number.isFinite(e.target.valueAsNumber) && onChange(e.target.valueAsNumber)}
         />
         <span className="unit">{unit}</span>
+      </span>
+    </label>
+  );
+}
+
+interface QuantityFieldProps {
+  label: string;
+  kind: QuantityKind;
+  value: number; // metric
+  min?: number;
+  max?: number;
+  metricStep?: number;
+  onChange: (metric: number) => void;
+}
+
+/** A field typed in the user's units and stored metric. */
+function QuantityField({ label, kind, value, min, max, metricStep, onChange }: QuantityFieldProps) {
+  return (
+    <label className="js-field">
+      <span className="field-label">{label}</span>
+      <span className="js-input">
+        <QuantityInput kind={kind} value={value} min={min} max={max} metricStep={metricStep} onChange={onChange} />
+        <span className="unit">{unitOf(kind)}</span>
       </span>
     </label>
   );
@@ -89,6 +124,8 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
   const material = MATERIALS.find((m) => m.id === s.materialId);
   const direction = DIRECTIONS.find(([, d]) => d === s.fallsTowardDeg)?.[0] ?? `${s.fallsTowardDeg}°`;
   const scannedArea = site.z.length * site.cellArea;
+  const cutArea = formatArea(v.cutArea);
+  const fillArea = formatArea(v.fillArea);
 
   const copySummary = async () => {
     const text = jobsiteSummary({
@@ -127,7 +164,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
             <strong className="fig js-result-value">{q(formatVolume(h.loose))}</strong>
             <span className="js-result-sub">
               loose · <span className="fig">{h.loads.toLocaleString("en-GB")}</span> load{h.loads === 1 ? "" : "s"} of{" "}
-              {s.truckM3} m³ · {formatVolume(h.bank).value} m³ in the ground
+              {formatCapacity(s.truckM3)} · {quantityText(formatVolume(h.bank))} in the ground
             </span>
           </>
         )}
@@ -153,7 +190,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
           </p>
         ) : (
           <>
-            <NumberField label="Pad elevation" unit="m" step={0.01} value={base} onChange={(x) => update({ customBase: x })} />
+            <QuantityField label="Pad elevation" kind="elevation" value={base} onChange={(x) => update({ customBase: x })} />
             <div className="js-quick">
               <button className="text-btn" onClick={() => update({ customBase: zStats.lo })}>Lowest</button>
               <button className="text-btn" onClick={() => update({ customBase: zStats.mean })}>Mean</button>
@@ -206,13 +243,13 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
           <div className="metric-row">
             <dt>Cut / fill area</dt>
             <dd className="fig">
-              {formatArea(v.cutArea).value} / {q(formatArea(v.fillArea))}
+              {cutArea.unit === fillArea.unit ? cutArea.value : q(cutArea)} / {q(fillArea)}
             </dd>
           </div>
           <div className="metric-row">
             <dt>Max dig / fill depth</dt>
             <dd className="fig">
-              {v.maxCut.toFixed(2)} / {v.maxFill.toFixed(2)} <span className="unit">m</span>
+              {lengthParts(v.maxCut).value} / {q(lengthParts(v.maxFill))}
             </dd>
           </div>
         </dl>
@@ -258,7 +295,7 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
             onChange={(x) => update({ shrinkPct: x, materialId: CUSTOM_MATERIAL })}
           />
         </div>
-        <NumberField label="Truck capacity" unit="m³" step={1} min={1} max={100} value={s.truckM3} onChange={(x) => update({ truckM3: x })} />
+        <QuantityField label="Truck capacity" kind="volume" metricStep={1} min={1} max={100} value={s.truckM3} onChange={(x) => update({ truckM3: x })} />
         <p className="panel-note">
           Swell: dug soil takes up more room loose in a truck. Shrinkage: fill compacts, so it needs more soil than the
           space it fills. Presets are typical figures — use your geotech's numbers if you have them.
@@ -267,8 +304,8 @@ export function JobsitePanel({ projectId, projectName, analysis }: JobsitePanelP
           {copied === "done" ? "Copied to clipboard" : copied === "failed" ? "Couldn't copy" : "Copy summary"}
         </button>
         <p className="panel-note">
-          Estimates from the scan over {formatArea(scannedArea).value} {formatArea(scannedArea).unit} of scanned ground
-          (grid {analysis.grid.cell_size} m). Verify on site before quoting.
+          Estimates from the scan over {quantityText(formatArea(scannedArea))} of scanned ground (grid{" "}
+          {formatDistance(analysis.grid.cell_size)}). Verify on site before quoting.
         </p>
       </PanelSection>
     </>

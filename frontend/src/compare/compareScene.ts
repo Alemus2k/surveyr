@@ -2,7 +2,7 @@
 // placed by its LayerTransform, plus a move/rotate gizmo for the selected layer.
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
-import { niceStep } from "../viewer/backdrop";
+import { niceLengthStep } from "../lib/units";
 import {
   createPointsMaterial,
   createSurfaceMaterials,
@@ -63,7 +63,7 @@ export function createCompareScene(
 ): CompareScene {
   const stage = createStage(host, { box: frame.box, span: frame.span }, onHeading);
   const layers = new Map<string, LayerObjects>();
-  const gridStep = niceStep(frame.span / SURFACE_GRID_DIVISIONS);
+  const gridStep = niceLengthStep(frame.span / SURFACE_GRID_DIVISIONS).metres;
   let pointScale = 1;
   let selected: string | null = null;
 

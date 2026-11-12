@@ -43,7 +43,7 @@
   width: 140px;
 }
 .slice-field output {
-  min-width: 64px;
+  min-width: 76px; /* room for "+123.45 ft" */
   font-size: var(--text-sm);
   color: var(--text);
 }

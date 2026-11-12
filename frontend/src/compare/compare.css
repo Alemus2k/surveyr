@@ -108,7 +108,7 @@
 }
 .xf-field {
   display: grid;
-  grid-template-columns: 38px minmax(56px, 1fr) 12px;
+  grid-template-columns: 38px minmax(56px, 1fr) 14px; /* unit: "m", "ft", "°" */
   align-items: center;
   gap: 4px;
   color: var(--text-muted);

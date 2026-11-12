@@ -14,8 +14,9 @@ import { UNITS } from "../adjust/units";
 import { ConfirmDialog } from "../layout/ConfirmDialog";
 import { Icon } from "../layout/icons";
 import { loadPref, savePref } from "../lib/persist";
+import { formatDistance } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
-import { cm, GRADE_LABEL, gradeAccuracy } from "./qa";
+import { formatOffset, GRADE_LABEL, gradeAccuracy } from "./qa";
 
 interface ControlPanelProps {
   projectId: string; // the scan being checked
@@ -210,19 +211,19 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
               <dl className="metric-list">
                 <div className="metric-row">
                   <dt>RMSE</dt>
-                  <dd className="fig">{cm(check.stats.rmse, false)}</dd>
+                  <dd className="fig">{formatOffset(check.stats.rmse, false)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>Mean offset (bias)</dt>
-                  <dd className="fig">{cm(check.stats.mean ?? 0)}</dd>
+                  <dd className="fig">{formatOffset(check.stats.mean ?? 0)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>95% of ground within</dt>
-                  <dd className="fig">±{cm(check.stats.ci95 ?? 0, false)}</dd>
+                  <dd className="fig">±{formatOffset(check.stats.ci95 ?? 0, false)}</dd>
                 </div>
                 <div className="metric-row">
                   <dt>Worst point</dt>
-                  <dd className="fig">{cm(check.stats.max_abs ?? 0, false)}</dd>
+                  <dd className="fig">{formatOffset(check.stats.max_abs ?? 0, false)}</dd>
                 </div>
               </dl>
             ) : (
@@ -230,26 +231,26 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
             )}
             <p className="panel-note">
               {covered} of {check.points.length} points of “{setName}” are on the scan. Graded against a ±
-              {cm(tolerance, false)} tolerance: good within half of it.
+              {formatOffset(tolerance, false)} tolerance: good within half of it.
             </p>
           </div>
 
           {verdict.bias !== null && (
             <div className="notice-card warn" role="status">
               <p>
-                This scan sits <strong>{cm(Math.abs(verdict.bias), false)} {verdict.bias > 0 ? "high" : "low"}</strong>{" "}
+                This scan sits <strong>{formatOffset(Math.abs(verdict.bias), false)} {verdict.bias > 0 ? "high" : "low"}</strong>{" "}
                 against the check points — a consistent offset, typically a base-station height or datum mix-up. Its
                 volumes will be off until it's corrected.
               </p>
               <button className="primary-btn compact" disabled={settings.saving} onClick={() => setOffset(offset - verdict.bias!)}>
-                {verdict.bias > 0 ? "Lower" : "Raise"} this scan by {cm(Math.abs(verdict.bias), false)}
+                {verdict.bias > 0 ? "Lower" : "Raise"} this scan by {formatOffset(Math.abs(verdict.bias), false)}
               </button>
             </div>
           )}
           {offset !== 0 && (
             <div className="notice-card ok">
               <p>
-                Elevation correction applied: <strong className="fig">{cm(offset)}</strong>. The scan file is unchanged.
+                Elevation correction applied: <strong className="fig">{formatOffset(offset)}</strong>. The scan file is unchanged.
               </p>
               <button className="text-btn" disabled={settings.saving} onClick={() => setOffset(0)}>
                 Remove correction
@@ -270,12 +271,12 @@ export function ControlPanel({ projectId, settings, siteControlId, tolerance, re
             </thead>
             <tbody>
               {check.points.map((p) => (
-                <tr key={p.id} title={p.dz === null ? "No scan points within 2 m" : `${p.neighbours} scan points within ${p.radius_m} m`}>
+                <tr key={p.id} title={p.dz === null ? `No scan points within ${formatDistance(2)}` : `${p.neighbours} scan points within ${formatDistance(p.radius_m ?? 0)}`}>
                   <td>
                     <span className="fig">{p.id}</span> {p.desc && <span className="control-desc">{p.desc}</span>}
                   </td>
                   <td className={`num fig ${p.dz === null ? "faint" : Math.abs(p.dz) > tolerance ? "bad" : Math.abs(p.dz) > tolerance / 2 ? "warn" : ""}`}>
-                    {p.dz === null ? "not on scan" : cm(p.dz)}
+                    {p.dz === null ? "not on scan" : formatOffset(p.dz)}
                   </td>
                 </tr>
               ))}

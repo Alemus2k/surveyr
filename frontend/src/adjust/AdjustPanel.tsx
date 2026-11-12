@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ScanSettings } from "../api";
+import { formatDimensions, fromDisplay, inputStep, inputValue, unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { unitLabel, UNITS } from "./units";
@@ -12,7 +13,7 @@ interface AdjustPanelProps {
 
 const size = (a: Analysis | null) => {
   const d = a?.dimensions;
-  return d ? `${d.width_m.toFixed(2)} × ${d.depth_m.toFixed(2)} × ${d.height_m.toFixed(2)} m` : "…";
+  return d ? formatDimensions(d.width_m, d.depth_m, d.height_m) : "…";
 };
 
 /** Manual adjustments for one scan: source units, up axis, ground-only. */
@@ -129,22 +130,23 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
             <input
               type="number"
               className="fig"
-              step={0.1}
-              min={-1000}
-              max={1000}
-              value={offsetDraft ?? String(Math.round(settings.z_offset_m * 1000) / 10)}
+              step={inputStep("small", 0.1)}
+              min={inputValue(-10, "small")}
+              max={inputValue(10, "small")}
+              value={offsetDraft ?? String(inputValue(settings.z_offset_m, "small"))}
               disabled={saving}
               onChange={(e) => setOffsetDraft(e.target.value)}
               // apply on Enter / leaving the field: every change reloads the scan and anything built on it
               onBlur={() => {
-                const cm = Number(offsetDraft);
-                if (offsetDraft !== null && offsetDraft.trim() !== "" && Number.isFinite(cm) && cm / 100 !== settings.z_offset_m)
-                  set({ z_offset_m: cm / 100 });
+                const typed = Number(offsetDraft);
+                // saved only when the figure shown was changed, so the stored correction never drifts
+                if (offsetDraft !== null && offsetDraft.trim() !== "" && Number.isFinite(typed) && typed !== inputValue(settings.z_offset_m, "small"))
+                  set({ z_offset_m: fromDisplay(typed, "small") });
                 setOffsetDraft(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             />
-            <span className="unit">cm</span>
+            <span className="unit">{unitOf("small")}</span>
           </span>
         </label>
         <p className="panel-note">
