@@ -409,3 +409,104 @@ def qa(site_id: str) -> List[dict]:
         res = control.check(s.project_id, site.control_id)
         out.append({"project_id": s.project_id, "date": s.date, "stats": res["stats"], "points": len(res["points"])})
     return out
+
+
+# ------------------------------------------------------------------ what else each flight saw
+
+GROUND_CLASS = 2
+VEGETATION_CLASSES = (3, 4, 5)  # ASPRS: low, medium, high vegetation
+NOISE_CLASSES = (7, 18)  # low / high noise: never drawn or measured
+_raster_cache: Dict[tuple, tuple] = {}
+
+
+def _grid_array(flat: list, ny: int, nx: int) -> np.ndarray:
+    return np.array([np.nan if v is None else v for v in flat], dtype=float).reshape(ny, nx)
+
+
+def rasters(site_id: str, project_id: str) -> tuple:
+    """Everything one flight recorded besides the ground shape, on the site's shared grid.
+
+    Returns ``(header, arrays)`` for ``binary.pack``; every array is (ny, nx[, 3]),
+    row 0 = south, like ``grids``:
+
+    - ``coverage`` (u1): 1 where the flight has any points.
+    - ``photo`` (u1 x 3): what the cell looks like from above — the mean colour of
+      the points over the ground (canopy, machines) if there are any, else of the
+      ground itself. Only when the scan has colour.
+    - ``intensity`` (u1): mean ground reflectance, contrast-stretched (raw range in
+      the header). Bright = aggregate / concrete, dark = wet or organic.
+    - ``veg_height`` / ``object_height`` (f4, NaN = none): the highest vegetation /
+      other non-ground point above the cell's ground. Objects are machines,
+      structures, pipe — anything not ground, vegetation or noise.
+    - ``density`` / ``ground_density`` (u2): points per cell, all classes / ground.
+
+    Scans with no classification are treated as all ground, so the height layers
+    are simply empty. Cached until the flight, its settings or the grid change.
+    """
+    g = grids(site_id)
+    scan = next((s for s in g["scans"] if s["project_id"] == project_id), None)
+    if scan is None:
+        raise service.ProjectNotFound(project_id)
+    nx, ny, cell = g["nx"], g["ny"], g["cell_size"]
+    key = (site_id, project_id, _member_stamp(project_id), cell, g["x0"], g["y0"], nx, ny)
+    with _grid_lock:
+        if key in _raster_cache:
+            return _raster_cache[key]
+
+    full, _ = service._load_full(project_id)
+    x, y, z = full.points[:, 0], full.points[:, 1], full.points[:, 2]
+    ix = np.floor((x - g["x0"]) / cell).astype(np.int64)
+    iy = np.floor((y - g["y0"]) / cell).astype(np.int64)
+    cls = full.channels["classification"].astype(int) if full.has("classification") else None
+    classified = cls is not None and bool((cls == GROUND_CLASS).any())
+    noise = np.isin(cls, NOISE_CLASSES) if cls is not None else np.zeros(full.size, dtype=bool)
+    ok = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & ~noise
+    flat = iy * nx + ix
+    ground = (cls == GROUND_CLASS) if classified else np.ones(full.size, dtype=bool)
+    veg = np.isin(cls, VEGETATION_CLASSES) if classified else np.zeros(full.size, dtype=bool)
+    obj = ~ground & ~veg
+    cells = nx * ny
+
+    def count(mask: np.ndarray) -> np.ndarray:
+        return np.bincount(flat[ok & mask], minlength=cells)
+
+    def mean(values: np.ndarray, mask: np.ndarray, n: np.ndarray) -> np.ndarray:
+        return np.bincount(flat[ok & mask], weights=values[ok & mask], minlength=cells) / np.maximum(n, 1)
+
+    n_all, n_ground, n_above = count(np.ones(full.size, dtype=bool)), count(ground), count(~ground)
+    ground_z = _grid_array(scan["z"], ny, nx).ravel()  # the same ground surface the volumes use
+
+    def height(mask: np.ndarray) -> np.ndarray:
+        top = np.full(cells, -np.inf)
+        np.maximum.at(top, flat[ok & mask], z[ok & mask])
+        h = np.where(np.isfinite(top), top - ground_z, np.nan)
+        return np.where(h > 0, h, np.nan).astype(np.float32).reshape(ny, nx)
+
+    header = {"project_id": project_id, "nx": nx, "ny": ny, "cell_size": cell, "x0": g["x0"], "y0": g["y0"],
+              "classified": classified}
+    arrays = [("coverage", (n_all > 0).astype(np.uint8).reshape(ny, nx))]
+    if all(full.has(c) for c in ("red", "green", "blue")):
+        photo = np.zeros((cells, 3))
+        for i, c in enumerate(("red", "green", "blue")):
+            col = full.channels[c]
+            photo[:, i] = np.where(n_above > 0, mean(col, ~ground, n_above), mean(col, ground, n_ground))
+        arrays.append(("photo", np.clip(photo * 255, 0, 255).astype(np.uint8).reshape(ny, nx, 3)))
+    if full.has("intensity"):
+        m = mean(full.channels["intensity"], ground, n_ground)
+        u8, lo, hi = service._stretch_u8(m[n_ground > 0])
+        out = np.zeros(cells, dtype=np.uint8)
+        out[n_ground > 0] = u8
+        arrays.append(("intensity", out.reshape(ny, nx)))
+        header["intensity_range"] = [lo, hi]
+    arrays += [
+        ("veg_height", height(veg)),
+        ("object_height", height(obj)),
+        ("density", np.minimum(n_all, 65535).astype(np.uint16).reshape(ny, nx)),
+        ("ground_density", np.minimum(n_ground, 65535).astype(np.uint16).reshape(ny, nx)),
+    ]
+    result = (header, arrays)
+    with _grid_lock:
+        for k in [k for k in _raster_cache if k[0] == site_id and k[1] == project_id]:
+            del _raster_cache[k]
+        _raster_cache[key] = result
+    return result

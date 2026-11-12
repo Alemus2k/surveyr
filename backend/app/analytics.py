@@ -63,7 +63,10 @@ def elevation_histogram(z: np.ndarray, bins: int = 40) -> dict:
     valid = z[np.isfinite(z)]
     if valid.size == 0:
         return {"counts": [], "edges": []}
-    counts, edges = np.histogram(valid, bins=bins)
+    lo, hi = float(valid.min()), float(valid.max())
+    if hi - lo < 1e-6:  # dead-flat ground (a slab, a test plane): one millimetre-wide span
+        lo, hi = lo - 0.0005, hi + 0.0005
+    counts, edges = np.histogram(valid, bins=bins, range=(lo, hi))
     return {"counts": counts.tolist(), "edges": edges.tolist()}
 
 

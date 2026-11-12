@@ -193,48 +193,126 @@ def analyze(project_id: str, cell_size: Optional[float] = None) -> dict:
         return _cache[key]
 
 
-def sample_points_with_origin(project_id: str, limit: int = DEFAULT_POINT_LIMIT) -> tuple:
-    """Cleaned points for the 3D view, randomly thinned to ``limit``. Cached.
+def _sample(project_id: str, limit: int, everything: bool) -> tuple:
+    """The thinned cloud shown in 3D: ``(origin, rel, sampled cloud)``. Cached.
+
+    Normally the cleaned terrain points (ground only when the scan's settings
+    say so). ``everything`` keeps every class and skips the outlier filter, so
+    trees, machines and structures show too.
+    """
+    key = f"{project_id}@{limit}{'+all' if everything else ''}"
+    with _lock:
+        if key not in _points_cache:
+            if everything:
+                cloud = _load_full(project_id)[0]
+            else:
+                cloud = clean.remove_z_outliers(_load_cloud(project_id)[0])
+            if cloud.size > limit:
+                idx = np.random.default_rng(0).choice(cloud.size, size=limit, replace=False)
+                keep = np.zeros(cloud.size, dtype=bool)
+                keep[idx] = True
+                cloud = cloud.mask(keep)
+            pts = cloud.points
+            origin = (pts.min(axis=0) + pts.max(axis=0)) / 2 if len(pts) else np.zeros(3)
+            rel = np.ascontiguousarray(pts[:, :3] - origin, dtype=np.float32)
+            _points_cache[key] = (origin.astype(np.float64), rel, cloud)
+        return _points_cache[key]
+
+
+def sample_points_with_origin(project_id: str, limit: int = DEFAULT_POINT_LIMIT, everything: bool = False) -> tuple:
+    """Points for the 3D view, randomly thinned to ``limit``.
 
     Returns ``(origin, rel)``: a float64 origin (footprint centre) and an (N, 3)
     float32 array relative to it. Real LiDAR uses survey-grid coordinates in the
     millions of metres, where float32 alone would round to ~0.5 m.
     """
-    key = f"{project_id}@{limit}"
-    with _lock:
-        if key not in _points_cache:
-            cloud, _ = _load_cloud(project_id)
-            pts = clean.remove_z_outliers(cloud).points
-            if len(pts) > limit:
-                idx = np.random.default_rng(0).choice(len(pts), size=limit, replace=False)
-                pts = pts[np.sort(idx)]
-            origin = (pts.min(axis=0) + pts.max(axis=0)) / 2 if len(pts) else np.zeros(3)
-            rel = np.ascontiguousarray(pts[:, :3] - origin, dtype=np.float32)
-            _points_cache[key] = (origin.astype(np.float64), rel)
-        return _points_cache[key]
+    origin, rel, _ = _sample(project_id, limit, everything)
+    return origin, rel
 
 
-def _load_cloud(project_id: str):
-    """A project's cloud with its manual adjustments applied.
+def _stretch_u8(values: np.ndarray) -> tuple:
+    """Values scaled to 0..255 between their 2nd and 98th percentiles; returns (u8, low, high)."""
+    if values.size == 0:
+        return np.zeros(0, dtype=np.uint8), 0.0, 1.0
+    lo, hi = (float(v) for v in np.percentile(values, [2, 98]))
+    if hi <= lo:
+        hi = lo + 1.0
+    return np.clip((values - lo) / (hi - lo) * 255, 0, 255).astype(np.uint8), lo, hi
 
-    Returns ``(cloud, ground_only)``: points converted to metres and Z-up, and
-    — when the user wants it and the scan is ground-classified — only ground
-    points, with ``ground_only`` saying whether that filter was applied.
+
+def sample_attributes(project_id: str, limit: int = DEFAULT_POINT_LIMIT, everything: bool = False) -> tuple:
+    """What else the scan recorded for the points of ``sample_points_with_origin``, in the same order.
+
+    Returns ``(header, arrays)``: uint8 arrays for colour (N, 3), intensity
+    (contrast-stretched; the header carries the raw range), classification,
+    return number and number of returns — whichever the scan has.
+    """
+    cloud = _sample(project_id, limit, everything)[2]
+    ch = cloud.channels
+    header: dict = {"count": cloud.size}
+    arrays = []
+    if all(cloud.has(c) for c in ("red", "green", "blue")):
+        rgb = np.column_stack([ch["red"], ch["green"], ch["blue"]])
+        arrays.append(("rgb", np.clip(rgb * 255, 0, 255).astype(np.uint8)))
+    if cloud.has("intensity"):
+        u8, lo, hi = _stretch_u8(ch["intensity"])
+        arrays.append(("intensity", u8))
+        header["intensity_range"] = [lo, hi]
+    for name in ("classification", "return_number", "number_of_returns"):
+        if cloud.has(name):
+            arrays.append((name, np.clip(ch[name], 0, 255).astype(np.uint8)))
+    return header, arrays
+
+
+def channel_summary(cloud: PointCloud) -> dict:
+    """Which optional channels a scan carries, and how many points each class has."""
+    have = [c for c in ("intensity", "classification", "return_number", "number_of_returns", "gps_time") if cloud.has(c)]
+    if all(cloud.has(c) for c in ("red", "green", "blue")):
+        have.insert(0, "rgb")
+    classes: Dict[str, int] = {}
+    if cloud.has("classification"):
+        codes, counts = np.unique(cloud.channels["classification"].astype(int), return_counts=True)
+        classes = {str(int(c)): int(n) for c, n in zip(codes, counts)}
+    return {"channels": have, "classes": classes}
+
+
+def _load_full(project_id: str):
+    """Every point of a project, manual adjustments applied: ``(cloud, settings)``.
+
+    Points are in metres, Z-up, with all their channels and classes — trees,
+    machines and structures included.
     """
     from . import scan_settings  # local: scan_settings imports this module
 
     if project_id == FUSED_PROJECT_ID:
-        return PointCloud(_fuse_demo_passes()[0].fused_points()), False
+        return PointCloud(_fuse_demo_passes()[0].fused_points()), scan_settings.load(project_id)
     info = _resolve(project_id)
     if info["type"] in GROUP_TYPES:
         raise NotAnalyzable(project_id)
     settings = scan_settings.load(project_id)
     raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]), surface=settings.surface)
-    cloud = PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels))
-    ground = scan_settings.ground_mask(cloud.channels.get("classification")) if settings.ground_only else None
+    return PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels)), settings
+
+
+def _terrain_of(full: PointCloud, settings) -> tuple:
+    """The terrain part of a cloud: ``(cloud, ground_only)`` — only ground points
+    when the user wants that and the scan is ground-classified."""
+    from . import scan_settings
+
+    ground = scan_settings.ground_mask(full.channels.get("classification")) if settings.ground_only else None
     if ground is not None:
-        return cloud.mask(ground), True
-    return cloud, False
+        return full.mask(ground), True
+    return full, False
+
+
+def _load_cloud(project_id: str):
+    """A project's terrain cloud with its manual adjustments applied.
+
+    Returns ``(cloud, ground_only)``: points converted to metres and Z-up, and
+    — when the user wants it and the scan is ground-classified — only ground
+    points, with ``ground_only`` saying whether that filter was applied.
+    """
+    return _terrain_of(*_load_full(project_id))
 
 
 def _fuse_demo_passes():
@@ -252,9 +330,12 @@ def _fuse_demo_passes():
 
 def _compute_single(project_id: str, cell_size: Optional[float]) -> dict:
     info = _resolve(project_id)
-    cloud, ground_only = _load_cloud(project_id)
+    full, settings = _load_full(project_id)
+    cloud, ground_only = _terrain_of(full, settings)
     result = _build_analysis(cloud, cell_size or auto_cell_size(cloud), info)
     result["points"]["ground_only"] = ground_only
+    result["points"]["total"] = int(full.size)  # every class, before the ground filter
+    result["points"].update(channel_summary(full))
     return result
 
 

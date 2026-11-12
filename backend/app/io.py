@@ -7,8 +7,9 @@ Formats supported with free/open-source tooling only:
   - LandXML    -> a TIN surface, sampled on a fine lattice (see landxml.py)
 
 Wherever the source provides extra per-point channels (intensity, echo return
-info, GPS time, classification, scan angle) they are copied into the
-PointCloud channel map so downstream code can use them when present.
+info, GPS time, classification, scan angle, colour) they are copied into the
+PointCloud channel map so downstream code can use them when present. Colour is
+always stored as red/green/blue in 0..1, whatever the file's bit depth.
 """
 from __future__ import annotations
 
@@ -45,13 +46,25 @@ def load_point_cloud(path: str, surface: Optional[str] = None) -> PointCloud:
     raise ValueError(f"unsupported point-cloud format: {ext!r}")
 
 
+def _colour_channels(r, g, b) -> Dict[str, np.ndarray]:
+    """red/green/blue scaled to 0..1 from 8-bit, 16-bit or already-normalised values."""
+    rgb = np.column_stack([r, g, b]).astype(float)
+    top = float(rgb.max()) if rgb.size else 0.0
+    if top <= 0:
+        return {}  # colour fields present but empty: the scan has no colour
+    scale = 1.0 if top <= 1.0 else 255.0 if top <= 255.0 else 65535.0
+    return {name: rgb[:, i] / scale for i, name in enumerate(("red", "green", "blue"))}
+
+
 def _load_xyz(path: str) -> PointCloud:
     pts = np.loadtxt(path)
     if pts.ndim == 1:
         pts = pts.reshape(1, -1)
     if pts.shape[1] < 3:
         raise ValueError("XYZ file must have at least x, y, z columns")
-    return PointCloud(pts[:, :3])
+    # "x y z r g b" is a common export: keep the colour
+    channels = _colour_channels(pts[:, 3], pts[:, 4], pts[:, 5]) if pts.shape[1] >= 6 else {}
+    return PointCloud(pts[:, :3], channels)
 
 
 def _load_las(path: str) -> PointCloud:
@@ -69,6 +82,8 @@ def _load_las(path: str) -> PointCloud:
     for name in _LAS_CHANNELS:
         if name in dims:
             channels[name] = np.asarray(las[name], dtype=float)
+    if {"red", "green", "blue"} <= dims:
+        channels.update(_colour_channels(las.red, las.green, las.blue))
     return PointCloud(pts, channels)
 
 
@@ -141,10 +156,15 @@ def _load_ply(path: str) -> PointCloud:
     else:
         raise ValueError(f"unsupported PLY format: {fmt!r}")
 
+    column = (lambda n: arr[:, idx[n]]) if fmt == "ascii" else (lambda n: recs[n])
     channels: Dict[str, np.ndarray] = {}
     for n in ("intensity", "classification", "return_number"):
         if n in names:
-            channels[n] = np.asarray(pts[:, 0] * 0, dtype=float)  # placeholder not meaningful
+            channels[n] = np.asarray(column(n), dtype=float)
+    for r, g, b in (("red", "green", "blue"), ("r", "g", "b"), ("diffuse_red", "diffuse_green", "diffuse_blue")):
+        if {r, g, b} <= set(names):  # phone scanning apps colour their PLYs
+            channels.update(_colour_channels(column(r), column(g), column(b)))
+            break
     return PointCloud(pts, channels)
 
 

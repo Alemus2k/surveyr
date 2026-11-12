@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import FastAPI, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import compare, control, scan_settings, service, sites, storage
+from . import binary, compare, control, scan_settings, service, sites, storage
 
 app = FastAPI(title="Surveyr API", version="0.2.0", description="Land surveying terrain analytics")
 
@@ -56,15 +56,19 @@ def analysis(
 def points(
     project_id: str,
     limit: int = Query(service.DEFAULT_POINT_LIMIT, ge=1, le=1_000_000),
+    everything: bool = Query(False),
 ) -> Response:
-    """Cleaned, thinned point cloud in metres (manual adjustments applied).
+    """Thinned point cloud in metres (manual adjustments applied).
+
+    By default the cleaned terrain points; ``everything=true`` keeps every
+    class (trees, machines, structures) and skips the outlier filter.
 
     Binary layout: 3 little-endian float64 (origin x, y, z) followed by
     float32 x, y, z triples relative to that origin. The split keeps
     millimetre precision for survey-grid coordinates (millions of metres).
     """
     try:
-        origin, rel = service.sample_points_with_origin(project_id, limit=limit)
+        origin, rel = service.sample_points_with_origin(project_id, limit=limit, everything=everything)
     except service.NotAnalyzable:
         raise HTTPException(status_code=400, detail="request each layer's points by its own project id")
     except service.ProjectNotFound:
@@ -74,6 +78,23 @@ def points(
         media_type="application/octet-stream",
         headers={"X-Point-Count": str(len(rel))},
     )
+
+
+@app.get("/api/points/{project_id}/attributes")
+def point_attributes(
+    project_id: str,
+    limit: int = Query(service.DEFAULT_POINT_LIMIT, ge=1, le=1_000_000),
+    everything: bool = Query(False),
+) -> Response:
+    """Colour, intensity, class and return numbers for the points of ``/api/points``
+    (same ``limit`` and ``everything``, same order), packed as in ``binary.py``."""
+    try:
+        header, arrays = service.sample_attributes(project_id, limit=limit, everything=everything)
+    except service.NotAnalyzable:
+        raise HTTPException(status_code=400, detail="request each layer's points by its own project id")
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown project '{project_id}'")
+    return Response(content=binary.pack(header, arrays), media_type="application/octet-stream")
 
 
 @app.post("/api/scans", status_code=201)
@@ -209,6 +230,17 @@ def site_grids(site_id: str) -> dict:
         return sites.grids(site_id)
     except service.ProjectNotFound:
         raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+
+
+@app.get("/api/sites/{site_id}/rasters/{project_id}")
+def site_rasters(site_id: str, project_id: str) -> Response:
+    """What one flight recorded besides the ground shape, on the site's grid: a
+    top-down photo, intensity, vegetation and object heights, point density."""
+    try:
+        header, arrays = sites.rasters(site_id, project_id)
+    except service.ProjectNotFound as exc:
+        raise HTTPException(status_code=404, detail=f"unknown site or scan '{exc.args[0]}'")
+    return Response(content=binary.pack(header, arrays), media_type="application/octet-stream")
 
 
 @app.get("/api/sites/{site_id}/qa")
