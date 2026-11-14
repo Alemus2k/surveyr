@@ -186,6 +186,15 @@ def put_scan_settings(project_id: str, body: scan_settings.ScanSettings) -> dict
         raise HTTPException(status_code=404, detail=f"unknown project '{project_id}'")
 
 
+@app.post("/api/demo/restore")
+def restore_demo() -> dict:
+    """Reinstall the Riverside Commons demo as shipped (old demo files go to the Trash first)."""
+    installed = storage.restore_demo(service.DATA_DIR, service.DEMO_DIR, service.TRASH_DIR)
+    for name in installed:
+        service.invalidate(name.rsplit(".", 1)[0])
+    return {"installed": installed}
+
+
 # ------------------------------------------------------------------ job sites
 
 

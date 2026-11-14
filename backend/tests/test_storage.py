@@ -129,3 +129,28 @@ def test_seed_demo_data_only_ever_runs_once(tmp_path):
     storage.seed_demo_data(target, demo)
 
     assert not (target / "synthetic_topo.xyz").exists()
+
+
+def test_restore_demo_trashes_the_old_demo_and_installs_the_bundled_one(tmp_path):
+    demo, target, trash = tmp_path / "demo", tmp_path / "projects", tmp_path / "trash"
+    for d in (demo, target, trash):
+        d.mkdir()
+    for name in storage.SITE_DEMO_ALL:
+        (demo / name).write_text("new")
+    (target / "riverside_2026-07-27.laz").write_text("old")
+    (target / "riverside_2026-07-27.settings.json").write_text("{}")
+    (target / "mine.xyz").write_text("0 0 0")
+
+    installed = storage.restore_demo(target, demo, trash)
+
+    assert set(installed) == set(storage.SITE_DEMO_ALL)
+    assert (target / "riverside_2026-07-27.laz").read_text() == "new"
+    assert not (target / "riverside_2026-07-27.settings.json").exists()
+    assert sorted(p.name for p in trash.iterdir()) == ["riverside_2026-07-27.laz", "riverside_2026-07-27.settings.json"]
+    assert (target / "mine.xyz").read_text() == "0 0 0"  # other projects untouched
+
+
+def test_restore_demo_is_a_no_op_when_projects_are_the_demo_folder(tmp_path):
+    (tmp_path / "riverside_grading.xml").write_text("x")
+    assert storage.restore_demo(tmp_path, tmp_path, None) == ["riverside_grading.xml"]
+    assert (tmp_path / "riverside_grading.xml").read_text() == "x"

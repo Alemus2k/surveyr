@@ -21,6 +21,7 @@ from . import analytics, clean, dem, fusion, io, storage, terrain
 from .pcd import PointCloud
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+DEMO_DIR = DATA_DIR  # where the bundled demo projects live (the desktop app points this at its bundle)
 DEFAULT_CELL = 2.0  # metres per raster cell (survey-scale sites)
 MIN_CELL = 0.01  # metres; finer than phone LiDAR noise is pointless
 TARGET_CELLS_ACROSS = 100  # auto cell size aims for ~this many cells on the long side

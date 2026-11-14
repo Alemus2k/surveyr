@@ -167,6 +167,7 @@ export default function App() {
       return (
         <ProjectsPanel
           variant="sites"
+          onRestoreDemo={projects.restoreDemo}
           projects={projects.projects}
           openIds={tabs.open}
           activeId={tabs.active}

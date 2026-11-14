@@ -300,3 +300,10 @@ export async function fetchSiteQA(siteId: string): Promise<FlightQA[]> {
   if (!res.ok) throw new Error(`Couldn't check flights against control: ${await errorDetail(res)}`);
   return res.json() as Promise<FlightQA[]>;
 }
+
+/** Reinstall the Riverside Commons demo as shipped; old demo files go to the Trash first. */
+export async function restoreDemo(): Promise<string[]> {
+  const res = await fetch(`${apiBase()}/demo/restore`, { method: "POST" });
+  if (!res.ok) throw new Error(`Couldn't restore the demo: ${await errorDetail(res)}`);
+  return ((await res.json()) as { installed: string[] }).installed;
+}
