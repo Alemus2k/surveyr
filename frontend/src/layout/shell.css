@@ -141,20 +141,59 @@
 /* ------------------------------------------------------------ icon rail */
 .icon-rail {
   grid-area: rail;
+  position: relative;
+  z-index: 20; /* slides out over the side panel when expanded */
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  padding: 10px 0;
+  width: var(--rail-w);
+  padding: 10px calc((var(--rail-w) - 34px) / 2); /* centres the 34 px buttons in the collapsed rail */
+  overflow: hidden;
   background: var(--bg-chrome);
   border-right: 1px solid var(--line);
+  transition: width var(--duration-normal) var(--ease-out-expo), box-shadow var(--duration-normal);
+}
+/* rest the pointer on the rail (or tab into it) to see every panel's name */
+.icon-rail:hover,
+.icon-rail:focus-within {
+  width: 212px;
+  box-shadow: var(--shadow-pop);
+  transition-delay: 350ms; /* don't flicker open when the pointer just crosses it */
+}
+.rail-item {
+  width: 100%;
+}
+.rail-divider {
+  width: 100%;
+  margin: 2px 0 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.rail-label {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+.icon-rail:hover .rail-label,
+.icon-rail:focus-within .rail-label {
+  opacity: 1;
+  transition-delay: 350ms;
 }
 .rail-btn {
   position: relative;
   display: grid;
-  place-items: center;
-  width: 34px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 34px;
   height: 34px;
+  padding: 0 7px;
+  text-align: left;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -175,7 +214,7 @@
   position: absolute;
   top: 8px;
   bottom: 8px;
-  left: -7px;
+  left: calc((34px - var(--rail-w)) / 2); /* the rail's own padding: sits on its left edge */
   width: 2px;
   border-radius: 0 2px 2px 0;
   background: var(--accent);

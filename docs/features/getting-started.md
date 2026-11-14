@@ -47,6 +47,13 @@ tab left only "No project open".
   Only demo file names are touched. In development (projects folder = demo
   folder) it does nothing.
 
+## Also: a rail that names itself
+
+The left rail now has two groups — **places** (Projects, Job sites, Site setup)
+and **tools for the scan in view** — split by a thin line. Resting the pointer on
+the rail for a moment (or tabbing into it) slides it out to 212 px with every
+panel's name; it overlays the side panel instead of pushing the layout.
+
 ## Limits and honesty notes
 
 - The page describes tabs that exist in 0.7; if a tab is axed after review,
@@ -54,7 +61,7 @@ tab left only "No project open".
 
 ## Files
 
-- `frontend/src/layout/GettingStarted.tsx`, `layout/TopBar.tsx` (?), `layout/shell.css`
+- `frontend/src/layout/GettingStarted.tsx`, `layout/TopBar.tsx` (?), `layout/IconRail.tsx` (groups, names), `layout/shell.css`
 - `frontend/src/App.tsx` (first run, help toggle), `hooks/useProjects.ts`, `panels/ProjectsPanel.tsx`
 - `backend/app/storage.py` (`restore_demo`), `backend/app/main.py` (`/api/demo/restore`)
 - Tests: `backend/tests/test_storage.py` (restore)
@@ -65,5 +72,7 @@ tab left only "No project open".
       "Welcome to Surveyr" with the units bar.
 - [ ] Pick a unit system: the bar disappears and numbers use it everywhere.
 - [ ] Open Riverside Commons from the page; press **?**; × returns to the site.
+- [ ] Rest the pointer on the left rail: it slides out with names after a
+      moment, and slides back when you move away; nothing else on screen moves.
 - [ ] Delete the demo site, then *Restore the demo site*: it comes back; the
       deleted file is in the Recycle Bin.

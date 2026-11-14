@@ -16,3 +16,4 @@ along the way and are the main keep/axe candidates; *roadmap* rows were planned.
 | 6 | [Whole-flight data](features/flight-data.md) | roadmap | Open a Riverside flight → Terrain panel | Lists colour, intensity, classes; points per class | |
 | 7 | [Dashboard tabs](features/site-dashboard.md) | roadmap | Riverside → tabs | Progress unchanged; each tab has a hint line; timeline shared | |
 | 8 | [8-flight demo](features/demo-site.md) | roadmap | Riverside → timeline | 8 flights, 27 Jul → 2 Nov; 21 Sep flagged 0.11 ft high | |
+| 9 | [Rail that names itself](features/getting-started.md) | idea | Rest the pointer on the left icon rail | Slides out with every panel's name, grouped places / tools; nothing shifts | |

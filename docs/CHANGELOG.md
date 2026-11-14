@@ -13,6 +13,9 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
 - **Getting started page** *(idea)*: first launch lands on a welcome page with
   three ways in, a one-time units choice and how the app fits together; **?** in
   the top bar brings it back. → [getting-started](features/getting-started.md)
+- **Rail that names itself** *(idea)*: rest the pointer on the left rail to see
+  every panel's name; panels are grouped into places and scan tools.
+  → [getting-started](features/getting-started.md)
 - **Restore the demo site** *(idea)*: one click reinstalls Riverside Commons as
   shipped (old copies go to the Trash). → [getting-started](features/getting-started.md)
 
