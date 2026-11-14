@@ -1,0 +1,18 @@
+# Review checklist — 0.7.0
+
+How to review: run the app locally (see [DEVELOPMENT.md](DEVELOPMENT.md) →
+Testing, or the browser dev setup in the README), open **Riverside Commons**, and
+go down this list. Each row links to the feature doc, which has the full steps.
+Mark **Keep**, **Change** (say what) or **Axe**. Rows marked *idea* were added
+along the way and are the main keep/axe candidates; *roadmap* rows were planned.
+
+| # | Feature | Origin | Quick test on the demo | Expected | Keep / Change / Axe |
+|---|---|---|---|---|---|
+| 1 | [US units](features/units.md) | roadmap | Appearance → Units → switch | Every number switches between ft / yd³ / acres and m / m³ / ha; nothing left in the other system | |
+| 2 | [Getting started](features/getting-started.md) | idea | Close all tabs, or press **?** | Welcome page with three cards and the how-it-fits list | |
+| 3 | [First-run units choice](features/getting-started.md) | idea | Fresh preferences | Units bar on the welcome page until a choice is made | |
+| 4 | [Restore the demo site](features/getting-started.md) | idea | Job sites panel → *Restore the demo site* | Demo comes back as shipped; old copies in the Recycle Bin | |
+| 5 | [LandXML design import](features/landxml.md) | roadmap | Projects → Riverside Grading → Manual adjustments | Read in US survey feet; *FG - Finished grade* picked; can switch to EG | |
+| 6 | [Whole-flight data](features/flight-data.md) | roadmap | Open a Riverside flight → Terrain panel | Lists colour, intensity, classes; points per class | |
+| 7 | [Dashboard tabs](features/site-dashboard.md) | roadmap | Riverside → tabs | Progress unchanged; each tab has a hint line; timeline shared | |
+| 8 | [8-flight demo](features/demo-site.md) | roadmap | Riverside → timeline | 8 flights, 27 Jul → 2 Nov; 21 Sep flagged 0.11 ft high | |
