@@ -16,6 +16,7 @@ import { usePanelWidth } from "./hooks/usePanelWidth";
 import { useProjectAnalysis } from "./hooks/useProjectAnalysis";
 import { useProjects } from "./hooks/useProjects";
 import { IconRail, type PanelId } from "./layout/IconRail";
+import { GettingStarted } from "./layout/GettingStarted";
 import { Icon } from "./layout/icons";
 import { TopBar } from "./layout/TopBar";
 import { ColorPanel } from "./panels/ColorPanel";
@@ -59,9 +60,8 @@ const DEFAULT_TOLERANCE_M = 0.05; // accuracy grading for scans outside a job si
 export default function App() {
   const projects = useProjects();
   const ready = projects.engine === "ready";
-  // first run: open job sites first, and not the individual scans inside them
-  const firstRun = [...projects.projects].sort((a, b) => Number(b.type === "site") - Number(a.type === "site")).filter((p) => !p.site);
-  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null, firstRun.map((p) => p.id));
+  // first run opens nothing: a new user lands on "Getting started", which offers the demo site
+  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null, []);
   const byId = new Map(projects.projects.map((p) => [p.id, p]));
   const activeType = byId.get(tabs.active ?? "")?.type;
   const isCompare = activeType === "compare";
@@ -100,6 +100,7 @@ export default function App() {
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
   const [newCompareOpen, setNewCompareOpen] = useState(false);
   const [newSiteOpen, setNewSiteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false); // "Getting started" shown over the open project
   const [zoneSel, setZoneSel] = useState<{ site: string; zone: string } | null>(null);
 
   // the rail shows only panels that fit the open tab; map a remembered choice across
@@ -155,7 +156,10 @@ export default function App() {
           projects={projects.projects}
           openIds={tabs.open}
           activeId={tabs.active}
-          onOpen={tabs.select}
+          onOpen={(id) => {
+            setHelpOpen(false);
+            tabs.select(id);
+          }}
           onImport={importScan}
           onDelete={deleteProject}
           onNewComparison={() => setNewCompareOpen(true)}
@@ -233,14 +237,23 @@ export default function App() {
         </div>
       );
     if (projects.engine === "failed") return <div className="error-state">{projects.engineError}</div>;
-    if (!tabs.active)
+    if (!tabs.active || helpOpen)
       return (
-        <div className="empty-state">
-          <p>No project open.</p>
-          <button className="secondary-btn" onClick={() => setPanel("projects")}>
-            Show projects
-          </button>
-        </div>
+        <GettingStarted
+          projects={projects.projects}
+          onOpen={(id) => {
+            setHelpOpen(false);
+            tabs.select(id);
+          }}
+          onImport={(file) => {
+            setHelpOpen(false);
+            void importScan(file);
+          }}
+          onNewSite={() => setNewSiteOpen(true)}
+          onRestoreDemo={() => void projects.restoreDemo()}
+          busy={projects.busy}
+          onClose={tabs.active ? () => setHelpOpen(false) : undefined}
+        />
       );
     if (loadError)
       return (
@@ -298,6 +311,8 @@ export default function App() {
         onClose={tabs.close}
         readout={readout || null}
         appearance={<AppearancePopover api={appearance} onPlayIntro={() => setIntroRun((n) => (n ?? 0) + 1)} />}
+        onHelp={() => setHelpOpen((h) => !h)}
+        helpOpen={helpOpen || !tabs.active}
         onImport={importScan}
         importing={projects.busy}
       />

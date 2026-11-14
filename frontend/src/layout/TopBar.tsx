@@ -15,6 +15,8 @@ interface TopBarProps {
   appearance: ReactNode; // the Appearance button + popover
   onImport: (file: File) => void;
   importing: boolean;
+  onHelp: () => void; // show / hide "Getting started"
+  helpOpen: boolean;
 }
 
 /** Window-style title bar: app mark, closable project tabs, status readout. */
@@ -51,6 +53,15 @@ export function TopBar(props: TopBarProps) {
       </div>
       <div className="topbar-status">
         {readout && <span className="mono topbar-readout">{readout}</span>}
+        <button
+          className="tool-btn topbar-help"
+          aria-pressed={props.helpOpen}
+          onClick={props.onHelp}
+          title="Getting started: what Surveyr does and where things are"
+          aria-label="Getting started"
+        >
+          ?
+        </button>
         {appearance}
       </div>
     </header>

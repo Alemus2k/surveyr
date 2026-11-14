@@ -298,3 +298,123 @@ body.is-resizing .viewport {
   cursor: progress;
   opacity: 0.5;
 }
+
+/* ------------------------------------------------------------ getting started */
+.topbar-help {
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-base);
+}
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1080px;
+  width: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: auto;
+  padding: 28px 24px 36px;
+  color: var(--text);
+}
+.workspace:has(> .welcome) {
+  background: var(--bg-app);
+}
+.welcome-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.welcome-head h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: var(--weight-heavy);
+}
+.welcome-head p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+.welcome-units {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  font-size: var(--text-sm);
+}
+.welcome-units .segmented button {
+  padding: 0 12px;
+}
+.welcome-units-detail,
+.welcome-units-note {
+  color: var(--text-muted);
+}
+.welcome-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+.welcome-card h2,
+.welcome-how h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-heavy);
+}
+.welcome-card p {
+  flex: 1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.welcome-step {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: var(--weight-heavy);
+  font-size: var(--text-sm);
+}
+.welcome-how {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+.welcome-how ol {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+.welcome-how ol svg {
+  vertical-align: -2px;
+}
+.welcome-how strong,
+.welcome-how em {
+  color: var(--text);
+}
+.welcome-note {
+  margin: 8px 0 0;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
