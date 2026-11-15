@@ -1,5 +1,5 @@
 """Per-scan manual adjustments: source units, which axis is up, ground-only,
-and an elevation correction (e.g. from checking the scan against control).
+automatic ground classification, and an elevation correction (e.g. from checking the scan against control).
 
 Stored as ``<project>.settings.json`` beside the scan (the scan file itself is
 never modified) and applied every time the scan is loaded, so all analytics,
@@ -50,6 +50,9 @@ class ScanSettings(BaseModel):
     unit: Unit = "m"
     up_axis: Literal["z", "y"] = "z"
     ground_only: bool = True
+    # work out ground automatically (app.ground), ignoring any classes in the file;
+    # the result is only used to filter when ground_only is on
+    auto_ground: bool = False
     z_offset_m: float = Field(0.0, ge=-100, le=100)  # added to every elevation, after unit conversion
     surface: Optional[str] = Field(None, max_length=200)  # LandXML: which surface (None = the design-looking one)
 

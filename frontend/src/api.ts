@@ -102,6 +102,7 @@ export interface ScanSettings {
   unit: Unit;
   up_axis: "z" | "y";
   ground_only: boolean;
+  auto_ground: boolean; // work out ground automatically, ignoring the file's classes
   z_offset_m: number; // elevation correction added after unit conversion
   surface: string | null; // LandXML: which surface; null = the default
 }

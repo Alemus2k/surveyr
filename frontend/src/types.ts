@@ -28,6 +28,10 @@ export interface PointStats {
   channels?: string[];
   /** Points per ASPRS class code (2 ground, 3–5 vegetation, 1 unclassified, …). */
   classes?: Record<string, number>;
+  /** Where the ground classes come from: the scan file, Surveyr's automatic classifier, or nowhere. */
+  ground_source?: "file" | "auto" | "none";
+  /** The scan has no ground classes but clearly has trees, machines or structures standing on it. */
+  suggest_auto_ground?: boolean;
 }
 
 export interface Dimensions {

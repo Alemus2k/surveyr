@@ -115,7 +115,7 @@ def _project_files(info: dict) -> List[str]:
 
 def invalidate(project_id: str) -> None:
     """Forget cached analysis/points for a project (after its settings change)."""
-    for cache in (_cache, _points_cache):
+    for cache in (_cache, _points_cache, _ground_cache):
         for key in [k for k in cache if k.startswith(f"{project_id}@")]:
             del cache[key]
 
@@ -140,6 +140,8 @@ def delete_project(project_id: str) -> List[str]:
 _cache: Dict[str, dict] = {}
 _points_cache: Dict[str, tuple] = {}
 _lock = threading.Lock()
+_ground_cache: Dict[str, np.ndarray] = {}  # automatic classes per scan file + settings
+_ground_lock = threading.Lock()
 
 DEFAULT_POINT_LIMIT = 200_000  # enough for a dense 3D view, ~2.4 MB on the wire
 
@@ -290,8 +292,45 @@ def _load_full(project_id: str):
     if info["type"] in GROUP_TYPES:
         raise NotAnalyzable(project_id)
     settings = scan_settings.load(project_id)
-    raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]), surface=settings.surface)
-    return PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels)), settings
+    path = os.path.join(DATA_DIR, info["source"])
+    raw = io.load_point_cloud(path, surface=settings.surface)
+    cloud = PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels))
+    if _auto_ground_applies(info, settings):
+        cloud.channels["classification"] = _auto_classes(project_id, path, cloud, settings)
+    return cloud, settings
+
+
+def _auto_ground_applies(info: dict, settings) -> bool:
+    """Automatic ground runs on point clouds when asked for; never on a LandXML surface."""
+    return bool(settings.auto_ground) and not info["source"].lower().endswith(".xml")
+
+
+def _auto_classes(project_id: str, path: str, cloud: PointCloud, settings) -> np.ndarray:
+    """The automatic classification of a scan (``ground.classify``), ignoring the file's classes.
+
+    Cached per scan file (path, size, modification time) and settings, so it runs
+    once, not for every request; ``invalidate`` also forgets it.
+    """
+    from . import ground
+
+    st = os.stat(path)
+    key = f"{project_id}@{path}|{st.st_size}|{st.st_mtime_ns}|{settings.model_dump_json()}"
+    with _ground_lock:
+        if key not in _ground_cache:
+            for k in [k for k in _ground_cache if k.startswith(f"{project_id}@")]:
+                del _ground_cache[k]  # one entry per scan
+            channels = {k: v for k, v in cloud.channels.items() if k != "classification"}
+            _ground_cache[key] = ground.classify(cloud.points, channels).astype(float)
+        return _ground_cache[key]
+
+
+def ground_source(info: dict, full: PointCloud, settings) -> str:
+    """Where a scan's ground classes come from: "auto", "file" or "none"."""
+    from . import scan_settings
+
+    if _auto_ground_applies(info, settings):
+        return "auto"
+    return "file" if scan_settings.ground_mask(full.channels.get("classification")) is not None else "none"
 
 
 def _terrain_of(full: PointCloud, settings) -> tuple:
@@ -336,7 +375,19 @@ def _compute_single(project_id: str, cell_size: Optional[float]) -> dict:
     result["points"]["ground_only"] = ground_only
     result["points"]["total"] = int(full.size)  # every class, before the ground filter
     result["points"].update(channel_summary(full))
+    source = ground_source(info, full, settings)
+    result["points"]["ground_source"] = source
+    result["points"]["suggest_auto_ground"] = _suggest_auto_ground(info, full, source)
     return result
+
+
+def _suggest_auto_ground(info: dict, full: PointCloud, source: str) -> bool:
+    """A scan with no usable ground class that clearly has things standing on the ground."""
+    from . import ground
+
+    if source != "none" or info["source"].lower().endswith(".xml"):
+        return False
+    return ground.suggest(full.points)
 
 
 def _compute_fused(cell_size: float) -> dict:
@@ -347,6 +398,8 @@ def _compute_fused(cell_size: float) -> dict:
     info = _resolve(FUSED_PROJECT_ID)
     result = _build_analysis(combined, cell_size, info)
     result["points"]["ground_only"] = False
+    result["points"]["ground_source"] = "none"
+    result["points"]["suggest_auto_ground"] = False
     cov = project.coverage(cell_size)
 
     result["coverage"] = {
