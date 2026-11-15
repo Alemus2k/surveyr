@@ -326,3 +326,7 @@ app.include_router(exports.router)
 from .conditions import router as conditions_router  # noqa: E402  (site conditions tab)
 
 app.include_router(conditions_router)
+
+from . import checks  # noqa: E402  (Checks & records tab: sections, trench as-built, ADA slopes, settlement)
+
+app.include_router(checks.router)
