@@ -1,6 +1,7 @@
 // The tabs of the job-site dashboard, in display order. A feature that belongs
 // to a job site adds one component under site/tabs/ and one entry here.
 import { ChangeOrderLog } from "../ChangeOrderLog";
+import { conditionsCount, ConditionsTab } from "./ConditionsTab";
 import { ProgressTab } from "./ProgressTab";
 import type { SiteTabDef, SiteTabProps } from "./types";
 
@@ -23,5 +24,13 @@ export const SITE_TABS: SiteTabDef[] = [
     Component: ChangesTab,
     count: ({ site }) => site.change_orders?.length || null,
     timeline: false,
+  },
+  {
+    id: "conditions",
+    label: "Site conditions",
+    hint: "What the flight shows besides earthworks: the site from above, trees and machines, disturbed ground and the limits, storm damage.",
+    Component: ConditionsTab,
+    count: conditionsCount,
+    alert: (p) => (conditionsCount(p) ?? 0) > 0,
   },
 ];
