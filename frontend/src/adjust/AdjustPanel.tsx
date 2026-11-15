@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ScanSettings } from "../api";
-import { formatDimensions, fromDisplay, inputStep, inputValue, unitOf } from "../lib/units";
+import { formatDimensions, formatLength, fromDisplay, inputStep, inputValue, unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { unitLabel, UNITS } from "./units";
@@ -26,6 +26,8 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
   const suggestion = detected.source === "size" && detected.unit && detected.unit !== settings.unit;
   const crsMismatch = detected.source === "crs" && detected.unit && detected.unit !== settings.unit;
   const groundApplied = analysis?.points.ground_only ?? false;
+  const auto = analysis?.points.ground_source === "auto";
+  const suggestAuto = !settings.auto_ground && (analysis?.points.suggest_auto_ground ?? false);
 
   return (
     <>
@@ -105,6 +107,21 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
       )}
 
       <PanelSection label="Classification">
+        {suggestAuto && (
+          <div className="notice-card warn" role="status">
+            <p>
+              This scan doesn't say which points are ground, but it has trees, machines or structures standing on it.
+              They would count as dirt in your volumes.
+            </p>
+            <button
+              className="secondary-btn"
+              disabled={saving}
+              onClick={() => set({ auto_ground: true, ground_only: true })}
+            >
+              Classify automatically
+            </button>
+          </div>
+        )}
         <label className="check-row">
           <input
             type="checkbox"
@@ -116,10 +133,26 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
         </label>
         <p className="panel-note">
           {groundApplied
-            ? `Using ${analysis?.points.captured.toLocaleString()} ground-classified points; trees, buildings and other classes are left out of the terrain.`
+            ? `Using ${analysis?.points.captured.toLocaleString()} ${auto ? "automatically found" : "ground-classified"} ground points; trees, machines and other objects are left out of the terrain.`
             : settings.ground_only
               ? "This scan isn't ground-classified (phone scans never are), so every point is used."
               : "Every point is used, including vegetation and structures if the scan has them."}
+        </p>
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={settings.auto_ground}
+            disabled={saving}
+            onChange={(e) => set({ auto_ground: e.target.checked })}
+          />
+          Work out ground points automatically
+        </label>
+        <p className="panel-note">
+          Surveyr finds the bare earth itself, ignoring any classes in the file: anything up to{" "}
+          {formatLength(7)} across that stands up off the ground like a machine, truck or tree is left out, while
+          stockpiles, berms, trenches and slopes stay. Use it for scans that aren't classified, or are classified
+          badly. Small things right on the ground (low brush, a pipe in a trench) may still count as ground.
+          {settings.auto_ground && !settings.ground_only ? " Turn on “Use ground points only” to apply it." : ""}
         </p>
       </PanelSection>
 
