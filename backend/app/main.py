@@ -308,3 +308,8 @@ def control_check(project_id: str, control_id: str = Query(..., alias="control")
         raise HTTPException(status_code=400, detail="check a scan, not a comparison or site")
     except service.ProjectNotFound as exc:
         raise HTTPException(status_code=404, detail=f"unknown project or control set '{exc.args[0]}'")
+
+
+from . import checks  # noqa: E402  (Checks & records tab: sections, trench as-built, ADA slopes, settlement)
+
+app.include_router(checks.router)
