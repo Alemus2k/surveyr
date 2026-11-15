@@ -4,6 +4,7 @@ import { formatOffset, gradeAccuracy } from "../control/qa";
 import { ChangeOrderDialog } from "./ChangeOrderDialog";
 import { formatDate } from "./dates";
 import { FlightTimeline, type FlightVerdict } from "./FlightTimeline";
+import { SiteReport } from "./SiteReport";
 import { siteSummary } from "./summary";
 import { SITE_TABS } from "./tabs/registry";
 import type { ScanCloud, SiteTabProps } from "./tabs/types";
@@ -36,6 +37,7 @@ export function SiteDashboard(props: SiteDashboardProps) {
   const [copied, setCopied] = useState<"idle" | "done" | "failed">("idle");
   const [tabId, setTab] = useState(SITE_TABS[0].id);
   const [ordering, setOrdering] = useState(false); // change-order dialog open
+  const [printing, setPrinting] = useState(false); // the printable report replaces the dashboard
 
   if (!site) return <div className="empty-state">Loading site…</div>;
   if (site.scans.length === 0)
@@ -91,6 +93,16 @@ export function SiteDashboard(props: SiteDashboardProps) {
     reloadKey: props.reloadKey,
   };
 
+  if (printing)
+    return (
+      <SiteReport
+        tab={tabProps}
+        verdict={verdicts.get(site.scans[scan]?.project_id ?? "") ?? null}
+        designName={name(site.design_id)}
+        onClose={() => setPrinting(false)}
+      />
+    );
+
   return (
     <div className="site-dash">
       <header className="site-head">
@@ -105,6 +117,9 @@ export function SiteDashboard(props: SiteDashboardProps) {
         <div className="site-head-actions">
           <button className="secondary-btn" onClick={() => setOrdering(true)}>
             Job specs change order
+          </button>
+          <button className="secondary-btn" onClick={() => setPrinting(true)} title="A one-flight report to print or save as PDF">
+            Print report
           </button>
           <button className="secondary-btn" onClick={copySummary}>
             {copied === "done" ? "Copied to clipboard" : copied === "failed" ? "Couldn't copy" : "Copy progress summary"}

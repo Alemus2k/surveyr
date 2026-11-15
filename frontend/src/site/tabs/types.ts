@@ -43,4 +43,5 @@ export interface SiteTabDef {
   count?: (p: SiteTabProps) => number | null; // small number on the tab (items, or things needing a look)
   alert?: (p: SiteTabProps) => boolean; // draw the count in the warning colour
   timeline?: boolean; // false for tabs that aren't about one flight (default true)
+  report?: ComponentType<SiteTabProps>; // this tab's section of the printable site report (sentences and small tables)
 }

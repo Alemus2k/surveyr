@@ -4,6 +4,7 @@ import { ChangeOrderLog } from "../ChangeOrderLog";
 import { conditionsCount, ConditionsTab } from "./ConditionsTab";
 import { ProgressTab } from "./ProgressTab";
 import { QuantitiesTab } from "./QuantitiesTab";
+import { ConditionsReport, ProgressReport, QuantitiesReport } from "./reports";
 import type { SiteTabDef, SiteTabProps } from "./types";
 
 function ChangesTab({ site, projects, state, onNewChangeOrder }: SiteTabProps) {
@@ -17,18 +18,21 @@ export const SITE_TABS: SiteTabDef[] = [
     label: "Progress",
     hint: "How far along the earthworks are, zone by zone, against the plan and the contractor's claims.",
     Component: ProgressTab,
+    report: ProgressReport,
   },
   {
     id: "quantities",
     label: "Quantities",
     hint: "How much base and paving went down and whether it's thick enough, what's in each stockpile, and whether the pond holds what the design says.",
     Component: QuantitiesTab,
+    report: QuantitiesReport,
   },
   {
     id: "conditions",
     label: "Site conditions",
     hint: "What the flight shows besides earthworks: the site from above, trees and machines, disturbed ground and the limits, storm damage.",
     Component: ConditionsTab,
+    report: ConditionsReport,
     count: conditionsCount,
     alert: (p) => (conditionsCount(p) ?? 0) > 0,
   },
