@@ -322,3 +322,7 @@ def control_check(project_id: str, control_id: str = Query(..., alias="control")
 from . import exports  # noqa: E402  contours and exports
 
 app.include_router(exports.router)
+
+from .conditions import router as conditions_router  # noqa: E402  (site conditions tab)
+
+app.include_router(conditions_router)
