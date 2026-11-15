@@ -47,6 +47,13 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
 - **Contours** traced from any scan, design or site flight (engine, no
   Matplotlib); used by the DXF export. → [contours](features/contours.md)
 
+### Measuring
+- **Measure in 3D** (single-scan 3D toolbar): spot elevation; distance with
+  height change, slope distance, grade % / ratio and bearing; path length with
+  climb and drop; area with perimeter, surface area and elevations. True survey
+  values (the vertical stretch is undone), ground-snapped, copyable.
+  → [measure](features/measure.md)
+
 ### Quantities (new job-site tab)
 - **Layers**: base course / paving placed between flights — area, volume,
   tonnage, thickness map against target, thin patches flagged.

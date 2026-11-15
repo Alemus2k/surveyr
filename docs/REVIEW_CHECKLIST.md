@@ -23,3 +23,5 @@ along the way and are the main keep/axe candidates; *roadmap* rows were planned.
 | 13 | [Stockpiles by material](features/stockpiles.md) | roadmap | Quantities → Stockpiles | Spoil / topsoil / aggregate recognised; volumes over time | |
 | 14 | [Pond storage](features/pond-storage.md) | roadmap | Quantities → Pond storage | Holds ~65 % of design on 2 Nov; 19 Oct reports unseen wet floor | |
 | 15 | Quantities extras (16 small ideas) | idea | See the "ideas" list in [layers](features/layers.md) / [stockpiles](features/stockpiles.md) / [pond-storage](features/pond-storage.md) | e.g. automatic base flight, suggested pond outlet, edge cells not judged thin | |
+| 16 | [3D measurement tools](features/measure.md) | roadmap | Open the 2 Nov flight → Measure → Distance; click two spots along the road | ≈ 2.0 % falling westward; spot elevations within ~0.06 ft. **Not yet tried by hand** — clicks, double-click, keys and both themes need a look | |
+| 17 | Measure extras (11 small ideas) | idea | See "ideas" in [measure](features/measure.md) | e.g. climb/drop on paths, coverage note on areas, live hover readout, P1/D2 tags | |
