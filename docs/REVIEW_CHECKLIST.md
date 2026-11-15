@@ -17,3 +17,9 @@ along the way and are the main keep/axe candidates; *roadmap* rows were planned.
 | 7 | [Dashboard tabs](features/site-dashboard.md) | roadmap | Riverside → tabs | Progress unchanged; each tab has a hint line; timeline shared | |
 | 8 | [8-flight demo](features/demo-site.md) | roadmap | Riverside → timeline | 8 flights, 27 Jul → 2 Nov; 21 Sep flagged 0.11 ft high | |
 | 9 | [Rail that names itself](features/getting-started.md) | idea | Rest the pointer on the left icon rail | Slides out with every panel's name, grouped places / tools; nothing shifts | |
+| 10 | [Export dialog](features/exports.md) | roadmap | Riverside → **Export…** → Progress data, then CAD drawing | Files appear in Downloads\Surveyr; *Show in folder* opens Explorer on them; DXF opens in CAD with contours on CONTOUR_MAJOR / MINOR | |
+| 11 | [Contours](features/contours.md) | roadmap | Export the 2 Nov flight as DXF with a 1 ft interval | Closed rings around the stockpiles; lines stop at unscanned ground | |
+| 12 | [Layers & tonnage](features/layers.md) | roadmap | Riverside → Quantities → Layers, 2 Nov | Road base ≈ 255 tons; thin patch ≈ 850 sq ft at ~3.6–4.3 in flagged red | |
+| 13 | [Stockpiles by material](features/stockpiles.md) | roadmap | Quantities → Stockpiles | Spoil / topsoil / aggregate recognised; volumes over time | |
+| 14 | [Pond storage](features/pond-storage.md) | roadmap | Quantities → Pond storage | Holds ~65 % of design on 2 Nov; 19 Oct reports unseen wet floor | |
+| 15 | Quantities extras (16 small ideas) | idea | See the "ideas" list in [layers](features/layers.md) / [stockpiles](features/stockpiles.md) / [pond-storage](features/pond-storage.md) | e.g. automatic base flight, suggested pond outlet, edge cells not judged thin | |

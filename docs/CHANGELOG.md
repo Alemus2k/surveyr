@@ -37,6 +37,26 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
   a limits-of-disturbance breach — each with exact answers for testing.
   → [demo-site](features/demo-site.md)
 
+### Getting results out
+- **Export…** (top bar): save the open scan or site as a CAD drawing (DXF:
+  contours, spot elevations, zones, limits), a LandXML surface, PNEZD points
+  (CSV), an elevation grid (ASCII grid + .prj), cleaned ground points (LAS/LAZ),
+  a site plan (GeoJSON, plus a latitude/longitude copy) or progress data (JSON)
+  for project-management software. Files go to Downloads\Surveyr and are never
+  overwritten. → [exports](features/exports.md)
+- **Contours** traced from any scan, design or site flight (engine, no
+  Matplotlib); used by the DXF export. → [contours](features/contours.md)
+
+### Quantities (new job-site tab)
+- **Layers**: base course / paving placed between flights — area, volume,
+  tonnage, thickness map against target, thin patches flagged.
+  → [layers](features/layers.md)
+- **Stockpiles by material**: each pile's volume over time with its material
+  guessed from colour and intensity (overridable) and tonnage.
+  → [stockpiles](features/stockpiles.md)
+- **Pond storage**: stage–storage curve as-built vs design below the outlet,
+  with unseen (wet) floor reported honestly. → [pond-storage](features/pond-storage.md)
+
 ### Fixes
 - Elevation histogram no longer crashes on dead-flat ground.
 - LandXML surfaces no longer crash the installed app (Matplotlib isn't bundled).
