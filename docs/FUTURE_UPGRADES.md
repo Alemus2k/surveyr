@@ -166,15 +166,52 @@ low-code flow before writing any dedicated connector.
 ## 3. Smaller ideas parked during 0.7
 
 Ideas that came up while building 0.7 but were out of scope. Each is small enough
-to become a normal feature.
+to become a normal feature. Grouped by where they'd live; the source doc is linked.
 
-- **Carry each scan's foot type to coordinate display** — show eastings /
-  northings in US survey feet when the file's CRS is in US survey feet, so they
-  match the plans exactly (today: international foot, ~4 ft off on a 2,000,000 ft
-  state-plane coordinate).
-- **Ask for units on first launch** — the US / metric choice is tucked under
-  Appearance.
-- **Re-word old change-order entries** in the current units from their stored
-  metric values, with the original wording in a tooltip.
-- **Tons next to cubic yards for hauls** using material density (job-site
-  calculations panel).
+**Units and display** ([units](features/units.md))
+- Show eastings / northings in **US survey feet** when the scan's coordinate
+  system is in US survey feet (today: international foot, about 4 ft off on a
+  2,000,000 ft state-plane coordinate).
+- Re-word old change-order entries in the current units from their stored metric
+  values, with the original wording in a tooltip.
+- Tons next to cubic yards for hauls in the job-site calculations panel (densities
+  now exist for stockpiles, so this is mostly wiring).
+
+**Exports** ([exports](features/exports.md), [contours](features/contours.md))
+- **Handover pack**: one zip with every export for a site.
+- Design-minus-flight cut/fill as a coloured grid or GeoJSON heat-map cells.
+- Cross-sections along alignments exported to CSV or DXF.
+- Direct KML for Google Earth (the WGS84 GeoJSON already does the hard part).
+- A coordinate-system note written into DXF drawings.
+- The original TIN points for LandXML designs.
+- Flat DXF contours with one elevation each, as an option for CAD tools that
+  prefer them; labels on minor contours when the interval is large.
+
+**Ground classification** ([ground-classification](features/ground-classification.md))
+- **A finer second pass around trenches** so a pipe or trench box isn't kept as
+  ground (today the demo trench reads 64.6 m³ low on 19 Oct).
+- A "largest machine on site" setting (the 7 m window).
+- Use intensity to find machines (paint is bright).
+- A QA layer showing where automatic ground disagrees with the file's classes.
+
+**Measure in 3D** ([measure](features/measure.md))
+- Save measurements with the scan or site (today they vanish on close).
+- Measure on the design surface; cut / fill under a drawn area.
+- Drag a spot to edit it; ignore machine points when snapping.
+
+**Quantities** ([layers](features/layers.md), [stockpiles](features/stockpiles.md), [pond storage](features/pond-storage.md))
+- Paving areas in square yards; per-pile density override.
+- Multi-stage pond outlets; export the stage–storage table.
+
+**Site conditions** ([site-conditions](features/site-conditions.md))
+- Guess machine type from size; per-tree markers; a 3D view of findings.
+
+**Checks & records** ([trench-asbuilt](features/trench-asbuilt.md), [ada-slopes](features/ada-slopes.md))
+- L-shaped walks as one outline; benched-wall detection; where along the trench
+  the spoil pile is.
+- A proper pipe-diameter field on as-builts (today it lives in the note).
+- A file save that works in the macOS app for "Save CSV" (copy works everywhere).
+
+**Report** ([site-report](features/site-report.md))
+- Maps and charts in the printout; one report covering a date range instead of
+  one flight.
