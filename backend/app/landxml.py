@@ -220,19 +220,27 @@ def load_surface(path: str, surface: Optional[str] = None) -> Tuple[np.ndarray, 
 
 def write(path: str, surfaces: List[Tuple[str, np.ndarray, np.ndarray]], unit: str = "meter",
           crs_name: Optional[str] = None) -> None:
-    """Write TIN surfaces (name, points[E, N, Z], triangles) as LandXML 1.2 — for fixtures and demos."""
-    system = "Metric" if unit in ("meter", "millimeter", "centimeter") else "Imperial"
+    """Write TIN surfaces (name, points[E, N, Z], triangles) as LandXML 1.2.
+
+    Used by the demo generators, tests and the LandXML surface export. Values are
+    written as given (already in ``unit``) with four decimals.
+    """
+    from xml.sax.saxutils import quoteattr
+
+    metric = unit in ("meter", "millimeter", "centimeter")
+    system = "Metric" if metric else "Imperial"
+    area, volume = ("squareMeter", "cubicMeter") if metric else ("squareFoot", "cubicYard")
     with open(path, "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<LandXML xmlns="http://www.landxml.org/schema/LandXML-1.2" version="1.2">\n')
-        f.write(f'  <Units><{system} linearUnit="{unit}" areaUnit="squareFoot" volumeUnit="cubicYard"/></Units>\n')
+        f.write(f'  <Units><{system} linearUnit="{unit}" areaUnit="{area}" volumeUnit="{volume}"/></Units>\n')
         if crs_name:
-            f.write(f'  <CoordinateSystem name="{crs_name}"/>\n')
+            f.write(f'  <CoordinateSystem name={quoteattr(crs_name)}/>\n')
         f.write("  <Surfaces>\n")
         for name, pts, tri in surfaces:
-            f.write(f'    <Surface name="{name}">\n      <Definition surfType="TIN">\n        <Pnts>\n')
+            f.write(f'    <Surface name={quoteattr(name)}>\n      <Definition surfType="TIN">\n        <Pnts>\n')
             for k, (e, n, z) in enumerate(pts, 1):
-                f.write(f'          <P id="{k}">{n:.3f} {e:.3f} {z:.3f}</P>\n')
+                f.write(f'          <P id="{k}">{n:.4f} {e:.4f} {z:.4f}</P>\n')
             f.write("        </Pnts>\n        <Faces>\n")
             for a, b, c in tri:
                 f.write(f"          <F>{a + 1} {b + 1} {c + 1}</F>\n")
