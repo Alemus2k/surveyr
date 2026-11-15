@@ -23,6 +23,8 @@ export interface Zone {
   // design surface raised (+) or lowered (−) by the offset
   target_elevation_m?: number | null;
   design_offset_m?: number;
+  // stockpiles: what the pile is ("topsoil", "aggregate", "spoil"), chosen by the user; absent = guess from the flight
+  material?: string | null;
 }
 
 export type SpecField = "design_id" | "tolerance_m" | "grade" | "start" | "finish";
