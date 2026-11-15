@@ -6,11 +6,14 @@ import {
   formatCapacity,
   formatCoordinate,
   formatDimensions,
+  formatDensity,
   formatDistance,
   formatElevation,
   formatLength,
   formatSigned,
   formatSmall,
+  formatThickness,
+  formatTonnage,
   formatVolume,
   fromDisplay,
   getUnitSystem,
@@ -23,6 +26,8 @@ import {
   niceStep,
   setUnitSystem,
   subscribeUnits,
+  T_M3_PER_PCF,
+  T_PER_SHORT_TON,
   toDisplay,
   unitOf,
 } from "./units";
@@ -218,5 +223,47 @@ describe("round steps", () => {
   test("elevation ticks land on round metres in metric", () => {
     setUnitSystem("metric");
     expect(elevationTicks(98, 103.5, 3).map((t) => t.label)).toEqual(["98.00 m", "100.00 m", "102.00 m"]);
+  });
+});
+
+describe("layers and materials: thickness, tonnage, density", () => {
+  test("thickness is inches in US and centimetres in metric", () => {
+    expect(formatThickness(0.1524)).toBe("6.0 in");
+    expect(formatThickness(0.11)).toBe("4.3 in"); // 4.33
+    expect(formatThickness(-0.0127, { signed: true })).toBe("−0.5 in");
+    expect(formatThickness(0.0127, { signed: true })).toBe("+0.5 in");
+    expect(formatThickness(0.0001, { signed: true })).toBe("0.0 in");
+    setUnitSystem("metric");
+    expect(formatThickness(0.11)).toBe("11.0 cm");
+  });
+
+  test("a short ton is 2,000 lb = 0.90718474 t", () => {
+    expect(T_PER_SHORT_TON).toBe(0.90718474);
+    expect(formatTonnage(0.90718474 * 265.5)).toEqual({ value: "265.5", unit: "tons" });
+    expect(formatTonnage(0.90718474 * 2000)).toEqual({ value: "2,000", unit: "tons" });
+    expect(formatTonnage(4.5359237)).toEqual({ value: "5.00", unit: "tons" });
+    setUnitSystem("metric");
+    expect(formatTonnage(240.93)).toEqual({ value: "240.9", unit: "t" });
+  });
+
+  test("density: 140 lb/ft³ is 2.24 t/m³", () => {
+    expect(T_M3_PER_PCF).toBeCloseTo(0.0160185, 6);
+    expect(formatDensity(2.24)).toBe("140 lb/ft³"); // 139.8
+    expect(toDisplay(1, "density")).toBeCloseTo(62.428, 3);
+    setUnitSystem("metric");
+    expect(formatDensity(2.24)).toBe("2.24 t/m³");
+  });
+
+  test("thickness and density inputs use the units they are specified in", () => {
+    expect(unitOf("thickness")).toBe("in");
+    expect(unitOf("density")).toBe("lb/ft³");
+    expect(fromDisplay(6, "thickness")).toBeCloseTo(0.1524, 9);
+    expect(inputValue(0.2, "thickness")).toBe(7.87);
+    expect(fromDisplay(140, "density")).toBeCloseTo(2.2426, 4);
+    expect(inputStep("thickness")).toBe(0.25);
+    setUnitSystem("metric");
+    expect(unitOf("thickness")).toBe("cm");
+    expect(fromDisplay(20, "thickness")).toBeCloseTo(0.2, 9);
+    expect(inputValue(2.24, "density")).toBe(2.24);
   });
 });

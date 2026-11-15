@@ -17,15 +17,20 @@ export interface Quantity {
 /**
  * What a number measures, which decides its unit:
  * length = horizontal or vertical distance; elevation = height above datum;
- * small = tolerances, deviations, corrections (cm in metric); area; volume.
+ * small = tolerances, deviations, corrections (cm in metric); area; volume;
+ * thickness = a placed layer (inches / cm, how paving and base are specified);
+ * density = weight per volume (lb/ft³ / t/m³), stored in tonnes per m³.
  */
-export type QuantityKind = "length" | "elevation" | "small" | "area" | "volume";
+export type QuantityKind = "length" | "elevation" | "small" | "area" | "volume" | "thickness" | "density";
 
 // Exact by definition (international foot, 1959).
 export const M_PER_FT = 0.3048;
 export const M2_PER_FT2 = M_PER_FT * M_PER_FT; // 0.09290304
 export const M3_PER_YD3 = (3 * M_PER_FT) ** 3; // 0.764554857984
 export const FT2_PER_ACRE = 43_560;
+export const M_PER_IN = 0.0254;
+export const T_PER_SHORT_TON = 0.90718474; // 2,000 lb
+export const T_M3_PER_PCF = 0.45359237 / 1000 / M_PER_FT ** 3; // 1 lb/ft³ in t/m³ (≈ 0.016018)
 const M2_PER_HA = 10_000;
 const M_PER_CM = 0.01;
 const MINUS = "−";
@@ -64,7 +69,9 @@ export function useUnitSystem(): UnitSystem {
 
 /** Metric units in one display unit of ``kind``. */
 function factor(kind: QuantityKind, system: UnitSystem): number {
-  if (system === "metric") return kind === "small" ? M_PER_CM : 1;
+  if (system === "metric") return kind === "small" || kind === "thickness" ? M_PER_CM : 1;
+  if (kind === "thickness") return M_PER_IN;
+  if (kind === "density") return T_M3_PER_PCF;
   return kind === "area" ? M2_PER_FT2 : kind === "volume" ? M3_PER_YD3 : M_PER_FT;
 }
 
@@ -80,13 +87,15 @@ export function fromDisplay(display: number, kind: QuantityKind, system: UnitSys
 
 /** The unit an input of ``kind`` is typed in (areas are always typed in ft² / m²). */
 export function unitOf(kind: QuantityKind, system: UnitSystem = current): string {
-  if (system === "metric") return { length: "m", elevation: "m", small: "cm", area: "m²", volume: "m³" }[kind];
-  return { length: "ft", elevation: "ft", small: "ft", area: "sq ft", volume: "yd³" }[kind];
+  if (system === "metric") return { length: "m", elevation: "m", small: "cm", area: "m²", volume: "m³", thickness: "cm", density: "t/m³" }[kind];
+  return { length: "ft", elevation: "ft", small: "ft", area: "sq ft", volume: "yd³", thickness: "in", density: "lb/ft³" }[kind];
 }
 
 /** Decimals an input shows; storage keeps full precision, so this only rounds what's displayed. */
 function inputDecimals(kind: QuantityKind, system: UnitSystem): number {
   if (kind === "area" || kind === "volume") return 2;
+  if (kind === "thickness") return system === "metric" ? 1 : 2;
+  if (kind === "density") return system === "metric" ? 2 : 1;
   return kind === "small" && system === "metric" ? 1 : 3;
 }
 
@@ -101,6 +110,8 @@ export function inputValue(metric: number, kind: QuantityKind, decimals?: number
  * own step, else centimetres / whole units.
  */
 export function inputStep(kind: QuantityKind, metricStep?: number): number {
+  if (kind === "thickness") return current === "metric" ? metricStep ?? 0.5 : 0.25;
+  if (kind === "density") return current === "metric" ? metricStep ?? 0.01 : 1;
   if (current === "metric") return metricStep ?? (kind === "length" || kind === "elevation" ? 0.01 : 1);
   return kind === "area" || kind === "volume" ? 1 : 0.01;
 }
@@ -205,6 +216,31 @@ export function formatVolume(m3: number): Quantity {
   const v = us ? m3 / M3_PER_YD3 : m3;
   const digits = Math.abs(v) < 10 ? 2 : Math.abs(v) < 1000 ? 1 : 0;
   return { value: grouped(v, digits).replace("-", MINUS), unit: us ? "yd³" : "m³" };
+}
+
+/**
+ * A layer's thickness, the way it is specified: inches in US ("4.3 in"), centimetres
+ * in metric ("10.9 cm"), one decimal.
+ */
+export function formatThickness(m: number, { signed = false }: { signed?: boolean } = {}): string {
+  const us = current === "us";
+  const v = us ? m / M_PER_IN : m / M_PER_CM;
+  const text = Math.abs(v).toFixed(1);
+  const sign = Number(text) === 0 ? "" : v < 0 ? MINUS : signed ? "+" : "";
+  return `${sign}${text} ${us ? "in" : "cm"}`;
+}
+
+/** A weight of material: short tons in US (2,000 lb), metric tonnes otherwise. Digits like volumes. */
+export function formatTonnage(tonnes: number): Quantity {
+  const us = current === "us";
+  const v = us ? tonnes / T_PER_SHORT_TON : tonnes;
+  const digits = Math.abs(v) < 10 ? 2 : Math.abs(v) < 1000 ? 1 : 0;
+  return { value: grouped(v, digits).replace("-", MINUS), unit: us ? "tons" : "t" };
+}
+
+/** A material's weight per volume: "140 lb/ft³" / "2.24 t/m³". */
+export function formatDensity(tPerM3: number): string {
+  return current === "us" ? `${Math.round(tPerM3 / T_M3_PER_PCF)} lb/ft³` : `${tPerM3.toFixed(2)} t/m³`;
 }
 
 /** A truck's capacity as set: "10 yd³" / "10 m³" (up to two decimals in US). */

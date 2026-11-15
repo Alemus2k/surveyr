@@ -1,0 +1,222 @@
+/* Quantities tab (layers, stockpiles, pond storage). Theme tokens only, so light and dark both work. */
+
+.q-kpi {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.q-kpi:hover {
+  border-color: var(--line-strong);
+}
+.q-kpi[aria-pressed="true"] {
+  border-color: var(--accent-line);
+}
+.kpi.warn strong {
+  color: var(--accent);
+}
+
+.q-sections {
+  align-self: flex-start;
+}
+
+.q-head-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-strong);
+}
+.q-select {
+  height: 28px;
+  max-width: 100%;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.q-material {
+  width: 100%;
+  min-width: 150px;
+}
+
+.q-empty h3 {
+  margin-bottom: 6px;
+}
+.q-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.text-btn.danger {
+  color: var(--bad);
+}
+.q-form {
+  margin-top: 12px;
+}
+.q-form input:not([type="checkbox"]),
+.q-form select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.q-form input:disabled {
+  opacity: 0.5;
+}
+.q-check {
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.q-form-note {
+  grid-column: 1 / -1;
+  margin: 10px 0 0;
+}
+.q-note,
+.q-accuracy {
+  margin-top: 10px;
+}
+.q-accuracy.poor {
+  color: var(--bad);
+}
+.q-accuracy.fair {
+  color: var(--accent);
+}
+.notice-card.q-bad {
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+  background: var(--bad-soft);
+}
+.notice-card.q-bad p strong {
+  color: var(--bad);
+}
+
+.sw.q-thick {
+  background: rgb(226, 172, 52);
+}
+.sw.q-edge {
+  background: rgb(150, 156, 164);
+}
+.zone-table .q-up {
+  color: var(--site-fill);
+}
+.zone-table .q-down {
+  color: var(--site-cut);
+}
+
+.q-verdict {
+  padding: 2px 0 2px 12px;
+  border-left: 3px solid var(--line-strong);
+}
+.q-verdict strong {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-strong);
+}
+.q-verdict p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+.q-verdict.ok {
+  border-color: var(--good);
+}
+.q-verdict.ok strong {
+  color: var(--good);
+}
+.q-verdict.warn {
+  border-color: var(--accent);
+}
+.q-verdict.bad {
+  border-color: var(--bad);
+}
+.q-verdict.bad strong {
+  color: var(--bad);
+}
+
+/* charts */
+.q-chart {
+  position: relative;
+}
+.q-crosshair {
+  stroke: var(--text-faint);
+  stroke-dasharray: 2 3;
+}
+.q-dot {
+  stroke: var(--bg-panel);
+  stroke-width: 2;
+}
+.q-dot.built {
+  fill: var(--site-fill);
+}
+.q-dot.design {
+  fill: var(--text-muted);
+}
+.q-curve {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.q-curve.built {
+  stroke: var(--site-fill);
+}
+.q-curve.design {
+  stroke: var(--text-muted);
+  stroke-dasharray: 6 4;
+}
+.q-outlet {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+.q-required {
+  stroke: var(--accent);
+  stroke-dasharray: 3 3;
+}
+.q-key {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-top: 2px solid var(--site-fill);
+}
+.q-key.design {
+  border-top: 2px dashed var(--text-muted);
+}
+.q-tip {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  min-width: 180px;
+  padding: 7px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--text-xs);
+  pointer-events: none;
+}
+.q-tip strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+.q-tip div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.q-tip div i:not(.q-key) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.q-tip div .fig {
+  margin-left: auto;
+  color: var(--text);
+}

@@ -2,6 +2,7 @@
 // to a job site adds one component under site/tabs/ and one entry here.
 import { ChangeOrderLog } from "../ChangeOrderLog";
 import { ProgressTab } from "./ProgressTab";
+import { QuantitiesTab } from "./QuantitiesTab";
 import type { SiteTabDef, SiteTabProps } from "./types";
 
 function ChangesTab({ site, projects, state, onNewChangeOrder }: SiteTabProps) {
@@ -23,5 +24,11 @@ export const SITE_TABS: SiteTabDef[] = [
     Component: ChangesTab,
     count: ({ site }) => site.change_orders?.length || null,
     timeline: false,
+  },
+  {
+    id: "quantities",
+    label: "Quantities",
+    hint: "How much base and paving went down and whether it's thick enough, what's in each stockpile, and whether the pond holds what the design says.",
+    Component: QuantitiesTab,
   },
 ];

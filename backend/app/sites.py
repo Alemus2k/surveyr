@@ -49,6 +49,8 @@ class Zone(BaseModel):
     # the design surface raised (+) or lowered (−) by the offset
     target_elevation_m: Optional[float] = Field(None, ge=-1000, le=10000)
     design_offset_m: float = Field(0.0, ge=-50, le=50)
+    # stockpiles: what the pile is (e.g. "topsoil"), set by the user over the app's guess; None = guess
+    material: Optional[str] = Field(None, max_length=40)
 
     @field_validator("polygon")
     @classmethod
