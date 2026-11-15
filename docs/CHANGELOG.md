@@ -51,7 +51,22 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
   erosion rills, possible standing water and pond silt.
   → [site-conditions](features/site-conditions.md)
 
+### Checks & records (new job-site tab)
+- **Cross-sections** along any line you draw (stations like road plans),
+  flight vs previous flight vs design. → [cross-sections](features/cross-sections.md)
+- **Trench as-built record**: length, width, depth, wall slope, pipe top and
+  invert elevations and slope, from the flight that saw it open — copy or save as
+  CSV — with OSHA prompts (protective system over 5 ft, spoil within 2 ft, ladder,
+  PE over 20 ft). → [trench-asbuilt](features/trench-asbuilt.md)
+- **ADA slopes** on walks, ramps, landings and accessible parking: running and
+  cross slope stretch by stretch, "too steep" only when it's beyond measuring
+  noise. → [ada-slopes](features/ada-slopes.md)
+- **Settlement monitors**: movement of an area flight by flight with an alert.
+  → [settlement](features/settlement.md)
+
 ### Getting results out
+- **Print report** (job site): a one-flight report with every tab's answer, to
+  print or save as PDF. → [site-report](features/site-report.md)
 - **Export…** (top bar): save the open scan or site as a CAD drawing (DXF:
   contours, spot elevations, zones, limits), a LandXML surface, PNEZD points
   (CSV), an elevation grid (ASCII grid + .prj), cleaned ground points (LAS/LAZ),

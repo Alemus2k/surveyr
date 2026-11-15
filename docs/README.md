@@ -24,8 +24,8 @@ with the `features/` folder at each release.
 
 | Area | Features |
 |---|---|
-| Whole app | [units](features/units.md) |
+| Whole app | [units](features/units.md), [getting started](features/getting-started.md) |
 | Importing | [LandXML design surfaces](features/landxml.md), [ground classification](features/ground-classification.md) |
-| A single scan | [contours](features/contours.md), [exports](features/exports.md) |
-| Job site | [site dashboard](features/site-dashboard.md), [site conditions](features/site-conditions.md), [layers](features/layers.md), [stockpiles](features/stockpiles.md), [pond storage](features/pond-storage.md), [cross-sections](features/cross-sections.md), [trench as-built](features/trench-asbuilt.md), [ADA slopes](features/ada-slopes.md), [settlement](features/settlement.md) |
+| A single scan | [measure in 3D](features/measure.md), [contours](features/contours.md), [exports](features/exports.md) |
+| Job site | [site dashboard](features/site-dashboard.md), [site conditions](features/site-conditions.md), [layers](features/layers.md), [stockpiles](features/stockpiles.md), [pond storage](features/pond-storage.md), [cross-sections](features/cross-sections.md), [trench as-built](features/trench-asbuilt.md), [ADA slopes](features/ada-slopes.md), [settlement](features/settlement.md), [printable report](features/site-report.md) |
 | Engine | [whole-flight data](features/flight-data.md), [demo site](features/demo-site.md) |

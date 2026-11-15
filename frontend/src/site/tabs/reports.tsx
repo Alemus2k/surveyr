@@ -1,7 +1,9 @@
 // Each dashboard tab's section of the printable site report (SiteReport.tsx).
 // A section states the answer in sentences and small tables — no maps or
 // interactive charts — so it prints cleanly on letter / A4 paper.
-import { formatArea, formatThickness, formatTonnage, formatVolume, quantityText } from "../../lib/units";
+import { formatArea, formatLength, formatThickness, formatTonnage, formatVolume, quantityText } from "../../lib/units";
+import { DEFAULT_PIPE_M, monitorFinding, parsePipeSize, pipeFallText, pipeLabel, stretchFinding, trenchFinding, type Finding } from "../checks";
+import { fetchFlatwork, fetchMonitor, fetchTrench, useChecks } from "../checksApi";
 import { conditionsSummary } from "./reportData";
 import { formatDate } from "../dates";
 import { overallPct } from "../progress";
@@ -178,3 +180,83 @@ export function ConditionsReport(props: SiteTabProps) {
   );
 }
 
+
+/** Checks & records: the same checks the tab runs (shared cache), as findings and trench records. */
+export function ChecksReport({ siteId, site, surfaces, scan, reloadKey }: SiteTabProps) {
+  const scanIds = site.scans.map((s) => s.project_id);
+  const scanId = scanIds[scan] ?? null;
+  const asbuilts = site.asbuilts ?? [];
+  const flatwork = site.flatwork ?? [];
+  const monitors = site.monitors ?? [];
+  const trench = useChecks(siteId, "trench",
+    asbuilts.map((a) => (scanIds.includes(a.scan) ? { scan: a.scan, line: a.line, diameter_m: parsePipeSize(a.note) ?? DEFAULT_PIPE_M } : null)), fetchTrench, reloadKey);
+  const walks = useChecks(siteId, "flatwork",
+    flatwork.map((f) => (scanId ? { scan: scanId, kind: f.kind, polygon: f.polygon } : null)), fetchFlatwork, reloadKey);
+  const watch = useChecks(siteId, "monitor",
+    monitors.map((m) => ({ polygon: m.polygon, baseline_scan: m.baseline_scan, alert_m: m.alert_m })), fetchMonitor, reloadKey);
+
+  if (!asbuilts.length && !flatwork.length && !monitors.length)
+    return <p>No trench records, walks or settlement areas set up for this site.</p>;
+  const pending = [...trench, ...walks, ...watch].some((c) => c.loading);
+  const findings: { item: string; f: Finding }[] = [];
+  flatwork.forEach((w, i) => {
+    const r = walks[i].data;
+    r?.stretches?.forEach((s) => stretchFinding(s, r).forEach((f) => findings.push({ item: w.name, f })));
+  });
+  monitors.forEach((m, i) => {
+    const r = watch[i].data;
+    const k = r ? r.scans.indexOf(scanId ?? "") : -1;
+    const f = r && k >= 0 ? monitorFinding(m.name, r.flights[k], m.alert_m) : null;
+    if (f) findings.push({ item: m.name, f });
+  });
+  const shown = findings.filter((x) => x.f.level !== "info");
+
+  return (
+    <>
+      {pending && <p>Some checks are still being worked out — wait a moment, then print.</p>}
+      <h3>At {formatDate(surfaces.dates[scan])}</h3>
+      {shown.length === 0 ? (
+        <p>No walks too steep, no settlement past its alert.</p>
+      ) : (
+        <ul>
+          {shown.map((x, i) => (
+            <li key={i} className={x.f.level === "bad" ? "report-bad" : undefined}>
+              <strong>{x.item}:</strong> {x.f.title}. {x.f.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+      {asbuilts.length > 0 && (
+        <>
+          <h3>Trench records</h3>
+          <ul>
+            {asbuilts.map((a, i) => {
+              const r = trench[i].data;
+              if (!r) return <li key={a.id}>{a.name}: {trench[i].error ?? "not worked out yet"}</li>;
+              const flags = (r.flags ?? []).filter((fl) => fl.level !== "info").map(trenchFinding);
+              return (
+                <li key={a.id}>
+                  <strong>{a.name}</strong> (flight of {formatDate(r.date)}):{" "}
+                  {r.open ? (
+                    <>
+                      {formatLength(r.trench_length_m ?? r.length_m)} long, {formatLength(r.depth_mean_m ?? 0)} deep on average (up to{" "}
+                      {formatLength(r.depth_max_m ?? 0)}){r.pipe?.seen && <>; pipe {pipeLabel(r.diameter_m)} {pipeFallText(r)}</>}.
+                      {flags.map((f, k) => (
+                        <span key={k} className={f.level === "bad" ? "report-bad" : undefined}>
+                          {" "}
+                          {f.title}.
+                        </span>
+                      ))}
+                    </>
+                  ) : (
+                    "the trench wasn't open on that flight."
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}

@@ -5,7 +5,7 @@ import { ChecksTab } from "./ChecksTab";
 import { conditionsCount, ConditionsTab } from "./ConditionsTab";
 import { ProgressTab } from "./ProgressTab";
 import { QuantitiesTab } from "./QuantitiesTab";
-import { ConditionsReport, ProgressReport, QuantitiesReport } from "./reports";
+import { ChecksReport, ConditionsReport, ProgressReport, QuantitiesReport } from "./reports";
 import type { SiteTabDef, SiteTabProps } from "./types";
 
 function ChangesTab({ site, projects, state, onNewChangeOrder }: SiteTabProps) {
@@ -42,6 +42,7 @@ export const SITE_TABS: SiteTabDef[] = [
     label: "Checks & records",
     hint: "Trenches, walks and fills checked before the inspector does, and a permanent record of what gets buried.",
     Component: ChecksTab,
+    report: ChecksReport,
     count: ({ site }) => (site.asbuilts?.length ?? 0) + (site.flatwork?.length ?? 0) + (site.monitors?.length ?? 0) + (site.alignments?.length ?? 0) || null,
   },
   {
