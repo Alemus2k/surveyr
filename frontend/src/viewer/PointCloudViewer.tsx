@@ -1,4 +1,6 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { MeasureOverlay } from "../measure/MeasureOverlay";
+import type { MeasureController } from "../measure/useMeasure";
 import { elevationCssGradient } from "../color";
 import { formatElevation, useUnitSystem } from "../lib/units";
 import type { SliceSpec } from "../slice/slice";
@@ -30,6 +32,8 @@ interface PointCloudViewerProps {
   outlines?: Outline[]; // closed outlines drawn over the points (job-site zones)
   legend?: ReactNode; // replaces the elevation colour scale
   highest?: number | null; // elevation for the up-axis chip; matches the Terrain panel (highest ground cell)
+  /** Opt-in measuring tools (state from useMeasure; put a MeasureGroup in the toolbar). */
+  measure?: MeasureController;
 }
 
 /** Full-bleed 3D viewport (particles or gridded surface) with legend, compass and a toolbar slot. */
@@ -43,6 +47,7 @@ function SceneViewer(props: PointCloudViewerProps) {
   const { renderMode, surfaceGrid, surfaceOpacity, outlines, legend, highest } = props;
   const host = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ViewerScene | null>(null);
+  const [scene, setScene] = useState<ViewerScene | null>(null); // for overlays that render with the scene
   const colorsRef = useRef(colors);
   colorsRef.current = colors;
   const { dialRef, onHeading } = useCompass();
@@ -52,6 +57,7 @@ function SceneViewer(props: PointCloudViewerProps) {
     if (!el || cloud.count === 0) return;
     const s = createViewerScene(el, cloud, colorsRef.current, onHeading);
     sceneRef.current = s;
+    setScene(s);
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (width > 0 && height > 0) s.resize(width, height);
@@ -61,6 +67,7 @@ function SceneViewer(props: PointCloudViewerProps) {
       ro.disconnect();
       s.dispose();
       sceneRef.current = null;
+      setScene(null);
     };
   }, [cloud, onHeading]);
 
@@ -100,6 +107,8 @@ function SceneViewer(props: PointCloudViewerProps) {
       </div>
 
       <Compass dialRef={dialRef} onTopView={onTopView} />
+
+      {props.measure && scene && <MeasureOverlay scene={scene} controller={props.measure} />}
     </div>
   );
 }

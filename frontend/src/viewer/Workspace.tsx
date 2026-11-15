@@ -3,6 +3,8 @@ import { SliceDock, type SliceExtent, type SliceLayer } from "../slice/SliceDock
 import type { Analysis } from "../types";
 import type { SliceSpec } from "../slice/slice";
 import { niceLengthStep } from "../lib/units";
+import { MeasureGroup } from "../measure/MeasureGroup";
+import { useMeasure } from "../measure/useMeasure";
 import { PointCloudViewer, type ViewRequest } from "./PointCloudViewer";
 import type { ColorRange, PreparedCloud } from "./prepare";
 import type { RenderMode, ViewPreset } from "./scene";
@@ -53,6 +55,7 @@ export function Workspace({ cloud, colors, range, accent, analysis }: WorkspaceP
     () => ({ box: cloud.box, span: cloud.span, zMin: cloud.zMin, zMax: cloud.zMax }),
     [cloud]
   );
+  const measure = useMeasure(cloud); // a different scan starts with no measurements
   const goTo = (preset: ViewPreset) => setView((v) => ({ preset, n: (v?.n ?? 0) + 1 }));
 
   return (
@@ -71,6 +74,7 @@ export function Workspace({ cloud, colors, range, accent, analysis }: WorkspaceP
         surfaceGrid={renderMode === "surface" ? surfaceGrid : null}
         surfaceOpacity={surfaceOpacity}
         onTopView={() => goTo("top")}
+        measure={measure}
         toolbar={
           <ViewerToolbar
             onView={goTo}
@@ -84,6 +88,7 @@ export function Workspace({ cloud, colors, range, accent, analysis }: WorkspaceP
             onToggleGrid={() => setShowGrid((g) => !g)}
             sliceOpen={sliceOpen}
             onToggleSlice={() => setSliceOpen((o) => !o)}
+            measure={<MeasureGroup controller={measure} />}
           />
         }
       />

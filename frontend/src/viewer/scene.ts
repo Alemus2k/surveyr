@@ -7,6 +7,7 @@ import { cloudToScene, type ColorRange, type PreparedCloud } from "./prepare";
 import { createStage, type ViewPreset } from "./stage";
 import { createSliceOutline } from "./sliceOutline";
 import { buildSurfaceGeometry, setSurfaceColors, type SurfaceGrid } from "./surface";
+import { createMeasureLayer, type MeasureLayer } from "../measure/layer";
 
 export type { ViewPreset } from "./stage";
 export type RenderMode = "points" | "surface";
@@ -36,6 +37,8 @@ export interface ViewerScene {
   setOutlines: (outlines: Outline[]) => void;
   /** The highest elevation shown on the up axis (defaults to the highest point). */
   setHighest: (elevation: number) => void;
+  /** The measuring overlay, created (and the cloud indexed) on first use. */
+  measure: () => MeasureLayer;
   goTo: (preset: ViewPreset) => void;
   resize: (w: number, h: number) => void;
   dispose: () => void;
@@ -80,6 +83,8 @@ export function createViewerScene(
   const surfaceMats = createSurfaceMaterials({ opacity: 0.85, gridStep: surfaceGridStep(cloud).metres });
   let surface: { group: THREE.Group; geo: THREE.BufferGeometry; grid: SurfaceGrid } | null = null;
   let mode: RenderMode = "points";
+  let measureLayer: MeasureLayer | null = null;
+  let accent = "#eeb02b"; // replaced by setAccent; kept for a measure layer made later
   const applyMode = () => {
     points.visible = mode === "points" || !surface;
     if (surface) surface.group.visible = mode === "surface";
@@ -96,7 +101,11 @@ export function createViewerScene(
     setSlice(spec) {
       outline.place(spec, cloud.box, cloud.span);
     },
-    setAccent: outline.setAccent,
+    setAccent(hex) {
+      accent = hex;
+      outline.setAccent(hex);
+      measureLayer?.setAccent(hex);
+    },
     setRenderMode(next) {
       mode = next;
       applyMode();
@@ -137,9 +146,13 @@ export function createViewerScene(
         outlines.add(line);
       }
     },
+    measure() {
+      return (measureLayer ??= createMeasureLayer(stage, cloud, host, accent));
+    },
     goTo: stage.goTo,
     resize: stage.resize,
     dispose: () => {
+      measureLayer?.dispose();
       outlines.children.forEach((c) => (c as THREE.LineLoop).geometry.dispose());
       stage.dispose();
     },
