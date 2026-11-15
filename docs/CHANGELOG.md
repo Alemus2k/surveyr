@@ -26,6 +26,11 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
 - **The whole flight is read**: colour, intensity, return numbers,
   classification and GPS time from LAS/LAZ, PLY and XYZ.
   → [flight-data](features/flight-data.md)
+- **Automatic ground classification**: for scans without (or with bad) ground
+  classes, Surveyr works out the ground itself and separates vegetation from
+  machines and structures (Manual adjustments → *Work out ground points
+  automatically*; suggested when a scan clearly has things standing on it).
+  → [ground-classification](features/ground-classification.md)
 - Files that state their units (LandXML, LAS with a coordinate system) are read
   in them by default.
 
@@ -36,6 +41,15 @@ see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
   three stockpiles, road base, a trench, storm damage, settlement, a sidewalk and
   a limits-of-disturbance breach — each with exact answers for testing.
   → [demo-site](features/demo-site.md)
+
+### Site conditions (new job-site tab)
+- **What the flight saw besides earthworks**: the site from above (colour
+  photo), intensity, vegetation and machine layers, flight coverage; trees
+  counted and clearing tracked; machines on site per flight; disturbed acreage
+  with the 1-acre stormwater-permit note; **work outside the limits of
+  disturbance** in red (draw the limits in the tab); **storm check** finding
+  erosion rills, possible standing water and pond silt.
+  → [site-conditions](features/site-conditions.md)
 
 ### Getting results out
 - **Export…** (top bar): save the open scan or site as a CAD drawing (DXF:
