@@ -16,6 +16,7 @@ interface TopBarProps {
   onImport: (file: File) => void;
   importing: boolean;
   onHelp: () => void; // show / hide "Getting started"
+  onExport: (() => void) | null; // null: nothing open that can be exported
   helpOpen: boolean;
 }
 
@@ -53,6 +54,11 @@ export function TopBar(props: TopBarProps) {
       </div>
       <div className="topbar-status">
         {readout && <span className="mono topbar-readout">{readout}</span>}
+        {props.onExport && (
+          <button className="secondary-btn topbar-export" onClick={props.onExport} title="Save this scan or site as a file for CAD, survey, GIS or project-management software">
+            Export…
+          </button>
+        )}
         <button
           className="tool-btn topbar-help"
           aria-pressed={props.helpOpen}

@@ -457,3 +457,57 @@ body.is-resizing .viewport {
   color: var(--text-faint);
   font-size: var(--text-xs);
 }
+
+/* ------------------------------------------------------------ export */
+.topbar-export {
+  height: 26px;
+  padding: 0 10px;
+  font-size: var(--text-sm);
+}
+.export-dialog {
+  width: min(640px, 94vw);
+}
+.export-formats {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.export-format {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.export-format[data-active] {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.export-format input {
+  margin-top: 3px;
+}
+.export-format strong {
+  display: block;
+  font-size: var(--text-sm);
+}
+.export-format-who {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.export-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 12px;
+  margin-top: 6px;
+}
+.export-options .check-row {
+  margin-top: 14px;
+}
+.export-result {
+  margin-top: 12px;
+}

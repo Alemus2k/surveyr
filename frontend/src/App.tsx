@@ -16,6 +16,7 @@ import { usePanelWidth } from "./hooks/usePanelWidth";
 import { useProjectAnalysis } from "./hooks/useProjectAnalysis";
 import { useProjects } from "./hooks/useProjects";
 import { IconRail, type PanelId } from "./layout/IconRail";
+import { ExportDialog, type ExportTarget } from "./export/ExportDialog";
 import { GettingStarted } from "./layout/GettingStarted";
 import { Icon } from "./layout/icons";
 import { TopBar } from "./layout/TopBar";
@@ -101,6 +102,7 @@ export default function App() {
   const [newCompareOpen, setNewCompareOpen] = useState(false);
   const [newSiteOpen, setNewSiteOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false); // "Getting started" shown over the open project
+  const [exportOpen, setExportOpen] = useState(false);
   const [zoneSel, setZoneSel] = useState<{ site: string; zone: string } | null>(null);
 
   // the rail shows only panels that fit the open tab; map a remembered choice across
@@ -116,6 +118,21 @@ export default function App() {
   const colors = useMemo(() => (cloud && range ? colorize(cloud.z, range) : null), [cloud, range?.min, range?.max]);
 
   const openTabs = tabs.open.flatMap((id) => byId.get(id) ?? []);
+  // what "Export…" exports: the open job site (at the flight picked on its timeline) or the open scan
+  const exportTarget: ExportTarget | null =
+    isSite && site.site && tabs.active
+      ? {
+          kind: "site",
+          id: tabs.active,
+          name: site.site.name,
+          flights: site.site.scans.map((s) => ({ id: s.project_id, date: s.date })),
+          zones: site.site.zones.map((z) => ({ id: z.id, name: z.name })),
+          hasDesign: !!site.site.design_id,
+          scan: pickedScan,
+        }
+      : !isGroup && tabs.active
+        ? { kind: "scan", id: tabs.active, name: byId.get(tabs.active)?.name ?? tabs.active }
+        : null;
   const readout = isSite
     ? site.site && `${site.site.scans.length} scans · ${site.site.zones.length} zones`
     : isCompare
@@ -312,6 +329,7 @@ export default function App() {
         readout={readout || null}
         appearance={<AppearancePopover api={appearance} onPlayIntro={() => setIntroRun((n) => (n ?? 0) + 1)} />}
         onHelp={() => setHelpOpen((h) => !h)}
+        onExport={exportTarget ? () => setExportOpen(true) : null}
         helpOpen={helpOpen || !tabs.active}
         onImport={importScan}
         importing={projects.busy}
@@ -356,6 +374,8 @@ export default function App() {
         onCreate={createSite}
         onCancel={() => setNewSiteOpen(false)}
       />
+
+      <ExportDialog open={exportOpen && exportTarget !== null} target={exportTarget} onClose={() => setExportOpen(false)} />
 
       {introRun !== null && <LaunchIntro key={introRun} accent={appearance.viewportAccent} onDone={() => setIntroRun(null)} />}
 
