@@ -94,7 +94,7 @@ interpolated outside a scan's outline.
 
 | Term | Meaning |
 |---|---|
-| **Design surface** | The finished grade the site is being built to. |
+| **Design surface** | The finished grade the site is being built to: a LandXML TIN from the engineer (sampled on a lattice ≈800 points across, linear within each triangle; hidden faces are holes) or any scan file. |
 | **Still to dig / still to fill** | Volume of ground above / below design inside a zone at a scan. Cells within the **on-grade tolerance** (default ±5 cm) count as finished. |
 | **% complete** | 100 × (1 − earthworks still to do ÷ earthworks to do at the first scan), by volume. A zone counts as **complete** at ≥ 98 % — real scans leave about 1 % of residual noise on side slopes even on finished ground. |
 | **Dug / placed since last scan** | Ground lowered / raised between consecutive scans. Changes smaller than the **change threshold** (default 5 cm) are treated as scan noise and ignored. |

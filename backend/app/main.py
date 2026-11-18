@@ -14,7 +14,7 @@ from typing import Optional
 from fastapi import FastAPI, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import compare, control, scan_settings, service, sites, storage
+from . import binary, compare, control, scan_settings, service, sites, storage
 
 app = FastAPI(title="Surveyr API", version="0.2.0", description="Land surveying terrain analytics")
 
@@ -56,15 +56,19 @@ def analysis(
 def points(
     project_id: str,
     limit: int = Query(service.DEFAULT_POINT_LIMIT, ge=1, le=1_000_000),
+    everything: bool = Query(False),
 ) -> Response:
-    """Cleaned, thinned point cloud in metres (manual adjustments applied).
+    """Thinned point cloud in metres (manual adjustments applied).
+
+    By default the cleaned terrain points; ``everything=true`` keeps every
+    class (trees, machines, structures) and skips the outlier filter.
 
     Binary layout: 3 little-endian float64 (origin x, y, z) followed by
     float32 x, y, z triples relative to that origin. The split keeps
     millimetre precision for survey-grid coordinates (millions of metres).
     """
     try:
-        origin, rel = service.sample_points_with_origin(project_id, limit=limit)
+        origin, rel = service.sample_points_with_origin(project_id, limit=limit, everything=everything)
     except service.NotAnalyzable:
         raise HTTPException(status_code=400, detail="request each layer's points by its own project id")
     except service.ProjectNotFound:
@@ -74,6 +78,23 @@ def points(
         media_type="application/octet-stream",
         headers={"X-Point-Count": str(len(rel))},
     )
+
+
+@app.get("/api/points/{project_id}/attributes")
+def point_attributes(
+    project_id: str,
+    limit: int = Query(service.DEFAULT_POINT_LIMIT, ge=1, le=1_000_000),
+    everything: bool = Query(False),
+) -> Response:
+    """Colour, intensity, class and return numbers for the points of ``/api/points``
+    (same ``limit`` and ``everything``, same order), packed as in ``binary.py``."""
+    try:
+        header, arrays = service.sample_attributes(project_id, limit=limit, everything=everything)
+    except service.NotAnalyzable:
+        raise HTTPException(status_code=400, detail="request each layer's points by its own project id")
+    except service.ProjectNotFound:
+        raise HTTPException(status_code=404, detail=f"unknown project '{project_id}'")
+    return Response(content=binary.pack(header, arrays), media_type="application/octet-stream")
 
 
 @app.post("/api/scans", status_code=201)
@@ -131,7 +152,16 @@ def put_composition(comp_id: str, body: compare.Composition) -> compare.Composit
 
 
 def _settings_response(project_id: str) -> dict:
-    return {"settings": scan_settings.load(project_id), "detected": scan_settings.detect(project_id)}
+    """Settings, detected units and — for a LandXML file — its surfaces and which one is in use."""
+    out = {"settings": scan_settings.load(project_id), "detected": scan_settings.detect(project_id), "surfaces": None}
+    source = service.discover_projects()[project_id].get("source", "")
+    if source.lower().endswith(".xml"):
+        from . import landxml
+
+        info = landxml.read_info(os.path.join(service.DATA_DIR, source))
+        names = [s["name"] for s in info["surfaces"]]
+        out["surfaces"] = {"available": info["surfaces"], "default": landxml.default_surface(names)}
+    return out
 
 
 @app.get("/api/projects/{project_id}/settings")
@@ -154,6 +184,15 @@ def put_scan_settings(project_id: str, body: scan_settings.ScanSettings) -> dict
         raise HTTPException(status_code=400, detail="comparisons have no scan settings")
     except service.ProjectNotFound:
         raise HTTPException(status_code=404, detail=f"unknown project '{project_id}'")
+
+
+@app.post("/api/demo/restore")
+def restore_demo() -> dict:
+    """Reinstall the Riverside Commons demo as shipped (old demo files go to the Trash first)."""
+    installed = storage.restore_demo(service.DATA_DIR, service.DEMO_DIR, service.TRASH_DIR)
+    for name in installed:
+        service.invalidate(name.rsplit(".", 1)[0])
+    return {"installed": installed}
 
 
 # ------------------------------------------------------------------ job sites
@@ -200,6 +239,17 @@ def site_grids(site_id: str) -> dict:
         return sites.grids(site_id)
     except service.ProjectNotFound:
         raise HTTPException(status_code=404, detail=f"unknown site '{site_id}'")
+
+
+@app.get("/api/sites/{site_id}/rasters/{project_id}")
+def site_rasters(site_id: str, project_id: str) -> Response:
+    """What one flight recorded besides the ground shape, on the site's grid: a
+    top-down photo, intensity, vegetation and object heights, point density."""
+    try:
+        header, arrays = sites.rasters(site_id, project_id)
+    except service.ProjectNotFound as exc:
+        raise HTTPException(status_code=404, detail=f"unknown site or scan '{exc.args[0]}'")
+    return Response(content=binary.pack(header, arrays), media_type="application/octet-stream")
 
 
 @app.get("/api/sites/{site_id}/qa")
@@ -267,3 +317,16 @@ def control_check(project_id: str, control_id: str = Query(..., alias="control")
         raise HTTPException(status_code=400, detail="check a scan, not a comparison or site")
     except service.ProjectNotFound as exc:
         raise HTTPException(status_code=404, detail=f"unknown project or control set '{exc.args[0]}'")
+
+
+from . import exports  # noqa: E402  contours and exports
+
+app.include_router(exports.router)
+
+from .conditions import router as conditions_router  # noqa: E402  (site conditions tab)
+
+app.include_router(conditions_router)
+
+from . import checks  # noqa: E402  (Checks & records tab: sections, trench as-built, ADA slopes, settlement)
+
+app.include_router(checks.router)

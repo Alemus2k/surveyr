@@ -193,11 +193,11 @@ def test_seeding_adds_the_site_demo_to_folders_seeded_before_it_existed(tmp_path
     (target / storage.SEED_MARKER).touch()  # seeded by an older version
 
     storage.seed_demo_data(target, demo)
-    (target / "riverside_design.laz").unlink()  # the user deletes part of it
+    (target / "riverside_2026-07-27.laz").unlink()  # the user deletes part of it
     storage.seed_demo_data(target, demo)
 
     assert (target / "riverside_commons.site.json").exists()
-    assert not (target / "riverside_design.laz").exists()  # never comes back
+    assert not (target / "riverside_2026-07-27.laz").exists()  # never comes back
 
 
 # ---------------------------------------------------------------- demo accuracy
@@ -224,7 +224,7 @@ def test_demo_site_volumes_match_the_analytic_truth(monkeypatch):
             with np.errstate(divide="ignore", invalid="ignore"):
                 inside ^= ((y1 > gy) != (y2 > gy)) & (gx < x1 + (gy - y1) * (x2 - x1) / (y2 - y1))
         for k, surface in ((0, first), (-1, last)):
-            diff = (surface - design)[inside]
+            diff = (surface - design - zone.design_offset_m)[inside]  # against the zone's own finished grade
             diff = diff[np.isfinite(diff)]
             diff = np.where(np.abs(diff) <= site.tolerance_m, 0.0, diff)
             want = truth["zones"][zone.id][k]

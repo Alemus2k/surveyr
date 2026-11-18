@@ -58,6 +58,12 @@ To build it yourself instead, run `npm run app:build` (see
 - **Import scans** with **Import scan…** (Projects panel) or the **+** at the end
   of the tabs: `.ply`, `.xyz`, `.las` or `.laz`. A Scaniverse PLY sent from a
   phone works as-is.
+- **Design surfaces** from the civil engineer import the same way as
+  **LandXML** (`.xml`) TINs. Units come from the file; when it holds several
+  surfaces (existing ground and finished grade, say) the finished-grade one is
+  used — pick another under **Manual adjustments → Design surface**. The TIN is
+  sampled on a fine grid (≈800 points across), so it works everywhere a scan
+  does: as a job site's design, in the 3D view, slices and accuracy checks.
 - **Tabs**: each open project is a tab; close with × or middle-click and reopen
   from **Projects**. Deleting a project there moves its files to the
   Trash / Recycle Bin.
@@ -132,8 +138,28 @@ To build it yourself instead, run `npm run app:build` (see
   modified.
   All scans of a site must share a coordinate system — they're compared cell
   by cell with no re-alignment. A demo site, *Riverside Commons*, is included
-  — with 12 check points, and one flight (21 Sep) that came back 3.5 cm high
-  for the accuracy check to catch.
+  — 8 flights from July to November 2026, 12 check points, a road, a pond, a
+  trench, sidewalks and stockpiles, and one flight (21 Sep) that came back
+  3.5 cm high for the accuracy check to catch.
+- **New in 0.7** (details for each in [docs/features/](docs/features/)):
+  - **Getting started** (**?** top right, shown on first launch): what Surveyr
+    does, a 3-step tour, US / metric choice, and **Restore demo files**.
+  - **US units** throughout (feet, cubic yards, acres, tons), or metric — the
+    engine stays metric.
+  - **Measure in 3D** (scan view toolbar): distance, slope, path and area, snapped
+    to the ground.
+  - **Contours and exports** (**Export…** top right): DXF contours and
+    surfaces, LandXML, CSV points, ASCII grid, LAS and GeoJSON, ready for CAD.
+  - **Automatic ground classification** (Manual adjustments): removes trees,
+    machines and stockpile-free clutter when the scan has no ground classes.
+  - **Job site tabs**: *Progress* (as before), *Quantities* (layer thickness
+    and tons of base, stockpiles with material and tons, pond storage),
+    *Site conditions* (disturbed area vs the limits of disturbance, erosion
+    rills, standing water, silt, machines, coverage), *Checks & records*
+    (cross-sections, trench as-builts with OSHA prompts, ADA slopes,
+    settlement) and *Change orders*.
+  - **Print report** on a job site: one flight's results from every tab, ready
+    to print or save as PDF.
 - **Appearance** (palette icon, top right): System / Light / Dark theme and a
   highlight colour (colour wheel, presets or hex), auto-adjusted for contrast.
 
@@ -367,8 +393,9 @@ point clouds, **OpenStreetMap** for any basemap.
   surfaces. Results also depend on cell size.
 - **Job-site scans** must already share a coordinate system (RTK drone /
   rover on the site's control); there is no automatic alignment between
-  flights yet, and a design surface is imported as a point cloud, not
-  LandXML. Volumes are prismatic cells on a ~1 m grid.
+  flights yet. Volumes are prismatic cells on a ~1 m grid. LandXML import
+  reads TIN surfaces only (no alignments, breaklines-only surfaces or
+  corridors yet).
 - **Alignment** of comparison layers is manual for now (move / rotate / exact
   values); point-pair snapping and automatic refinement are planned.
 - Treat every figure as decision support; final judgements remain the

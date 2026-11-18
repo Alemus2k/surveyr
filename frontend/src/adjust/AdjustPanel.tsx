@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ScanSettings } from "../api";
+import { formatDimensions, formatLength, fromDisplay, inputStep, inputValue, unitOf } from "../lib/units";
 import { PanelSection } from "../panels/SidePanel";
 import type { Analysis } from "../types";
 import { unitLabel, UNITS } from "./units";
@@ -12,7 +13,7 @@ interface AdjustPanelProps {
 
 const size = (a: Analysis | null) => {
   const d = a?.dimensions;
-  return d ? `${d.width_m.toFixed(2)} × ${d.depth_m.toFixed(2)} × ${d.height_m.toFixed(2)} m` : "…";
+  return d ? formatDimensions(d.width_m, d.depth_m, d.height_m) : "…";
 };
 
 /** Manual adjustments for one scan: source units, up axis, ground-only. */
@@ -25,6 +26,8 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
   const suggestion = detected.source === "size" && detected.unit && detected.unit !== settings.unit;
   const crsMismatch = detected.source === "crs" && detected.unit && detected.unit !== settings.unit;
   const groundApplied = analysis?.points.ground_only ?? false;
+  const auto = analysis?.points.ground_source === "auto";
+  const suggestAuto = !settings.auto_ground && (analysis?.points.suggest_auto_ground ?? false);
 
   return (
     <>
@@ -80,7 +83,45 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
         </p>
       </PanelSection>
 
+      {current.surfaces && (
+        <PanelSection label="Design surface">
+          <label className="dialog-field">
+            <span className="field-label">Surface from this LandXML file</span>
+            <select
+              value={settings.surface ?? current.surfaces.default}
+              disabled={saving}
+              onChange={(e) => set({ surface: e.target.value === current.surfaces!.default ? null : e.target.value })}
+            >
+              {current.surfaces.available.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name} ({s.faces.toLocaleString()} triangles)
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="panel-note">
+            Engineers' files often hold existing ground and finished grade together. The one named like finished grade
+            is picked by default; it's sampled on a fine grid so every tool can use it.
+          </p>
+        </PanelSection>
+      )}
+
       <PanelSection label="Classification">
+        {suggestAuto && (
+          <div className="notice-card warn" role="status">
+            <p>
+              This scan doesn't say which points are ground, but it has trees, machines or structures standing on it.
+              They would count as dirt in your volumes.
+            </p>
+            <button
+              className="secondary-btn"
+              disabled={saving}
+              onClick={() => set({ auto_ground: true, ground_only: true })}
+            >
+              Classify automatically
+            </button>
+          </div>
+        )}
         <label className="check-row">
           <input
             type="checkbox"
@@ -92,10 +133,26 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
         </label>
         <p className="panel-note">
           {groundApplied
-            ? `Using ${analysis?.points.captured.toLocaleString()} ground-classified points; trees, buildings and other classes are left out of the terrain.`
+            ? `Using ${analysis?.points.captured.toLocaleString()} ${auto ? "automatically found" : "ground-classified"} ground points; trees, machines and other objects are left out of the terrain.`
             : settings.ground_only
               ? "This scan isn't ground-classified (phone scans never are), so every point is used."
               : "Every point is used, including vegetation and structures if the scan has them."}
+        </p>
+        <label className="check-row">
+          <input
+            type="checkbox"
+            checked={settings.auto_ground}
+            disabled={saving}
+            onChange={(e) => set({ auto_ground: e.target.checked })}
+          />
+          Work out ground points automatically
+        </label>
+        <p className="panel-note">
+          Surveyr finds the bare earth itself, ignoring any classes in the file: anything up to{" "}
+          {formatLength(7)} across that stands up off the ground like a machine, truck or tree is left out, while
+          stockpiles, berms, trenches and slopes stay. Use it for scans that aren't classified, or are classified
+          badly. Small things right on the ground (low brush, a pipe in a trench) may still count as ground.
+          {settings.auto_ground && !settings.ground_only ? " Turn on “Use ground points only” to apply it." : ""}
         </p>
       </PanelSection>
 
@@ -106,22 +163,23 @@ export function AdjustPanel({ state, analysis }: AdjustPanelProps) {
             <input
               type="number"
               className="fig"
-              step={0.1}
-              min={-1000}
-              max={1000}
-              value={offsetDraft ?? String(Math.round(settings.z_offset_m * 1000) / 10)}
+              step={inputStep("small", 0.1)}
+              min={inputValue(-10, "small")}
+              max={inputValue(10, "small")}
+              value={offsetDraft ?? String(inputValue(settings.z_offset_m, "small"))}
               disabled={saving}
               onChange={(e) => setOffsetDraft(e.target.value)}
               // apply on Enter / leaving the field: every change reloads the scan and anything built on it
               onBlur={() => {
-                const cm = Number(offsetDraft);
-                if (offsetDraft !== null && offsetDraft.trim() !== "" && Number.isFinite(cm) && cm / 100 !== settings.z_offset_m)
-                  set({ z_offset_m: cm / 100 });
+                const typed = Number(offsetDraft);
+                // saved only when the figure shown was changed, so the stored correction never drifts
+                if (offsetDraft !== null && offsetDraft.trim() !== "" && Number.isFinite(typed) && typed !== inputValue(settings.z_offset_m, "small"))
+                  set({ z_offset_m: fromDisplay(typed, "small") });
                 setOffsetDraft(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             />
-            <span className="unit">cm</span>
+            <span className="unit">{unitOf("small")}</span>
           </span>
         </label>
         <p className="panel-note">

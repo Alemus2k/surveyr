@@ -1,0 +1,135 @@
+/* Site conditions tab (ConditionsTab.tsx) */
+.cond-layers {
+  flex: 1 1 560px !important;
+}
+.cond-note {
+  margin: 0 0 8px;
+}
+.cond-foot {
+  margin: 10px 0 0;
+  line-height: 1.45;
+}
+.notice-card.cond-bad {
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+  background: var(--bad-soft);
+}
+.cond-ramp {
+  width: 40px !important;
+  background: linear-gradient(90deg, #111, #ddd);
+}
+
+.cond-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cond-findings li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.cond-findings li:hover,
+.cond-findings li[data-selected] {
+  background: var(--bg-hover);
+}
+.cond-num {
+  min-width: 18px;
+  color: var(--text-faint);
+  text-align: right;
+}
+.cond-finding-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.cond-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 14px;
+  margin: 0 0 12px;
+}
+.cond-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cond-metrics dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.cond-metrics dd {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: var(--weight-strong);
+}
+
+.cond-bars {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+.cond-bars button {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.cond-bars button:hover {
+  background: var(--bg-hover);
+}
+.cond-bars button[aria-pressed="true"] {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.cond-bar-val {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cond-bar-track {
+  position: relative;
+  width: 60%;
+  height: 64px;
+}
+.cond-bar-track i {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  min-height: 1px;
+  border-radius: 2px 2px 0 0;
+  background: #b08a5a;
+}
+.cond-bars.green .cond-bar-track i {
+  background: var(--good);
+}
+.cond-bars.amber .cond-bar-track i {
+  background: var(--accent);
+}
+.cond-bars button[aria-pressed="true"] .cond-bar-track i {
+  filter: brightness(1.15);
+  box-shadow: 0 0 0 1px var(--text-muted);
+}
+.cond-bar-date {
+  font-size: 10px;
+  white-space: nowrap;
+}

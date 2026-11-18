@@ -63,7 +63,10 @@ def elevation_histogram(z: np.ndarray, bins: int = 40) -> dict:
     valid = z[np.isfinite(z)]
     if valid.size == 0:
         return {"counts": [], "edges": []}
-    counts, edges = np.histogram(valid, bins=bins)
+    lo, hi = float(valid.min()), float(valid.max())
+    if hi - lo < 1e-6:  # dead-flat ground (a slab, a test plane): one millimetre-wide span
+        lo, hi = lo - 0.0005, hi + 0.0005
+    counts, edges = np.histogram(valid, bins=bins, range=(lo, hi))
     return {"counts": counts.tolist(), "edges": edges.tolist()}
 
 
@@ -104,22 +107,18 @@ def buildable_percent(stats_mask: np.ndarray) -> float:
 
 
 def contour_lines(z: np.ndarray, x: np.ndarray, y: np.ndarray, levels: List[float]) -> List[dict]:
-    """Extract contour isolines (list of {level, line}) using matplotlib.
+    """Contour isolines (list of {level, line}) at the given levels.
 
-    ``x``/``y`` are the 1-D cell-centre coordinates of the grid.
+    ``x``/``y`` are the 1-D cell-centre coordinates of a regular grid. Pure NumPy
+    marching squares (see contours.py); NaN cells are left out, never crossed.
     """
-    import matplotlib
+    from . import contours
 
-    matplotlib.use("Agg")  # headless, no display needed
-    import matplotlib.pyplot as plt
-
-    fig, ax = plt.subplots()
-    cs = ax.contour(x, y, z, levels=levels)
+    z = np.asarray(z, dtype=float)
+    cell = float(x[1] - x[0]) if len(x) > 1 else 1.0
+    origin = np.array([x[0], y[0]], dtype=float)
     result = []
-    for level, segs in zip(cs.levels, cs.allsegs):
-        for seg in segs:
-            if seg.size == 0:
-                continue
-            result.append({"level": float(level), "line": seg.tolist()})
-    plt.close(fig)
+    for level in levels:
+        for line in contours.trace_level(z, float(level)):
+            result.append({"level": float(level), "line": (origin + line * cell).tolist()})
     return result

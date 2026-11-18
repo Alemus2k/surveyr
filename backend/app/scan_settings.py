@@ -1,5 +1,5 @@
 """Per-scan manual adjustments: source units, which axis is up, ground-only,
-and an elevation correction (e.g. from checking the scan against control).
+automatic ground classification, and an elevation correction (e.g. from checking the scan against control).
 
 Stored as ``<project>.settings.json`` beside the scan (the scan file itself is
 never modified) and applied every time the scan is loaded, so all analytics,
@@ -50,7 +50,11 @@ class ScanSettings(BaseModel):
     unit: Unit = "m"
     up_axis: Literal["z", "y"] = "z"
     ground_only: bool = True
+    # work out ground automatically (app.ground), ignoring any classes in the file;
+    # the result is only used to filter when ground_only is on
+    auto_ground: bool = False
     z_offset_m: float = Field(0.0, ge=-100, le=100)  # added to every elevation, after unit conversion
+    surface: Optional[str] = Field(None, max_length=200)  # LandXML: which surface (None = the design-looking one)
 
 
 def _path(project_id: str) -> str:
@@ -70,9 +74,20 @@ def load(project_id: str) -> ScanSettings:
         with open(_path(project_id)) as f:
             return ScanSettings.model_validate(json.load(f))
     except FileNotFoundError:
-        return ScanSettings()
+        return _file_defaults(project_id)
     except (OSError, ValueError):
         return ScanSettings()  # damaged settings file: fall back to defaults
+
+
+def _file_defaults(project_id: str) -> ScanSettings:
+    """Settings for a scan nobody has adjusted: in the units the file itself states, if any.
+
+    Only reads the file's header / units (never the points), as this runs on every load.
+    """
+    info = _scan_info(project_id)
+    first = service.FUSED_SOURCES[0] if info["type"] == "fused" else info["source"]
+    crs = crs_info(os.path.join(service.DATA_DIR, first))
+    return ScanSettings(unit=crs["unit"]) if crs and crs["unit"] else ScanSettings()
 
 
 def save(project_id: str, settings: ScanSettings) -> ScanSettings:
@@ -109,7 +124,15 @@ def ground_mask(classification: Optional[np.ndarray]) -> Optional[np.ndarray]:
 # ------------------------------------------------------------------ detection
 
 def crs_info(path: str) -> Optional[dict]:
-    """Name, EPSG and horizontal unit of a LAS/LAZ file's coordinate system, if any."""
+    """Name, EPSG and horizontal unit of a LAS/LAZ coordinate system or LandXML units, if any."""
+    if path.lower().endswith(".xml"):
+        from . import landxml
+
+        try:
+            info = landxml.read_info(path)
+        except landxml.LandXMLError:
+            return None
+        return {"name": info["crs_name"] or "LandXML units", "epsg": None, "unit": info["units"]}
     if not path.lower().endswith((".las", ".laz")):
         return None
     try:
@@ -146,7 +169,9 @@ def detect(project_id: str) -> dict:
         return {
             "unit": crs["unit"],
             "source": "crs",
-            "reason": f"Coordinate system {crs['name']} is in {UNIT_NAMES[crs['unit']]}.",
+            "reason": f"Coordinate system {crs['name']} is in {UNIT_NAMES[crs['unit']]}."
+            if not path.lower().endswith(".xml")
+            else f"The LandXML file states its units: {UNIT_NAMES[crs['unit']]}.",
             "crs_name": crs["name"],
             "epsg": crs["epsg"],
         }

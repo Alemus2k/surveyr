@@ -21,6 +21,7 @@ from . import analytics, clean, dem, fusion, io, storage, terrain
 from .pcd import PointCloud
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+DEMO_DIR = DATA_DIR  # where the bundled demo projects live (the desktop app points this at its bundle)
 DEFAULT_CELL = 2.0  # metres per raster cell (survey-scale sites)
 MIN_CELL = 0.01  # metres; finer than phone LiDAR noise is pointless
 TARGET_CELLS_ACROSS = 100  # auto cell size aims for ~this many cells on the long side
@@ -44,7 +45,7 @@ def discover_projects() -> Dict[str, dict]:
     """
     found: Dict[str, dict] = {}
     for fname in sorted(os.listdir(DATA_DIR)):
-        if fname.lower().endswith((".xyz", ".las", ".laz", ".ply")):
+        if fname.lower().endswith(storage.SUPPORTED_EXTENSIONS):
             pid = os.path.splitext(fname)[0]
             found[pid] = {"id": pid, "name": pid.replace("_", " ").title(),
                           "source": fname, "type": "single"}
@@ -115,7 +116,7 @@ def _project_files(info: dict) -> List[str]:
 
 def invalidate(project_id: str) -> None:
     """Forget cached analysis/points for a project (after its settings change)."""
-    for cache in (_cache, _points_cache):
+    for cache in (_cache, _points_cache, _ground_cache):
         for key in [k for k in cache if k.startswith(f"{project_id}@")]:
             del cache[key]
 
@@ -140,6 +141,8 @@ def delete_project(project_id: str) -> List[str]:
 _cache: Dict[str, dict] = {}
 _points_cache: Dict[str, tuple] = {}
 _lock = threading.Lock()
+_ground_cache: Dict[str, np.ndarray] = {}  # automatic classes per scan file + settings
+_ground_lock = threading.Lock()
 
 DEFAULT_POINT_LIMIT = 200_000  # enough for a dense 3D view, ~2.4 MB on the wire
 
@@ -193,48 +196,163 @@ def analyze(project_id: str, cell_size: Optional[float] = None) -> dict:
         return _cache[key]
 
 
-def sample_points_with_origin(project_id: str, limit: int = DEFAULT_POINT_LIMIT) -> tuple:
-    """Cleaned points for the 3D view, randomly thinned to ``limit``. Cached.
+def _sample(project_id: str, limit: int, everything: bool) -> tuple:
+    """The thinned cloud shown in 3D: ``(origin, rel, sampled cloud)``. Cached.
+
+    Normally the cleaned terrain points (ground only when the scan's settings
+    say so). ``everything`` keeps every class and skips the outlier filter, so
+    trees, machines and structures show too.
+    """
+    key = f"{project_id}@{limit}{'+all' if everything else ''}"
+    with _lock:
+        if key not in _points_cache:
+            if everything:
+                cloud = _load_full(project_id)[0]
+            else:
+                cloud = clean.remove_z_outliers(_load_cloud(project_id)[0])
+            if cloud.size > limit:
+                idx = np.random.default_rng(0).choice(cloud.size, size=limit, replace=False)
+                keep = np.zeros(cloud.size, dtype=bool)
+                keep[idx] = True
+                cloud = cloud.mask(keep)
+            pts = cloud.points
+            origin = (pts.min(axis=0) + pts.max(axis=0)) / 2 if len(pts) else np.zeros(3)
+            rel = np.ascontiguousarray(pts[:, :3] - origin, dtype=np.float32)
+            _points_cache[key] = (origin.astype(np.float64), rel, cloud)
+        return _points_cache[key]
+
+
+def sample_points_with_origin(project_id: str, limit: int = DEFAULT_POINT_LIMIT, everything: bool = False) -> tuple:
+    """Points for the 3D view, randomly thinned to ``limit``.
 
     Returns ``(origin, rel)``: a float64 origin (footprint centre) and an (N, 3)
     float32 array relative to it. Real LiDAR uses survey-grid coordinates in the
     millions of metres, where float32 alone would round to ~0.5 m.
     """
-    key = f"{project_id}@{limit}"
-    with _lock:
-        if key not in _points_cache:
-            cloud, _ = _load_cloud(project_id)
-            pts = clean.remove_z_outliers(cloud).points
-            if len(pts) > limit:
-                idx = np.random.default_rng(0).choice(len(pts), size=limit, replace=False)
-                pts = pts[np.sort(idx)]
-            origin = (pts.min(axis=0) + pts.max(axis=0)) / 2 if len(pts) else np.zeros(3)
-            rel = np.ascontiguousarray(pts[:, :3] - origin, dtype=np.float32)
-            _points_cache[key] = (origin.astype(np.float64), rel)
-        return _points_cache[key]
+    origin, rel, _ = _sample(project_id, limit, everything)
+    return origin, rel
+
+
+def _stretch_u8(values: np.ndarray) -> tuple:
+    """Values scaled to 0..255 between their 2nd and 98th percentiles; returns (u8, low, high)."""
+    if values.size == 0:
+        return np.zeros(0, dtype=np.uint8), 0.0, 1.0
+    lo, hi = (float(v) for v in np.percentile(values, [2, 98]))
+    if hi <= lo:
+        hi = lo + 1.0
+    return np.clip((values - lo) / (hi - lo) * 255, 0, 255).astype(np.uint8), lo, hi
+
+
+def sample_attributes(project_id: str, limit: int = DEFAULT_POINT_LIMIT, everything: bool = False) -> tuple:
+    """What else the scan recorded for the points of ``sample_points_with_origin``, in the same order.
+
+    Returns ``(header, arrays)``: uint8 arrays for colour (N, 3), intensity
+    (contrast-stretched; the header carries the raw range), classification,
+    return number and number of returns — whichever the scan has.
+    """
+    cloud = _sample(project_id, limit, everything)[2]
+    ch = cloud.channels
+    header: dict = {"count": cloud.size}
+    arrays = []
+    if all(cloud.has(c) for c in ("red", "green", "blue")):
+        rgb = np.column_stack([ch["red"], ch["green"], ch["blue"]])
+        arrays.append(("rgb", np.clip(rgb * 255, 0, 255).astype(np.uint8)))
+    if cloud.has("intensity"):
+        u8, lo, hi = _stretch_u8(ch["intensity"])
+        arrays.append(("intensity", u8))
+        header["intensity_range"] = [lo, hi]
+    for name in ("classification", "return_number", "number_of_returns"):
+        if cloud.has(name):
+            arrays.append((name, np.clip(ch[name], 0, 255).astype(np.uint8)))
+    return header, arrays
+
+
+def channel_summary(cloud: PointCloud) -> dict:
+    """Which optional channels a scan carries, and how many points each class has."""
+    have = [c for c in ("intensity", "classification", "return_number", "number_of_returns", "gps_time") if cloud.has(c)]
+    if all(cloud.has(c) for c in ("red", "green", "blue")):
+        have.insert(0, "rgb")
+    classes: Dict[str, int] = {}
+    if cloud.has("classification"):
+        codes, counts = np.unique(cloud.channels["classification"].astype(int), return_counts=True)
+        classes = {str(int(c)): int(n) for c, n in zip(codes, counts)}
+    return {"channels": have, "classes": classes}
+
+
+def _load_full(project_id: str):
+    """Every point of a project, manual adjustments applied: ``(cloud, settings)``.
+
+    Points are in metres, Z-up, with all their channels and classes — trees,
+    machines and structures included.
+    """
+    from . import scan_settings  # local: scan_settings imports this module
+
+    if project_id == FUSED_PROJECT_ID:
+        return PointCloud(_fuse_demo_passes()[0].fused_points()), scan_settings.load(project_id)
+    info = _resolve(project_id)
+    if info["type"] in GROUP_TYPES:
+        raise NotAnalyzable(project_id)
+    settings = scan_settings.load(project_id)
+    path = os.path.join(DATA_DIR, info["source"])
+    raw = io.load_point_cloud(path, surface=settings.surface)
+    cloud = PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels))
+    if _auto_ground_applies(info, settings):
+        cloud.channels["classification"] = _auto_classes(project_id, path, cloud, settings)
+    return cloud, settings
+
+
+def _auto_ground_applies(info: dict, settings) -> bool:
+    """Automatic ground runs on point clouds when asked for; never on a LandXML surface."""
+    return bool(settings.auto_ground) and not info["source"].lower().endswith(".xml")
+
+
+def _auto_classes(project_id: str, path: str, cloud: PointCloud, settings) -> np.ndarray:
+    """The automatic classification of a scan (``ground.classify``), ignoring the file's classes.
+
+    Cached per scan file (path, size, modification time) and settings, so it runs
+    once, not for every request; ``invalidate`` also forgets it.
+    """
+    from . import ground
+
+    st = os.stat(path)
+    key = f"{project_id}@{path}|{st.st_size}|{st.st_mtime_ns}|{settings.model_dump_json()}"
+    with _ground_lock:
+        if key not in _ground_cache:
+            for k in [k for k in _ground_cache if k.startswith(f"{project_id}@")]:
+                del _ground_cache[k]  # one entry per scan
+            channels = {k: v for k, v in cloud.channels.items() if k != "classification"}
+            _ground_cache[key] = ground.classify(cloud.points, channels).astype(float)
+        return _ground_cache[key]
+
+
+def ground_source(info: dict, full: PointCloud, settings) -> str:
+    """Where a scan's ground classes come from: "auto", "file" or "none"."""
+    from . import scan_settings
+
+    if _auto_ground_applies(info, settings):
+        return "auto"
+    return "file" if scan_settings.ground_mask(full.channels.get("classification")) is not None else "none"
+
+
+def _terrain_of(full: PointCloud, settings) -> tuple:
+    """The terrain part of a cloud: ``(cloud, ground_only)`` — only ground points
+    when the user wants that and the scan is ground-classified."""
+    from . import scan_settings
+
+    ground = scan_settings.ground_mask(full.channels.get("classification")) if settings.ground_only else None
+    if ground is not None:
+        return full.mask(ground), True
+    return full, False
 
 
 def _load_cloud(project_id: str):
-    """A project's cloud with its manual adjustments applied.
+    """A project's terrain cloud with its manual adjustments applied.
 
     Returns ``(cloud, ground_only)``: points converted to metres and Z-up, and
     — when the user wants it and the scan is ground-classified — only ground
     points, with ``ground_only`` saying whether that filter was applied.
     """
-    from . import scan_settings  # local: scan_settings imports this module
-
-    if project_id == FUSED_PROJECT_ID:
-        return PointCloud(_fuse_demo_passes()[0].fused_points()), False
-    info = _resolve(project_id)
-    if info["type"] in GROUP_TYPES:
-        raise NotAnalyzable(project_id)
-    settings = scan_settings.load(project_id)
-    raw = io.load_point_cloud(os.path.join(DATA_DIR, info["source"]))
-    cloud = PointCloud(scan_settings.apply(raw.points, settings), dict(raw.channels))
-    ground = scan_settings.ground_mask(cloud.channels.get("classification")) if settings.ground_only else None
-    if ground is not None:
-        return cloud.mask(ground), True
-    return cloud, False
+    return _terrain_of(*_load_full(project_id))
 
 
 def _fuse_demo_passes():
@@ -252,10 +370,25 @@ def _fuse_demo_passes():
 
 def _compute_single(project_id: str, cell_size: Optional[float]) -> dict:
     info = _resolve(project_id)
-    cloud, ground_only = _load_cloud(project_id)
+    full, settings = _load_full(project_id)
+    cloud, ground_only = _terrain_of(full, settings)
     result = _build_analysis(cloud, cell_size or auto_cell_size(cloud), info)
     result["points"]["ground_only"] = ground_only
+    result["points"]["total"] = int(full.size)  # every class, before the ground filter
+    result["points"].update(channel_summary(full))
+    source = ground_source(info, full, settings)
+    result["points"]["ground_source"] = source
+    result["points"]["suggest_auto_ground"] = _suggest_auto_ground(info, full, source)
     return result
+
+
+def _suggest_auto_ground(info: dict, full: PointCloud, source: str) -> bool:
+    """A scan with no usable ground class that clearly has things standing on the ground."""
+    from . import ground
+
+    if source != "none" or info["source"].lower().endswith(".xml"):
+        return False
+    return ground.suggest(full.points)
 
 
 def _compute_fused(cell_size: float) -> dict:
@@ -266,6 +399,8 @@ def _compute_fused(cell_size: float) -> dict:
     info = _resolve(FUSED_PROJECT_ID)
     result = _build_analysis(combined, cell_size, info)
     result["points"]["ground_only"] = False
+    result["points"]["ground_source"] = "none"
+    result["points"]["suggest_auto_ground"] = False
     cov = project.coverage(cell_size)
 
     result["coverage"] = {

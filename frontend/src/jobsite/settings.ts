@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadPref, savePref } from "../lib/persist";
+import { fromDisplay } from "../lib/units";
 
 /** Typical swell/shrinkage figures; real values vary with moisture and compaction. */
 export const MATERIALS: ReadonlyArray<{ id: string; label: string; swellPct: number; shrinkPct: number }> = [
@@ -33,6 +34,8 @@ export interface JobsiteSettings {
 }
 
 export const DEFAULT_TRUCK_M3 = 10; // typical tandem dump truck, loose volume
+/** A scan's first truck size: 10 of the user's volume unit (10 yd³ ≈ 7.65 m³ in US), not "13.08 yd³". */
+export const defaultTruckM3 = () => fromDisplay(DEFAULT_TRUCK_M3, "volume");
 export const DEFAULT_JOBSITE: JobsiteSettings = {
   mode: "balanced",
   customBase: null,
@@ -59,7 +62,7 @@ export function parseJobsite(raw: unknown): JobsiteSettings {
     materialId: typeof o.materialId === "string" ? o.materialId : d.materialId,
     swellPct: num(o.swellPct, 0, 100, d.swellPct),
     shrinkPct: num(o.shrinkPct, 0, 50, d.shrinkPct),
-    truckM3: num(o.truckM3, 1, 100, d.truckM3),
+    truckM3: num(o.truckM3, 1, 100, defaultTruckM3()),
   };
 }
 

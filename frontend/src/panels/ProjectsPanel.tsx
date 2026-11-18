@@ -15,6 +15,7 @@ interface ProjectsPanelProps {
   onDelete: (project: ProjectRef) => Promise<boolean>;
   onNewComparison: () => void;
   onNewSite: () => void;
+  onRestoreDemo?: () => Promise<boolean>; // job sites only: put the demo site back
   busy: boolean;
 }
 
@@ -24,6 +25,7 @@ const isScan = (p: ProjectRef) => p.type !== "compare" && p.type !== "site";
 export function ProjectsPanel(props: ProjectsPanelProps) {
   const { variant = "projects", projects, openIds, activeId, onOpen, onImport, onDelete, onNewComparison, onNewSite, busy } = props;
   const [pending, setPending] = useState<ProjectRef | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const sitesView = variant === "sites";
   const listed = projects.filter((p) => (p.type === "site") === sitesView);
   const siteName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
@@ -66,7 +68,11 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
                 <button className="project-open" onClick={() => onOpen(p.id)} title={isOpen ? "Show tab" : "Open in a tab"}>
                   <span className="project-name">{p.name}</span>
                   <span className="project-id fig">
-                    {p.type === "compare" ? "comparison" : p.type === "site" ? "job site" : p.site ? `in ${siteName(p.site)}` : p.id}
+                    {p.type === "compare"
+                      ? "comparison"
+                      : p.type === "site"
+                        ? "job site"
+                        : `${p.source?.toLowerCase().endsWith(".xml") ? "LandXML surface · " : ""}${p.site ? `in ${siteName(p.site)}` : p.id}`}
                     {isOpen && <span className="project-open-tag">open</span>}
                   </span>
                 </button>
@@ -86,17 +92,45 @@ export function ProjectsPanel(props: ProjectsPanelProps) {
       )}
 
       {sitesView ? (
-        <p className="panel-note">
-          A job site tracks construction progress from repeat scans of one site against its design surface. Its
-          scans stay listed under Projects.
-        </p>
+        <>
+          <p className="panel-note">
+            A job site tracks construction progress from repeat scans of one site against its design surface. Its
+            scans stay listed under Projects.
+          </p>
+          {props.onRestoreDemo && (
+            <p className="panel-note">
+              New to Surveyr? Riverside Commons is a demo site with eight flights to explore.{" "}
+              <button className="text-btn" onClick={() => setRestoring(true)} disabled={busy}>
+                Restore the demo site
+              </button>
+            </p>
+          )}
+        </>
       ) : (
         <p className="panel-note">
           Imports <span className="fig">.ply</span>, <span className="fig">.las</span>,{" "}
           <span className="fig">.laz</span> and <span className="fig">.xyz</span> point clouds — e.g. a Scaniverse
-          PLY AirDropped from your phone. Closing a tab keeps the project; reopen it here.
+          PLY AirDropped from your phone — and LandXML <span className="fig">.xml</span> design surfaces from the
+          engineer. Closing a tab keeps the project; reopen it here.
         </p>
       )}
+
+      <ConfirmDialog
+        open={restoring}
+        title="Restore the demo site?"
+        confirmLabel="Restore demo"
+        busy={busy}
+        onConfirm={async () => {
+          await props.onRestoreDemo?.();
+          setRestoring(false);
+        }}
+        onCancel={() => setRestoring(false)}
+      >
+        <p>
+          Riverside Commons, its flights, design and check points are reinstalled as shipped. If you changed or
+          deleted any of them, the old copies go to the Trash first. Your own projects aren't touched.
+        </p>
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={pending !== null}

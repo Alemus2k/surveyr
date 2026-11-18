@@ -4,6 +4,7 @@ import { useScanSettings } from "./adjust/useScanSettings";
 import type { ProjectRef } from "./api";
 import { AppearancePopover } from "./appearance/AppearancePopover";
 import { useAppearance } from "./appearance/useAppearance";
+import { formatDistance, useUnitSystem } from "./lib/units";
 import { CompareViewer } from "./compare/CompareViewer";
 import type { GizmoMode } from "./compare/compareScene";
 import { LayersPanel } from "./compare/LayersPanel";
@@ -15,6 +16,8 @@ import { usePanelWidth } from "./hooks/usePanelWidth";
 import { useProjectAnalysis } from "./hooks/useProjectAnalysis";
 import { useProjects } from "./hooks/useProjects";
 import { IconRail, type PanelId } from "./layout/IconRail";
+import { ExportDialog, type ExportTarget } from "./export/ExportDialog";
+import { GettingStarted } from "./layout/GettingStarted";
 import { Icon } from "./layout/icons";
 import { TopBar } from "./layout/TopBar";
 import { ColorPanel } from "./panels/ColorPanel";
@@ -58,9 +61,8 @@ const DEFAULT_TOLERANCE_M = 0.05; // accuracy grading for scans outside a job si
 export default function App() {
   const projects = useProjects();
   const ready = projects.engine === "ready";
-  // first run: open job sites first, and not the individual scans inside them
-  const firstRun = [...projects.projects].sort((a, b) => Number(b.type === "site") - Number(a.type === "site")).filter((p) => !p.site);
-  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null, firstRun.map((p) => p.id));
+  // first run opens nothing: a new user lands on "Getting started", which offers the demo site
+  const tabs = useOpenTabs(ready ? projects.projects.map((p) => p.id) : null, []);
   const byId = new Map(projects.projects.map((p) => [p.id, p]));
   const activeType = byId.get(tabs.active ?? "")?.type;
   const isCompare = activeType === "compare";
@@ -84,6 +86,7 @@ export default function App() {
   const scanSettings = useScanSettings(ready ? scanId : null, bumpSettings);
   const [panelWidth, setPanelWidth, resetPanelWidth] = usePanelWidth();
   const appearance = useAppearance();
+  useUnitSystem(); // every figure is formatted in the active units: a switch re-renders the whole app
   // the launch animation: key of the run playing, or null; "Play now" replays it
   const [introRun, setIntroRun] = useState<number | null>(null);
   // once per page load, before the first paint so the app never flashes up first
@@ -98,6 +101,8 @@ export default function App() {
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>("translate");
   const [newCompareOpen, setNewCompareOpen] = useState(false);
   const [newSiteOpen, setNewSiteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false); // "Getting started" shown over the open project
+  const [exportOpen, setExportOpen] = useState(false);
   const [zoneSel, setZoneSel] = useState<{ site: string; zone: string } | null>(null);
 
   // the rail shows only panels that fit the open tab; map a remembered choice across
@@ -113,11 +118,26 @@ export default function App() {
   const colors = useMemo(() => (cloud && range ? colorize(cloud.z, range) : null), [cloud, range?.min, range?.max]);
 
   const openTabs = tabs.open.flatMap((id) => byId.get(id) ?? []);
+  // what "Export…" exports: the open job site (at the flight picked on its timeline) or the open scan
+  const exportTarget: ExportTarget | null =
+    isSite && site.site && tabs.active
+      ? {
+          kind: "site",
+          id: tabs.active,
+          name: site.site.name,
+          flights: site.site.scans.map((s) => ({ id: s.project_id, date: s.date })),
+          zones: site.site.zones.map((z) => ({ id: z.id, name: z.name })),
+          hasDesign: !!site.site.design_id,
+          scan: pickedScan,
+        }
+      : !isGroup && tabs.active
+        ? { kind: "scan", id: tabs.active, name: byId.get(tabs.active)?.name ?? tabs.active }
+        : null;
   const readout = isSite
     ? site.site && `${site.site.scans.length} scans · ${site.site.zones.length} zones`
     : isCompare
     ? composition.comp && `${composition.comp.layers.length} layers`
-    : analysis && `${(analysis.points.kept / 1000).toFixed(0)}k pts · ${analysis.grid.cell_size} m cell`;
+    : analysis && `${(analysis.points.kept / 1000).toFixed(0)}k pts · ${formatDistance(analysis.grid.cell_size)} cell`;
 
   const importScan = async (file: File) => {
     const id = await projects.importScan(file);
@@ -153,7 +173,10 @@ export default function App() {
           projects={projects.projects}
           openIds={tabs.open}
           activeId={tabs.active}
-          onOpen={tabs.select}
+          onOpen={(id) => {
+            setHelpOpen(false);
+            tabs.select(id);
+          }}
           onImport={importScan}
           onDelete={deleteProject}
           onNewComparison={() => setNewCompareOpen(true)}
@@ -165,6 +188,7 @@ export default function App() {
       return (
         <ProjectsPanel
           variant="sites"
+          onRestoreDemo={projects.restoreDemo}
           projects={projects.projects}
           openIds={tabs.open}
           activeId={tabs.active}
@@ -230,14 +254,23 @@ export default function App() {
         </div>
       );
     if (projects.engine === "failed") return <div className="error-state">{projects.engineError}</div>;
-    if (!tabs.active)
+    if (!tabs.active || helpOpen)
       return (
-        <div className="empty-state">
-          <p>No project open.</p>
-          <button className="secondary-btn" onClick={() => setPanel("projects")}>
-            Show projects
-          </button>
-        </div>
+        <GettingStarted
+          projects={projects.projects}
+          onOpen={(id) => {
+            setHelpOpen(false);
+            tabs.select(id);
+          }}
+          onImport={(file) => {
+            setHelpOpen(false);
+            void importScan(file);
+          }}
+          onNewSite={() => setNewSiteOpen(true)}
+          onRestoreDemo={() => void projects.restoreDemo()}
+          busy={projects.busy}
+          onClose={tabs.active ? () => setHelpOpen(false) : undefined}
+        />
       );
     if (loadError)
       return (
@@ -249,6 +282,8 @@ export default function App() {
     if (isSite)
       return (
         <SiteDashboard
+          siteId={tabs.active}
+          reloadKey={settingsVersion}
           state={site}
           projects={projects.projects}
           scanId={pickedScan}
@@ -293,6 +328,9 @@ export default function App() {
         onClose={tabs.close}
         readout={readout || null}
         appearance={<AppearancePopover api={appearance} onPlayIntro={() => setIntroRun((n) => (n ?? 0) + 1)} />}
+        onHelp={() => setHelpOpen((h) => !h)}
+        onExport={exportTarget ? () => setExportOpen(true) : null}
+        helpOpen={helpOpen || !tabs.active}
         onImport={importScan}
         importing={projects.busy}
       />
@@ -336,6 +374,8 @@ export default function App() {
         onCreate={createSite}
         onCancel={() => setNewSiteOpen(false)}
       />
+
+      <ExportDialog open={exportOpen && exportTarget !== null} target={exportTarget} onClose={() => setExportOpen(false)} />
 
       {introRun !== null && <LaunchIntro key={introRun} accent={appearance.viewportAccent} onDone={() => setIntroRun(null)} />}
 

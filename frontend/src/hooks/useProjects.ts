@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createComposition, createSite, deleteProject, fetchProjects, uploadScan, waitForBackend, type ProjectRef, type UnitDetection } from "../api";
+import { createComposition, createSite, deleteProject, restoreDemo, fetchProjects, uploadScan, waitForBackend, type ProjectRef, type UnitDetection } from "../api";
 import { unitLabel } from "../adjust/units";
 import type { SiteScan } from "../site/types";
 
@@ -22,6 +22,7 @@ export interface Projects {
   removeProject: (project: ProjectRef) => Promise<boolean>;
   createComparison: (name: string, projectIds: string[]) => Promise<string | null>; // new id
   createSite: (name: string, scans: SiteScan[], designId: string | null) => Promise<string | null>; // new id
+  restoreDemo: () => Promise<boolean>;
 }
 
 const INFO_NOTICE_MS = 4000; // warnings and errors stay until dismissed
@@ -112,6 +113,21 @@ export function useProjects(): Projects {
     }
   }, []);
 
+  const restoreDemoSite = useCallback(async () => {
+    setBusy(true);
+    try {
+      await restoreDemo();
+      setProjects(await fetchProjects());
+      setNotice({ text: "The Riverside Commons demo is back as shipped. Any old demo files are in the Trash.", tone: "info" });
+      return true;
+    } catch (e) {
+      setNotice({ text: message(e), tone: "error" });
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const createSiteProject = useCallback(async (name: string, scans: SiteScan[], designId: string | null) => {
     setBusy(true);
     try {
@@ -145,5 +161,6 @@ export function useProjects(): Projects {
     removeProject,
     createComparison,
     createSite: createSiteProject,
+    restoreDemo: restoreDemoSite,
   };
 }

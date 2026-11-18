@@ -49,6 +49,8 @@ class Zone(BaseModel):
     # the design surface raised (+) or lowered (−) by the offset
     target_elevation_m: Optional[float] = Field(None, ge=-1000, le=10000)
     design_offset_m: float = Field(0.0, ge=-50, le=50)
+    # stockpiles: what the pile is (e.g. "topsoil"), set by the user over the app's guess; None = guess
+    material: Optional[str] = Field(None, max_length=40)
 
     @field_validator("polygon")
     @classmethod
@@ -56,6 +58,81 @@ class Zone(BaseModel):
         if any(len(p) != 2 for p in v):
             raise ValueError("polygon vertices must be [easting, northing] pairs")
         return v
+
+
+def _check_pairs(v: List[List[float]]) -> List[List[float]]:
+    if any(len(p) != 2 for p in v):
+        raise ValueError("vertices must be [easting, northing] pairs")
+    return v
+
+
+class _Shape(BaseModel):
+    """Something drawn on the site plan, with an id and a display name."""
+
+    id: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=60)
+
+
+class Layer(_Shape):
+    """A material layer placed on a finished surface (base course, paving, topsoil…),
+    measured as the rise between the scan flown before it was placed and later scans."""
+
+    material: str = Field("", max_length=60)
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+    base_scan: Optional[str] = None  # project id of the scan it sits on; None = the scan before it first appears
+    target_thickness_m: float = Field(gt=0, le=5)
+    tolerance_m: float = Field(0.03, ge=0, le=1)  # thinner than target − tolerance is flagged
+    density_t_m3: Optional[float] = Field(None, gt=0, le=10)  # for tonnage; None = volume only
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class Flatwork(_Shape):
+    """Paved walking surface checked against accessibility (ADA) slope limits."""
+
+    kind: Literal["walk", "ramp", "landing", "parking"] = "walk"
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class Alignment(_Shape):
+    """A centreline to cut cross-sections along (road, trench, swale)."""
+
+    points: List[List[float]] = Field(min_length=2, max_length=500)
+    interval_m: float = Field(10.0, gt=0, le=1000)  # station spacing
+    half_width_m: float = Field(10.0, gt=0, le=500)  # how far each section reaches either side
+
+    _pairs = field_validator("points")(_check_pairs)
+
+
+class Monitor(_Shape):
+    """An area watched for settlement or heave between flights."""
+
+    polygon: List[List[float]] = Field(min_length=3, max_length=500)
+    baseline_scan: Optional[str] = None  # project id; None = the first scan after the area stops changing
+    alert_m: float = Field(0.025, gt=0, le=2)  # movement that raises a flag
+
+    _pairs = field_validator("polygon")(_check_pairs)
+
+
+class AsBuilt(_Shape):
+    """A record of something that gets buried: where it ran and how deep, from the scan that saw it."""
+
+    kind: Literal["trench"] = "trench"
+    scan: str  # project id of the flight that captured it open
+    line: List[List[float]] = Field(min_length=2, max_length=500)
+    note: str = Field("", max_length=200)
+
+    _pairs = field_validator("line")(_check_pairs)
+
+
+class Pond(BaseModel):
+    """A detention / retention basin whose storage is checked against the design."""
+
+    zone_id: str
+    spill_elevation_m: float = Field(ge=-1000, le=10000)  # outlet: storage is the volume below it
+    required_storage_m3: Optional[float] = Field(None, ge=0)
 
 
 class PayApp(BaseModel):
@@ -134,6 +211,16 @@ class Site(BaseModel):
     zones: List[Zone] = Field(default_factory=list, max_length=MAX_ZONES)
     pay_apps: List[PayApp] = Field(default_factory=list, max_length=500)
     change_orders: List[ChangeOrder] = Field(default_factory=list, max_length=500)
+    # what else to measure on each flight (all optional; older site files simply lack them)
+    lod: Optional[List[List[float]]] = Field(None, min_length=3, max_length=2000)  # limits of disturbance polygon
+    layers: List[Layer] = Field(default_factory=list, max_length=100)
+    flatwork: List[Flatwork] = Field(default_factory=list, max_length=200)
+    alignments: List[Alignment] = Field(default_factory=list, max_length=50)
+    monitors: List[Monitor] = Field(default_factory=list, max_length=100)
+    asbuilts: List[AsBuilt] = Field(default_factory=list, max_length=200)
+    ponds: List[Pond] = Field(default_factory=list, max_length=20)
+
+    _lod_pairs = field_validator("lod")(lambda v: v if v is None else _check_pairs(v))
 
 
 def _path(site_id: str) -> str:
@@ -324,3 +411,104 @@ def qa(site_id: str) -> List[dict]:
         res = control.check(s.project_id, site.control_id)
         out.append({"project_id": s.project_id, "date": s.date, "stats": res["stats"], "points": len(res["points"])})
     return out
+
+
+# ------------------------------------------------------------------ what else each flight saw
+
+GROUND_CLASS = 2
+VEGETATION_CLASSES = (3, 4, 5)  # ASPRS: low, medium, high vegetation
+NOISE_CLASSES = (7, 18)  # low / high noise: never drawn or measured
+_raster_cache: Dict[tuple, tuple] = {}
+
+
+def _grid_array(flat: list, ny: int, nx: int) -> np.ndarray:
+    return np.array([np.nan if v is None else v for v in flat], dtype=float).reshape(ny, nx)
+
+
+def rasters(site_id: str, project_id: str) -> tuple:
+    """Everything one flight recorded besides the ground shape, on the site's shared grid.
+
+    Returns ``(header, arrays)`` for ``binary.pack``; every array is (ny, nx[, 3]),
+    row 0 = south, like ``grids``:
+
+    - ``coverage`` (u1): 1 where the flight has any points.
+    - ``photo`` (u1 x 3): what the cell looks like from above — the mean colour of
+      the points over the ground (canopy, machines) if there are any, else of the
+      ground itself. Only when the scan has colour.
+    - ``intensity`` (u1): mean ground reflectance, contrast-stretched (raw range in
+      the header). Bright = aggregate / concrete, dark = wet or organic.
+    - ``veg_height`` / ``object_height`` (f4, NaN = none): the highest vegetation /
+      other non-ground point above the cell's ground. Objects are machines,
+      structures, pipe — anything not ground, vegetation or noise.
+    - ``density`` / ``ground_density`` (u2): points per cell, all classes / ground.
+
+    Scans with no classification are treated as all ground, so the height layers
+    are simply empty. Cached until the flight, its settings or the grid change.
+    """
+    g = grids(site_id)
+    scan = next((s for s in g["scans"] if s["project_id"] == project_id), None)
+    if scan is None:
+        raise service.ProjectNotFound(project_id)
+    nx, ny, cell = g["nx"], g["ny"], g["cell_size"]
+    key = (site_id, project_id, _member_stamp(project_id), cell, g["x0"], g["y0"], nx, ny)
+    with _grid_lock:
+        if key in _raster_cache:
+            return _raster_cache[key]
+
+    full, _ = service._load_full(project_id)
+    x, y, z = full.points[:, 0], full.points[:, 1], full.points[:, 2]
+    ix = np.floor((x - g["x0"]) / cell).astype(np.int64)
+    iy = np.floor((y - g["y0"]) / cell).astype(np.int64)
+    cls = full.channels["classification"].astype(int) if full.has("classification") else None
+    classified = cls is not None and bool((cls == GROUND_CLASS).any())
+    noise = np.isin(cls, NOISE_CLASSES) if cls is not None else np.zeros(full.size, dtype=bool)
+    ok = (ix >= 0) & (ix < nx) & (iy >= 0) & (iy < ny) & ~noise
+    flat = iy * nx + ix
+    ground = (cls == GROUND_CLASS) if classified else np.ones(full.size, dtype=bool)
+    veg = np.isin(cls, VEGETATION_CLASSES) if classified else np.zeros(full.size, dtype=bool)
+    obj = ~ground & ~veg
+    cells = nx * ny
+
+    def count(mask: np.ndarray) -> np.ndarray:
+        return np.bincount(flat[ok & mask], minlength=cells)
+
+    def mean(values: np.ndarray, mask: np.ndarray, n: np.ndarray) -> np.ndarray:
+        return np.bincount(flat[ok & mask], weights=values[ok & mask], minlength=cells) / np.maximum(n, 1)
+
+    n_all, n_ground, n_above = count(np.ones(full.size, dtype=bool)), count(ground), count(~ground)
+    ground_z = _grid_array(scan["z"], ny, nx).ravel()  # the same ground surface the volumes use
+
+    def height(mask: np.ndarray) -> np.ndarray:
+        top = np.full(cells, -np.inf)
+        np.maximum.at(top, flat[ok & mask], z[ok & mask])
+        h = np.where(np.isfinite(top), top - ground_z, np.nan)
+        return np.where(h > 0, h, np.nan).astype(np.float32).reshape(ny, nx)
+
+    header = {"project_id": project_id, "nx": nx, "ny": ny, "cell_size": cell, "x0": g["x0"], "y0": g["y0"],
+              "classified": classified}
+    arrays = [("coverage", (n_all > 0).astype(np.uint8).reshape(ny, nx))]
+    if all(full.has(c) for c in ("red", "green", "blue")):
+        photo = np.zeros((cells, 3))
+        for i, c in enumerate(("red", "green", "blue")):
+            col = full.channels[c]
+            photo[:, i] = np.where(n_above > 0, mean(col, ~ground, n_above), mean(col, ground, n_ground))
+        arrays.append(("photo", np.clip(photo * 255, 0, 255).astype(np.uint8).reshape(ny, nx, 3)))
+    if full.has("intensity"):
+        m = mean(full.channels["intensity"], ground, n_ground)
+        u8, lo, hi = service._stretch_u8(m[n_ground > 0])
+        out = np.zeros(cells, dtype=np.uint8)
+        out[n_ground > 0] = u8
+        arrays.append(("intensity", out.reshape(ny, nx)))
+        header["intensity_range"] = [lo, hi]
+    arrays += [
+        ("veg_height", height(veg)),
+        ("object_height", height(obj)),
+        ("density", np.minimum(n_all, 65535).astype(np.uint16).reshape(ny, nx)),
+        ("ground_density", np.minimum(n_ground, 65535).astype(np.uint16).reshape(ny, nx)),
+    ]
+    result = (header, arrays)
+    with _grid_lock:
+        for k in [k for k in _raster_cache if k[0] == site_id and k[1] == project_id]:
+            del _raster_cache[k]
+        _raster_cache[key] = result
+    return result

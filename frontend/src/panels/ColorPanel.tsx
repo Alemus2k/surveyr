@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { elevationCssGradient } from "../color";
+import { QuantityInput } from "../components/QuantityInput";
+import { formatElevation, unitOf } from "../lib/units";
 import { elevationHistogram, type ColorRange, type PreparedCloud } from "../viewer/prepare";
 
 const BINS = 60;
@@ -36,24 +38,12 @@ export function ColorPanel({ cloud, range, onRange }: ColorPanelProps) {
 
         <div className="range-inputs">
           <label>
-            <span className="sr-only">Lowest colour elevation (m)</span>
-            <input
-              className="fig"
-              type="number"
-              step={step}
-              value={range.min.toFixed(2)}
-              onChange={(e) => Number.isFinite(e.target.valueAsNumber) && setMin(e.target.valueAsNumber)}
-            />
+            <span className="sr-only">Lowest colour elevation ({unitOf("elevation")})</span>
+            <QuantityInput kind="elevation" decimals={2} metricStep={step} value={range.min} onChange={setMin} />
           </label>
           <label>
-            <span className="sr-only">Highest colour elevation (m)</span>
-            <input
-              className="fig"
-              type="number"
-              step={step}
-              value={range.max.toFixed(2)}
-              onChange={(e) => Number.isFinite(e.target.valueAsNumber) && setMax(e.target.valueAsNumber)}
-            />
+            <span className="sr-only">Highest colour elevation ({unitOf("elevation")})</span>
+            <QuantityInput kind="elevation" decimals={2} metricStep={step} value={range.max} onChange={setMax} />
           </label>
         </div>
 
@@ -98,8 +88,8 @@ export function ColorPanel({ cloud, range, onRange }: ColorPanelProps) {
         </div>
         <div className="ramp-strip" style={{ background: elevationCssGradient().replace("to top", "to right") }} />
         <div className="range-extent mono">
-          <span>{zMin.toFixed(2)} m</span>
-          <span>{zMax.toFixed(2)} m</span>
+          <span>{formatElevation(zMin)}</span>
+          <span>{formatElevation(zMax)}</span>
         </div>
       </section>
 

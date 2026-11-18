@@ -22,6 +22,7 @@ KNOWN_CHANNELS: tuple = (
     "gps_time",             # per-point timestamp
     "classification",       # ground / vegetation / building
     "scan_angle",           # off-nadir angle
+    "red", "green", "blue",  # point colour from the drone's camera, 0..1
 )
 
 

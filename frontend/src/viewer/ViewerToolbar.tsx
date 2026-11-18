@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Icon } from "../layout/icons";
 import type { RenderMode, ViewPreset } from "./scene";
 
@@ -85,6 +86,7 @@ interface ViewerToolbarProps {
   onToggleGrid: () => void;
   sliceOpen: boolean;
   onToggleSlice: () => void;
+  measure?: ReactNode; // the measuring tools group, when the viewer has them
 }
 
 /** Floating viewport toolbar: camera, points/surface, size or opacity, grid and slice toggles. */
@@ -123,6 +125,7 @@ export function ViewerToolbar(props: ViewerToolbarProps) {
           <Icon name="slice" />
         </button>
       </div>
+      {props.measure}
     </>
   );
 }

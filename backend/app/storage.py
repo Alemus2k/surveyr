@@ -14,18 +14,26 @@ from typing import BinaryIO, Optional, Union
 
 from . import io
 
-SUPPORTED_EXTENSIONS = (".ply", ".las", ".laz", ".xyz")
+SUPPORTED_EXTENSIONS = (".ply", ".las", ".laz", ".xyz", ".xml")  # .xml = LandXML surface
 MAX_IMPORT_BYTES = 1024 * 1024 * 1024  # 1 GiB; phone scans are typically 5–100 MB
 DEMO_FILES = ("synthetic_topo.xyz", "scan_a.las", "scan_b.las")
-SITE_DEMO_DATES = ("2026-07-27", "2026-08-10", "2026-08-24", "2026-09-07", "2026-09-21", "2026-10-05")
+SITE_DEMO_DATES = ("2026-07-27", "2026-08-10", "2026-08-24", "2026-09-07", "2026-09-21", "2026-10-05",
+                   "2026-10-19", "2026-11-02")
 SITE_DEMO_FILES = (
-    "riverside_design.laz",
     *(f"riverside_{d}.laz" for d in SITE_DEMO_DATES),
     "riverside_commons.site.json",
 )
 # Demo sets by seed version. A folder records the last version it received, so
 # each set arrives once — including on installs seeded before the set existed.
-DEMO_SETS = ((1, DEMO_FILES), (2, SITE_DEMO_FILES), (3, ("riverside_control.control.json",)))
+DEMO_SETS = (
+    (1, DEMO_FILES),
+    (2, SITE_DEMO_FILES),
+    (3, ("riverside_control.control.json",)),
+    (4, ("riverside_grading.xml",)),  # the demo design as LandXML (sites seeded earlier keep their LAZ design)
+    (5, tuple(f"riverside_{d}.laz" for d in SITE_DEMO_DATES[6:])),  # two more flights (0.7)
+)
+# Everything that makes up the job-site demo, for "Restore the demo site".
+SITE_DEMO_ALL = (*SITE_DEMO_FILES, "riverside_control.control.json", "riverside_grading.xml")
 SEED_MARKER = ".surveyr-seeded"
 _CHUNK = 1024 * 1024
 _STEM_MAX = 60
@@ -78,7 +86,8 @@ def import_scan(
         try:
             cloud = io.load_point_cloud(str(dest))
         except Exception as exc:  # any parse failure means "not a point cloud we can read"
-            raise ImportRejected(f"could not read this file as a point cloud ({exc})") from exc
+            what = "a LandXML surface" if dest.suffix == ".xml" else "a point cloud"
+            raise ImportRejected(f"could not read this file as {what} ({exc})") from exc
         if cloud.size == 0:
             raise ImportRejected("could not read this file as a point cloud (it has no points)")
     except BaseException:
@@ -159,3 +168,28 @@ def seed_demo_data(target: PathLike, demo_dir: PathLike) -> None:
             if src.exists() and not dest.exists():
                 shutil.copy2(src, dest)
     marker.write_text(str(latest))
+
+
+def restore_demo(target: PathLike, demo_dir: PathLike, trash_dir: Optional[PathLike]) -> list:
+    """Put the bundled job-site demo back as shipped.
+
+    Demo files already in the projects folder go to the Trash / Recycle Bin first
+    (along with their settings sidecars), so nothing is lost; then the bundled
+    copies are installed. Other projects are never touched. Returns the file
+    names installed. A no-op when the projects folder *is* the demo folder (dev).
+    """
+    target_dir, source = Path(target), Path(demo_dir)
+    if target_dir.resolve() == source.resolve():
+        return [name for name in SITE_DEMO_ALL if (source / name).exists()]
+    installed = []
+    for name in SITE_DEMO_ALL:
+        src = source / name
+        if not src.exists():
+            continue
+        stem = name.rsplit(".", 1)[0]
+        for old in (target_dir / name, target_dir / f"{stem}.settings.json"):
+            if old.exists():
+                move_to_trash(old, trash_dir)
+        shutil.copy2(src, target_dir / name)
+        installed.append(name)
+    return installed

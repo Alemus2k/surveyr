@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { formatLength } from "../lib/units";
 import type { SiteCells } from "./earthworks";
 
 interface CutFillMapProps {
@@ -49,7 +50,7 @@ export function CutFillMap({ site, target, nx, ny }: CutFillMapProps) {
         <span className="legend-chip cut">Dig</span>
         <span className="legend-ramp" />
         <span className="legend-chip fill">Fill</span>
-        <span className="mono legend-max">±{maxAbs.toFixed(2)} m</span>
+        <span className="mono legend-max">±{formatLength(maxAbs)}</span>
       </figcaption>
     </figure>
   );

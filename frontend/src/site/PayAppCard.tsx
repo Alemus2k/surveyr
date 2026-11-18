@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Icon } from "../layout/icons";
-import { formatVolume } from "../lib/format";
+import { formatVolume, fromDisplay, quantityText, unitOf } from "../lib/units";
 import { formatDate } from "./dates";
 import type { PayAppCheck } from "./progress";
 import type { PayApp, Zone } from "./types";
@@ -14,7 +14,7 @@ interface PayAppCardProps {
   onRemove: (id: string) => void;
 }
 
-const v = (m3: number) => formatVolume(m3).value;
+const v = (m3: number) => quantityText(formatVolume(m3));
 
 /** Contractor quantity claims next to what the scans measured for the same period and zone. */
 export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRemove }: PayAppCardProps) {
@@ -38,7 +38,7 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
       date: draft.date,
       zone_id: draft.zone || null,
       kind: draft.kind,
-      claimed_m3: claimed,
+      claimed_m3: fromDisplay(claimed, "volume"), // typed in the user's unit, stored in m³
       contractor: draft.contractor.trim(),
       note: "",
     });
@@ -50,7 +50,7 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
       {checks.length > 0 && (
         <p className={`payapp-summary ${flagged.length ? "bad" : "good"}`}>
           {flagged.length
-            ? `${flagged.length} claim${flagged.length === 1 ? "" : "s"} more than ${overbillPct}% above measured — ${v(overClaim)} m³ over in total.`
+            ? `${flagged.length} claim${flagged.length === 1 ? "" : "s"} more than ${overbillPct}% above measured — ${v(overClaim)} over in total.`
             : `All ${checks.length} claims are within ${overbillPct}% of what the scans measured.`}
         </p>
       )}
@@ -78,12 +78,12 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
                     {zoneName(c.payApp.zone_id)} · {c.payApp.kind === "cut" ? "dug" : "filled"}
                     {c.payApp.contractor && <span className="payapp-who">{c.payApp.contractor}</span>}
                   </td>
-                  <td className="num fig">{v(c.payApp.claimed_m3)} m³</td>
-                  <td className="num fig">{c.measured === null ? "—" : `${v(c.measured)} m³`}</td>
+                  <td className="num fig">{v(c.payApp.claimed_m3)}</td>
+                  <td className="num fig">{c.measured === null ? "—" : v(c.measured)}</td>
                   <td className={`num fig ${c.flagged ? "late" : ""}`}>
                     {c.diff === null
                       ? "no scans"
-                      : `${c.diff >= 0 ? "+" : "−"}${v(Math.abs(c.diff))} m³${c.diffPct === null ? "" : ` (${c.diffPct >= 0 ? "+" : "−"}${Math.abs(c.diffPct).toFixed(0)}%)`}`}
+                      : `${c.diff >= 0 ? "+" : "−"}${v(Math.abs(c.diff))}${c.diffPct === null ? "" : ` (${c.diffPct >= 0 ? "+" : "−"}${Math.abs(c.diffPct).toFixed(0)}%)`}`}
                     {c.flagged && <span className="status-chip bad">Check</span>}
                   </td>
                   <td>
@@ -132,7 +132,7 @@ export function PayAppCard({ checks, zones, periodEnds, overbillPct, onAdd, onRe
             <span className="field-label">Claimed</span>
             <span className="js-input">
               <input type="number" className="fig" min={0} step={1} value={draft.claimed} onChange={(e) => setDraft({ ...draft, claimed: e.target.value })} />
-              <span className="unit">m³</span>
+              <span className="unit">{unitOf("volume")}</span>
             </span>
           </label>
           <label className="js-field payapp-wide">

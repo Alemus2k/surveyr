@@ -105,6 +105,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     data_dir = args.data_dir or Path(os.environ.get("SURVEYR_DATA_DIR", default_data_dir()))
     storage.seed_demo_data(data_dir, demo_dir())
     service.DATA_DIR = str(data_dir)
+    service.DEMO_DIR = str(demo_dir())
     if args.parent_pid:
         watch_parent(args.parent_pid)
 

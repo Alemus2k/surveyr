@@ -18,6 +18,13 @@ export interface ProjectRef {
   name: string;
   type?: ProjectType;
   site?: string; // the job site this scan belongs to, if any
+  source?: string; // file name(s) on disk
+}
+
+/** A LandXML file's design surfaces (TINs). */
+export interface LandXMLSurfaces {
+  available: { name: string; desc: string; points: number; faces: number }[];
+  default: string; // used when no surface has been picked
 }
 
 /** API root: injected by the desktop app, else the Vite dev-server proxy. */
@@ -95,7 +102,9 @@ export interface ScanSettings {
   unit: Unit;
   up_axis: "z" | "y";
   ground_only: boolean;
+  auto_ground: boolean; // work out ground automatically, ignoring the file's classes
   z_offset_m: number; // elevation correction added after unit conversion
+  surface: string | null; // LandXML: which surface; null = the default
 }
 
 /** What a scan's units appear to be: "crs" = stated by the file, "size" = a guess. */
@@ -110,6 +119,7 @@ export interface UnitDetection {
 export interface ScanSettingsResponse {
   settings: ScanSettings;
   detected: UnitDetection;
+  surfaces: LandXMLSurfaces | null; // only for LandXML files
 }
 
 export async function fetchScanSettings(id: string): Promise<ScanSettingsResponse> {
@@ -290,4 +300,11 @@ export async function fetchSiteQA(siteId: string): Promise<FlightQA[]> {
   const res = await fetch(`${apiBase()}/sites/${encodeURIComponent(siteId)}/qa`);
   if (!res.ok) throw new Error(`Couldn't check flights against control: ${await errorDetail(res)}`);
   return res.json() as Promise<FlightQA[]>;
+}
+
+/** Reinstall the Riverside Commons demo as shipped; old demo files go to the Trash first. */
+export async function restoreDemo(): Promise<string[]> {
+  const res = await fetch(`${apiBase()}/demo/restore`, { method: "POST" });
+  if (!res.ok) throw new Error(`Couldn't restore the demo: ${await errorDetail(res)}`);
+  return ((await res.json()) as { installed: string[] }).installed;
 }
