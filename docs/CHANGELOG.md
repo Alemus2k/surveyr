@@ -4,7 +4,7 @@ Newest first. Each entry links to its feature doc, which has the details and a
 review checklist. "Idea" marks things added along the way rather than planned —
 see [REVIEW_CHECKLIST.md](REVIEW_CHECKLIST.md) to keep or axe them.
 
-## 0.7.0 — unreleased
+## 0.7.0 — 2026-11-18
 
 ### Whole app
 - **US units by default** (feet to hundredths, cubic yards, square feet / acres),
